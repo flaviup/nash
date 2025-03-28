@@ -1290,6 +1290,14 @@
 
     const NON_STYLABLE_NODE_NAMES = ["CODE", "IFRAME"];
 
+    function generateUId() {
+      function s4() {
+        return Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
+      }
+      return s4() + s4() + s4() + s4() +
+             s4() + s4() + s4() + s4();
+    }
+
     function setEditMode(editMode) {
       let editor = document.getElementById("editor");
       let toolbar = document.getElementById("toolbar");
@@ -1307,7 +1315,7 @@
       }
     }
 
-    function removeDocumentNodes(html) {
+    function removeDocumentNodes(html, editMode) {
 
       const template = document.createElement("template");
       template.innerHTML = html;
@@ -1320,13 +1328,31 @@
         el.replaceChildren();
       });*/
 
+      if (editMode === false) {
+
+        template.content.querySelectorAll(".x-remover").forEach(el => {
+          el.parentNode?.removeChild(el);
+        });
+
+        template.content.querySelectorAll('*[contenteditable="true"]').forEach(el => {
+          el.setAttribute("contenteditable", "false");
+        });
+      }
+
       return template.innerHTML;
     }
 
     async function exportToFile(save, editMode) {
+
       let filename = document.getElementById("filename").innerText.trim();
+
       if (!filename) {
-        alert("title is empty!");
+        alert("Title is empty!");
+        return;
+      }
+
+      if (audioRecorder.recordingState !== MediaRecordingStatus.CLOSED) {
+        alert("Stop recording before " + (save ? "saving." : "sharing."));
         return;
       }
 
@@ -1336,7 +1362,7 @@
         setEditMode(false);
       }
 
-      let content = removeDocumentNodes(document.documentElement.outerHTML);
+      let content = removeDocumentNodes(document.documentElement.outerHTML, editMode);
       let blob = new Blob(["<!DOCTYPE html>\n" + content], { type: "text/html" });
       let file = new File([blob], filename, { type: "text/html" });
 
@@ -1400,19 +1426,14 @@
 
       const divNode = document.createElement("div");
       divNode.innerText = "❌";
-      divNode.addEventListener("click", function (e) {
 
-        const parentNode = e.target?.parentNode;
-
-        if (parentNode?.parentNode) {
-
-          parentNode.parentNode.removeChild(parentNode);
-
-          if (callback) {
-            callback();
-          }
-        }
-      }, false);
+      if (callback) {
+        divNode.addEventListener("click", function (e) {
+          callback();
+        }, false);
+      } else {
+        divNode.setAttribute("onclick", "event.target?.parentNode?.parentNode?.removeChild(event.target?.parentNode)");
+      }
       divNode.setAttribute("class", "x-remover non-selectable");
       divNode.setAttribute("contenteditable", "false");
       return divNode;
@@ -1432,6 +1453,7 @@
           img.src = e.target.result;
           divNode.appendChild(img);
           divNode.appendChild(createRemover());
+          divNode.setAttribute("id", `img${generateUId()}`);
           divNode.setAttribute("class", "embedded-local-image");
           divNode.setAttribute("contenteditable", "false");
           editor.insertBefore(divNode, nextSibling);
@@ -1450,6 +1472,7 @@
       img.src = `${url}`;
       divNode.appendChild(img);
       divNode.appendChild(createRemover());
+      divNode.setAttribute("id", `img${generateUId()}`);
       divNode.setAttribute("class", "image-link");
       divNode.setAttribute("contenteditable", "false");
       editor.insertBefore(divNode, nextSibling);
@@ -1470,6 +1493,7 @@
           audio.setAttribute("controls", "");
           divNode.appendChild(audio);
           divNode.appendChild(createRemover());
+          divNode.setAttribute("id", `audio${generateUId()}`);
           divNode.setAttribute("class", "embedded-local-audio");
           divNode.setAttribute("contenteditable", "false");
           editor.insertBefore(divNode, nextSibling);
@@ -1489,6 +1513,7 @@
       audio.setAttribute("controls", "");
       divNode.appendChild(audio);
       divNode.appendChild(createRemover());
+      divNode.setAttribute("id", `audio${generateUId()}`);
       divNode.setAttribute("class", "audio-link");
       divNode.setAttribute("contenteditable", "false");
       editor.insertBefore(divNode, nextSibling);
@@ -1505,17 +1530,10 @@
       video.setAttribute("controls", "");
       divNode.appendChild(video);
       divNode.appendChild(createRemover());
+      divNode.setAttribute("id", `video${generateUId()}`);
       divNode.setAttribute("class", "video-link");
       divNode.setAttribute("contenteditable", "false");
       editor.insertBefore(divNode, nextSibling);
-    }
-
-    function generateUId() {
-      function s4() {
-        return Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
-      }
-      return s4() + s4() + s4() + s4() +
-             s4() + s4() + s4() + s4();
     }
 
     function insertAudioRecording() {
@@ -1530,8 +1548,7 @@
         return;
       }
       const nextSibling = getTopLevelNodeOfCurrentPosition()?.nextSibling;
-      const arId = generateUId();
-      const strArId = `ar${arId}`;
+      const strArId = `ar${generateUId()}`;
       const audioRecordingNode = document.createElement("div");
       audioRecordingNode.setAttribute("id", strArId);
       audioRecordingNode.setAttribute("class", "audio-recording");
@@ -1894,7 +1911,10 @@
 
         divNode.appendChild(divEbook);
         divEbook.book = book;
-        divNode.appendChild(createRemover(function () { book.destroy(); }));
+        divNode.appendChild(createRemover(function () {
+          book.destroy();
+          if (editor.contains(divNode)) editor.removeChild(divNode);
+        }));
         divNode.setAttribute("class", "embedded-local-epub");
         divNode.setAttribute("contenteditable", "false");
         divNode.setAttribute("data-epub", epubData);
@@ -2017,18 +2037,14 @@
 
         element?.replaceChildren();
         const divNode = element || document.createElement("div");
+        const strPdfId = divNode.getAttribute("id");
+
+        if (!strPdfId) {
+          divNode.setAttribute("id", `pdf${generateUId()}`);
+        }
         divNode.setAttribute("class", "embedded-local-pdf");
         divNode.setAttribute("contenteditable", "false");
         //divNode.setAttribute("data-pdf", pdfData);
-
-        let strPdfId = divNode.getAttribute("id");
-
-        if (!strPdfId) {
-
-          const pdfId = generateUId();
-          strPdfId = `pdf${pdfId}`;
-          divNode.setAttribute("id", strPdfId);
-        }
 
         if (!element) editor.insertBefore(divNode, nextSibling);
 
@@ -2050,12 +2066,9 @@
       if (!url) return;
       const nextSibling = getTopLevelNodeOfCurrentPosition()?.nextSibling;
       const divNode = document.createElement("div");
+      divNode.setAttribute("id", `pdf${generateUId()}`);
       divNode.setAttribute("class", "pdf-link");
       divNode.setAttribute("contenteditable", "false");
-
-      const pdfId = generateUId();
-      const strPdfId = `pdf${pdfId}`;
-      divNode.setAttribute("id", strPdfId);
 
       editor.insertBefore(divNode, nextSibling);
 
@@ -2149,12 +2162,9 @@
 
       const nextSibling = getTopLevelNodeOfCurrentPosition()?.nextSibling;
       const divNode = document.createElement("div");
+      divNode.setAttribute("id", `table${generateUId()}`);
       divNode.setAttribute("class", "embedded-table");
       divNode.setAttribute("contenteditable", "false");
-
-      const tableId = generateUId();
-      const strTableId = `table${tableId}`;
-      divNode.setAttribute("id", strTableId);
       divNode.innerHTML = ['<table contenteditable="false">', thead, tbody, "</table>"].join("\n");
 
       editor.insertBefore(divNode, nextSibling);
@@ -2165,6 +2175,7 @@
 
       const topNode = getTopLevelNodeOfCurrentPosition();
       const p = document.createElement("p");
+      p.setAttribute("id", `text${generateUId()}`);
       p.setAttribute("class", "text-block");
       p.appendChild(document.createElement("br"));
       editor.insertBefore(p, topNode?.nextSibling);
@@ -2182,6 +2193,7 @@
       code.innerText = "\n";
       pre.appendChild(code);
       divNode.appendChild(pre);
+      divNode.setAttribute("id", `code${generateUId()}`);
       divNode.setAttribute("class", "code-block");
       divNode.setAttribute("contenteditable", "true");
       editor.insertBefore(divNode, nextSibling);
@@ -2200,6 +2212,7 @@
       } else {
         divNode.innerHTML = `${iframeHtml}`;
       }
+      divNode.setAttribute("id", `embed${generateUId()}`);
       divNode.setAttribute("class", "embedded-content");
       divNode.setAttribute("contenteditable", "true");
       editor.insertBefore(divNode, nextSibling);
