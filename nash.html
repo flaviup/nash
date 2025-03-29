@@ -1569,50 +1569,82 @@
       editor.insertBefore(divNode, nextSibling);
     }
 
-    function insertAudioRecording() {
+    const audioRecordingInserter = {
 
-      if (!audioRecorder.isMediaRecordingSupported()) {
-        console.log("Media recording is not supported in this browser.");
-        alert("Media recording is not supported in this browser.");
-        return;
-      }
+      /** Stores the audio recording node id*/
+      strArId: null,
 
-      if (audioRecorder.recordingState !== MediaRecordingStatus.CLOSED) {
-        alert("A recording is already in progress.");
-        return;
-      }
-      const nextSibling = getTopLevelNodeOfCurrentPosition()?.nextSibling;
-      const strArId = `ar${generateUId()}`;
-      const audioRecordingNode = document.createElement("div");
-      audioRecordingNode.setAttribute("id", strArId);
-      audioRecordingNode.setAttribute("class", "audio-recording");
-      audioRecordingNode.setAttribute("contenteditable", "false");
-      const audioRecordingControlsNode = document.createElement("div");
-      audioRecordingControlsNode.setAttribute("class", "recording-control-buttons-container");
-      audioRecordingControlsNode.setAttribute("contenteditable", "false");
-      audioRecordingControlsNode.innerHTML = `
-          <b class="cancel-recording-button non-selectable" contenteditable="false" aria-hidden="true">✖</b>
-          <div class="recording-elapsed-time" contenteditable="false">
-            <b class="red-recording-dot non-selectable" contenteditable="false" aria-hidden="true">🔴</b>
-            <p class="elapsed-time non-selectable" style="font-size: 28px;" contenteditable="false">00:00</p>
-          </div>
-          <b class="stop-recording-button non-selectable" contenteditable="false" aria-hidden="true">✓</b>`;
-      audioRecordingNode.appendChild(audioRecordingControlsNode);
-      let elapsedTimeTag = null;
+      /** Stores the audio recording node*/
+      audioRecordingNode: null,
 
-      // Audio Controller
+      /** Stores the audio recording node's next sibling present already in the DOM tree*/
+      nextSibling: null,
+
+      /** Stores the elapsed time node*/
+      elapsedTimeTag: null,
 
       /** Stores the actual start time when an audio recording begins to take place to ensure elapsed time start time is accurate*/
-      let audioRecordStartTime = null;
+      audioRecordStartTime: null,
 
       /** Stores the maximum recording time in hours to stop recording once maximum recording hour has been reached */
-      const maximumRecordingTimeInHours = 1;
+      maximumRecordingTimeInHours: 1,
 
       /** Stores the reference of the setInterval function that controls the timer in audio recording*/
-      let elapsedTimeTimer = null;
+      elapsedTimeTimer: null,
 
-      /** Starts the audio recording*/
-      function startAudioRecording() {
+      /** Resets all the audioRecordingInserter's data members*/
+      reset: function () {
+        audioRecordingInserter.strArId = null;
+        audioRecordingInserter.audioRecordingNode = null;
+        audioRecordingInserter.nextSibling = null;
+        audioRecordingInserter.elapsedTimeTag = null;
+        audioRecordingInserter.audioRecordStartTime = null;
+        audioRecordingInserter.elapsedTimeTimer = null;
+      },
+
+      /** Tries to start recording and insert the audio recording ui in the page*/
+      insert: function () {
+
+        if (!audioRecorder.isMediaRecordingSupported()) {
+          console.log("Media recording is not supported in this browser.");
+          alert("Media recording is not supported in this browser.");
+          return;
+        }
+
+        if (audioRecorder.recordingState !== MediaRecordingStatus.CLOSED) {
+          alert("A recording is already in progress.");
+          return;
+        }
+        audioRecordingInserter.reset();
+
+        audioRecordingInserter.nextSibling = getTopLevelNodeOfCurrentPosition()?.nextSibling;
+        audioRecordingInserter.strArId = `ar${generateUId()}`;
+        audioRecordingInserter.audioRecordingNode = document.createElement("div");
+        audioRecordingInserter.audioRecordingNode.setAttribute("id", audioRecordingInserter.strArId);
+        audioRecordingInserter.audioRecordingNode.setAttribute("class", "audio-recording");
+        audioRecordingInserter.audioRecordingNode.setAttribute("contenteditable", "false");
+
+        const audioRecordingControlsNode = document.createElement("div");
+        audioRecordingControlsNode.setAttribute("class", "recording-control-buttons-container");
+        audioRecordingControlsNode.setAttribute("contenteditable", "false");
+        audioRecordingControlsNode.innerHTML = `
+            <b class="cancel-recording-button non-selectable" contenteditable="false" aria-hidden="true">✖</b>
+            <div class="recording-elapsed-time" contenteditable="false">
+              <b class="red-recording-dot non-selectable" contenteditable="false" aria-hidden="true">🔴</b>
+              <p class="elapsed-time non-selectable" style="font-size: 28px;" contenteditable="false">00:00</p>
+            </div>
+            <b class="stop-recording-button non-selectable" contenteditable="false" aria-hidden="true">✓</b>`;
+        audioRecordingInserter.audioRecordingNode.appendChild(audioRecordingControlsNode);
+
+        if (audioRecorder.recordingState === MediaRecordingStatus.CLOSED) {
+          audioRecordingInserter.startAudioRecording();
+        } else {
+          audioRecordingInserter.reset();
+        }
+      },
+
+      /** Starts recording using the audio recording API*/
+      startAudioRecording: function () {
 
         console.log("Recording Audio...");
 
@@ -1627,20 +1659,21 @@
         }
 
         if (audioRecorder.recordingState !== MediaRecordingStatus.CLOSED) {
+          audioRecordingInserter.reset();
           return;
         }
 
         // start recording using the audio recording API
         audioRecorder.start()
           .then(() => { //on success
-            audioRecordStartTime = new Date(); // store the recording start time to display the elapsed time according to it
-            editor.insertBefore(audioRecordingNode, nextSibling);
-            elapsedTimeTag = document.querySelectorAll(`#${strArId} .elapsed-time`)[0];
-            const stopRecordingButton = document.querySelectorAll(`#${strArId} .stop-recording-button`)[0];
-            const cancelRecordingButton = document.querySelectorAll(`#${strArId} .cancel-recording-button`)[0];
-            stopRecordingButton.onclick = stopAudioRecording;
-            cancelRecordingButton.onclick = cancelAudioRecording;
-            handleElapsedRecordingTime();
+            audioRecordingInserter.audioRecordStartTime = new Date(); // store the recording start time to display the elapsed time according to it
+            editor.insertBefore(audioRecordingInserter.audioRecordingNode, audioRecordingInserter.nextSibling);
+            audioRecordingInserter.elapsedTimeTag = document.querySelectorAll(`#${audioRecordingInserter.strArId} .elapsed-time`)[0];
+            const stopRecordingButton = document.querySelectorAll(`#${audioRecordingInserter.strArId} .stop-recording-button`)[0];
+            const cancelRecordingButton = document.querySelectorAll(`#${audioRecordingInserter.strArId} .cancel-recording-button`)[0];
+            stopRecordingButton.onclick = audioRecordingInserter.stopAudioRecording;
+            cancelRecordingButton.onclick = audioRecordingInserter.cancelAudioRecording;
+            audioRecordingInserter.handleElapsedRecordingTime();
           })
           .catch(error => { // on error
             // No Browser Support Error
@@ -1678,12 +1711,12 @@
               default:
                 console.log("An error occured with the error name " + error.name);
             };
-            cancelAudioRecording();
+            audioRecordingInserter.cancelAudioRecording();
           });
-      }
-      /** Stop the currently started audio recording & sends it
-       */
-      function stopAudioRecording() {
+      },
+
+      /** Stops the currently started audio recording & sends it*/
+      stopAudioRecording: function () {
 
         console.log("Stopping Audio Recording...");
 
@@ -1691,8 +1724,8 @@
         audioRecorder.stop()
           .then(audioAsblob => {
 
-            handleRecordingEnd();
-            showAudioPlay(audioAsblob);
+            audioRecordingInserter.handleRecordingEnd();
+            audioRecordingInserter.showAudioPlay(audioAsblob);
           })
           .catch(error => {
             // Error handling structure
@@ -1703,26 +1736,27 @@
               default:
                 console.log("An error occured with the error name " + error.name);
             };
-            cancelAudioRecording();
+            audioRecordingInserter.cancelAudioRecording();
           });
-      }
+      },
 
-      /** Cancel the currently started audio recording */
-      function cancelAudioRecording() {
+      /** Cancels the currently started audio recording */
+      cancelAudioRecording: function () {
 
         console.log("Canceling audio...");
 
         // cancel the recording using the audio recording API
         audioRecorder.cancel();
-        handleRecordingEnd();
+        audioRecordingInserter.handleRecordingEnd();
 
-        if (editor.contains(audioRecordingNode)) editor.removeChild(audioRecordingNode);
-      }
+        if (editor.contains(audioRecordingInserter.audioRecordingNode)) editor.removeChild(audioRecordingInserter.audioRecordingNode);
+        audioRecordingInserter.reset(); // audioRecordingInserter's job is finished here
+      },
 
       /** Shows the audio play interface for playing the recorded audio using the audio element in the HTML document
        * @param {Blob} recorderAudioAsBlob - recorded audio as a Blob Object 
       */
-      function showAudioPlay(recorderAudioAsBlob) {
+      showAudioPlay: function (recorderAudioAsBlob) {
 
         // read content of files (Blobs) asynchronously
         let reader = new FileReader();
@@ -1730,21 +1764,24 @@
         // once content has been read
         reader.onload = (e) => {
 
-          audioRecordingNode.innerHTML = `<audio controls src="${e.target.result}"></audio>`;
-          audioRecordingNode.appendChild(createRemover());
-          document.querySelectorAll(`#${strArId} audio`)[0].load();
+          audioRecordingInserter.audioRecordingNode.innerHTML = `<audio controls src="${e.target.result}"></audio>`;
+          audioRecordingInserter.audioRecordingNode.appendChild(createRemover());
+          document.querySelectorAll(`#${audioRecordingInserter.strArId} audio`)[0].load();
+          audioRecordingInserter.reset(); // audioRecordingInserter's job is finished here
         };
 
         // read content and convert it to a URL (base64)
         reader.readAsDataURL(recorderAudioAsBlob);
-      }
+      },
 
-      function hideRecordingStatusBar() {
+      /** Hides the recording status bar*/
+      hideRecordingStatusBar: function () {
         document.getElementById("editorContainer").classList.add("thin-line");
         document.getElementById("recordingBar").classList.add("hidden");
-      }
+      },
 
-      function recordingDotShowingInViewport() {
+      /** Checks if the recording animated dot is showing in the window viewport*/
+      recordingDotShowingInViewport: function () {
 
         const dot = document.querySelectorAll(".audio-recording .red-recording-dot")[0];
         const toolbar = document.getElementById("toolbar");
@@ -1759,74 +1796,81 @@
             && dotRect.bottom - dotBottomOffset > toolbarRect.bottom
             && dotRect.left < wWidth
             && dotRect.left > -dotRect.width);
-      }
+      },
 
-      function showRecordingStatusBar() {
+      /** Displays the recording status bar if the recording animated dot is not showing in the window viewport, otherwise it hides the recording status bar*/
+      showRecordingStatusBar: function () {
 
-        if (!recordingDotShowingInViewport()) {
+        if (!audioRecordingInserter.recordingDotShowingInViewport()) {
           document.getElementById("editorContainer").classList.remove("thin-line");
           document.getElementById("recordingBar").classList.remove("hidden");
         } else {
-          hideRecordingStatusBar();
+          audioRecordingInserter.hideRecordingStatusBar();
         }
-      }
+      },
 
       /** Computes the elapsed recording time since the moment the function is called in the format h:m:s*/
-      function handleElapsedRecordingTime() {
+      handleElapsedRecordingTime: function () {
+
         // display inital time when recording begins
-        displayElapsedTimeDuringAudioRecording("00:00");
-        showRecordingStatusBar();
-        document.addEventListener("scroll", showRecordingStatusBar);
+        audioRecordingInserter.displayElapsedTimeDuringAudioRecording("00:00");
+        audioRecordingInserter.showRecordingStatusBar();
+        document.addEventListener("scroll", audioRecordingInserter.showRecordingStatusBar);
 
         // create an interval that compute & displays elapsed time, as well as, animate red dot - every second
-        elapsedTimeTimer = setInterval(() => {
+        audioRecordingInserter.elapsedTimeTimer = setInterval(() => {
           // compute the elapsed time every second
-          const elapsedTime = computeElapsedTime(audioRecordStartTime); // pass the actual record start time
+          const elapsedTime = audioRecordingInserter.computeElapsedTime(audioRecordingInserter.audioRecordStartTime); // pass the actual record start time
           // display the elapsed time
-          displayElapsedTimeDuringAudioRecording(elapsedTime);
+          audioRecordingInserter.displayElapsedTimeDuringAudioRecording(elapsedTime);
         }, 1000); // every second
-      }
+      },
 
-      /** Display elapsed time during audio recording
+      /** Displays elapsed time during audio recording
        * @param {String} elapsedTime - elapsed time in the format mm:ss or hh:mm:ss 
        */
-      function displayElapsedTimeDuringAudioRecording(elapsedTime) {
+      displayElapsedTimeDuringAudioRecording: function (elapsedTime) {
+
         // 1. display the passed elapsed time as the elapsed time in the elapsedTime HTML element
-        elapsedTimeTag.innerHTML = elapsedTime;
+        audioRecordingInserter.elapsedTimeTag.innerHTML = elapsedTime;
 
         // 2. Stop the recording when the max number of hours is reached
-        if (elapsedTimeReachedMaximumNumberOfHours(elapsedTime)) {
-          stopAudioRecording();
+        if (audioRecordingInserter.elapsedTimeReachedMaximumNumberOfHours(elapsedTime)) {
+          audioRecordingInserter.stopAudioRecording();
         } else {
-          showRecordingStatusBar();
+          audioRecordingInserter.showRecordingStatusBar();
         }
-      }
+      },
 
       /**
        * @param {String} elapsedTime - elapsed time in the format mm:ss or hh:mm:ss  
        * @returns {Boolean} whether the elapsed time reached the maximum number of hours or not
        */
-      function elapsedTimeReachedMaximumNumberOfHours(elapsedTime) {
+      elapsedTimeReachedMaximumNumberOfHours: function (elapsedTime) {
+
         // Split the elapsed time by the symbo :
-        let elapsedTimeSplitted = elapsedTime.split(":");
+        const elapsedTimeSplitted = elapsedTime.split(":");
 
         // Turn the maximum recording time in hours to a string and pad it with zero if less than 10
-        let maximumRecordingTimeInHoursAsString = maximumRecordingTimeInHours < 10 ? "0" + maximumRecordingTimeInHours : maximumRecordingTimeInHours.toString();
+        const maximumRecordingTimeInHoursAsString = audioRecordingInserter.maximumRecordingTimeInHours < 10 ?
+                                                      "0" + audioRecordingInserter.maximumRecordingTimeInHours :
+                                                      audioRecordingInserter.maximumRecordingTimeInHours.toString();
 
         // if it the elapsed time reach hours and also reach the maximum recording time in hours return true
         if (elapsedTimeSplitted.length === 3 && elapsedTimeSplitted[0] === maximumRecordingTimeInHoursAsString)
           return true;
         else // otherwise, return false
           return false;
-      }
+      },
 
       /** Computes the elapsedTime since the moment the function is called in the format mm:ss or hh:mm:ss
        * @param {String} startTime - start time to compute the elapsed time since
        * @returns {String} elapsed time in mm:ss format or hh:mm:ss format, if elapsed hours are 0.
        */
-      function computeElapsedTime(startTime) {
+      computeElapsedTime: function (startTime) {
+
         // record end time
-        let endTime = new Date();
+        const endTime = new Date();
 
         // time difference in ms
         let timeDiff = endTime - startTime;
@@ -1867,24 +1911,24 @@
         } else {
           return totalHours + ":" + minutes + ":" + seconds;
         }
-      }
+      },
 
-      /** Hide the displayed recording control buttons */
-      function handleRecordingEnd() {
+      /** Hides the displayed recording control buttons */
+      handleRecordingEnd: function () {
 
         // stop interval that handles both time elapsed and the red dot
-        if (elapsedTimeTimer) {
-          clearInterval(elapsedTimeTimer);
-          elapsedTimeTimer = null;
+        if (audioRecordingInserter.elapsedTimeTimer) {
+          clearInterval(audioRecordingInserter.elapsedTimeTimer);
+          audioRecordingInserter.elapsedTimeTimer = null;
           console.log("Recording timer stopped.");
         }
-        hideRecordingStatusBar();
-        document.removeEventListener("scroll", showRecordingStatusBar);
+        audioRecordingInserter.hideRecordingStatusBar();
+        document.removeEventListener("scroll", audioRecordingInserter.showRecordingStatusBar);
       }
+    };
 
-      if (audioRecorder.recordingState === MediaRecordingStatus.CLOSED) {
-        startAudioRecording();
-      }
+    function insertAudioRecording() {
+      audioRecordingInserter.insert();
     }
 
     function loadAllReferencedDocuments() {
