@@ -1322,18 +1322,6 @@
 
     const NON_STYLABLE_NODE_NAMES = ["CODE", "IFRAME"];
 
-    function elementShowingInViewport(element) {
-
-      const bounding = element.getBoundingClientRect();
-      const wWidth = (window.innerWidth || document.documentElement.clientWidth);
-      const wHeight = (window.innerHeight || document.documentElement.clientHeight);
-
-      return (bounding.top < wHeight
-          && bounding.top > -bounding.height
-          && bounding.left < wWidth
-          && bounding.left > -bounding.width);
-    }
-
     function generateUId() {
       function s4() {
         return Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
@@ -1762,9 +1750,26 @@
         document.getElementById("recordingBar").classList.add("hidden");
       }
 
+      function recordingDotShowingInViewport() {
+
+        const dot = document.querySelectorAll(".audio-recording .red-recording-dot")[0];
+        const toolbar = document.getElementById("toolbar");
+        const dotRect = dot.getBoundingClientRect();
+        const toolbarRect = toolbar.getBoundingClientRect();
+        const wWidth = (window.innerWidth || document.documentElement.clientWidth);
+        const wHeight = (window.innerHeight || document.documentElement.clientHeight);
+        const dotTopOffset = 11;
+        const dotBottomOffset = 6;
+
+        return (dotRect.top + dotTopOffset < wHeight
+            && dotRect.bottom - dotBottomOffset > toolbarRect.bottom
+            && dotRect.left < wWidth
+            && dotRect.left > -dotRect.width);
+      }
+
       function showRecordingStatusBar() {
 
-        if (!elementShowingInViewport(document.querySelectorAll(".audio-recording .red-recording-dot")[0])) {
+        if (!recordingDotShowingInViewport()) {
           document.getElementById("editorContainer").classList.remove("thin-line");
           document.getElementById("recordingBar").classList.remove("hidden");
         } else {
