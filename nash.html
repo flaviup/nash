@@ -1322,6 +1322,18 @@
 
     const NON_STYLABLE_NODE_NAMES = ["CODE", "IFRAME"];
 
+    function elementShowingInViewport(element) {
+
+      const bounding = element.getBoundingClientRect();
+      const wWidth = (window.innerWidth || document.documentElement.clientWidth);
+      const wHeight = (window.innerHeight || document.documentElement.clientHeight);
+
+      return (bounding.top < wHeight
+          && bounding.top > -bounding.height
+          && bounding.left < wWidth
+          && bounding.left > -bounding.width);
+    }
+
     function generateUId() {
       function s4() {
         return Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
@@ -1578,6 +1590,7 @@
       }
 
       if (audioRecorder.recordingState !== MediaRecordingStatus.CLOSED) {
+        alert("A recording is already in progress.");
         return;
       }
       const nextSibling = getTopLevelNodeOfCurrentPosition()?.nextSibling;
@@ -1744,12 +1757,27 @@
         reader.readAsDataURL(recorderAudioAsBlob);
       }
 
+      function hideRecordingStatusBar() {
+        document.getElementById("editorContainer").classList.add("thin-line");
+        document.getElementById("recordingBar").classList.add("hidden");
+      }
+
+      function showRecordingStatusBar() {
+
+        if (!elementShowingInViewport(document.querySelectorAll(".audio-recording .red-recording-dot")[0])) {
+          document.getElementById("editorContainer").classList.remove("thin-line");
+          document.getElementById("recordingBar").classList.remove("hidden");
+        } else {
+          hideRecordingStatusBar();
+        }
+      }
+
       /** Computes the elapsed recording time since the moment the function is called in the format h:m:s*/
       function handleElapsedRecordingTime() {
         // display inital time when recording begins
         displayElapsedTimeDuringAudioRecording("00:00");
-        document.getElementById("editorContainer").classList.remove("thin-line");
-        document.getElementById("recordingBar").classList.remove("hidden");
+        showRecordingStatusBar();
+        document.addEventListener("scroll", showRecordingStatusBar);
 
         // create an interval that compute & displays elapsed time, as well as, animate red dot - every second
         elapsedTimeTimer = setInterval(() => {
@@ -1770,6 +1798,8 @@
         // 2. Stop the recording when the max number of hours is reached
         if (elapsedTimeReachedMaximumNumberOfHours(elapsedTime)) {
           stopAudioRecording();
+        } else {
+          showRecordingStatusBar();
         }
       }
 
@@ -1849,8 +1879,8 @@
           elapsedTimeTimer = null;
           console.log("Recording timer stopped.");
         }
-        document.getElementById("editorContainer").classList.add("thin-line");
-        document.getElementById("recordingBar").classList.add("hidden");
+        hideRecordingStatusBar();
+        document.removeEventListener("scroll", showRecordingStatusBar);
       }
 
       // Listeners
