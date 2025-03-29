@@ -1598,16 +1598,7 @@
           </div>
           <b class="stop-recording-button non-selectable" contenteditable="false" aria-hidden="true">✓</b>`;
       audioRecordingNode.appendChild(audioRecordingControlsNode);
-
-      if (audioRecorder.recordingState === MediaRecordingStatus.CLOSED) {
-        editor.insertBefore(audioRecordingNode, nextSibling);
-      } else {
-        return;
-      }
-      const recordingControlButtonsContainer = document.querySelectorAll(`#${strArId} .recording-control-buttons-container`)[0];
-      const stopRecordingButton = document.querySelectorAll(`#${strArId} .stop-recording-button`)[0];
-      const cancelRecordingButton = document.querySelectorAll(`#${strArId} .cancel-recording-button`)[0];
-      const elapsedTimeTag = document.querySelectorAll(`#${strArId} .elapsed-time`)[0];
+      let elapsedTimeTag = null;
 
       // Audio Controller
 
@@ -1636,16 +1627,19 @@
         }
 
         if (audioRecorder.recordingState !== MediaRecordingStatus.CLOSED) {
-          editor.removeChild(audioRecordingNode);
           return;
         }
 
         // start recording using the audio recording API
         audioRecorder.start()
           .then(() => { //on success
-
-            // store the recording start time to display the elapsed time according to it
-            audioRecordStartTime = new Date();
+            audioRecordStartTime = new Date(); // store the recording start time to display the elapsed time according to it
+            editor.insertBefore(audioRecordingNode, nextSibling);
+            elapsedTimeTag = document.querySelectorAll(`#${strArId} .elapsed-time`)[0];
+            const stopRecordingButton = document.querySelectorAll(`#${strArId} .stop-recording-button`)[0];
+            const cancelRecordingButton = document.querySelectorAll(`#${strArId} .cancel-recording-button`)[0];
+            stopRecordingButton.onclick = stopAudioRecording;
+            cancelRecordingButton.onclick = cancelAudioRecording;
             handleElapsedRecordingTime();
           })
           .catch(error => { // on error
@@ -1888,18 +1882,8 @@
         document.removeEventListener("scroll", showRecordingStatusBar);
       }
 
-      // Listeners
-
-      // Listen to stop recording button
-      stopRecordingButton.onclick = stopAudioRecording;
-
-      // Listen to cancel recording button
-      cancelRecordingButton.onclick = cancelAudioRecording;
-
       if (audioRecorder.recordingState === MediaRecordingStatus.CLOSED) {
         startAudioRecording();
-      } else {
-        editor.removeChild(audioRecordingNode);
       }
     }
 
