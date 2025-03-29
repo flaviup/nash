@@ -1322,6 +1322,7 @@
 
       template.content.querySelectorAll(".embedded-local-epub").forEach(el => {
         el.replaceChildren();
+        if (editMode === false) el.setAttribute("data-readonly", "true");
       });
 
       /*template.content.querySelectorAll(".embedded-local-pdf").forEach(el => {
@@ -1334,7 +1335,7 @@
           el.parentNode?.removeChild(el);
         });
 
-        template.content.querySelectorAll('*[contenteditable="true"]').forEach(el => {
+        template.content.querySelectorAll('*[contenteditable]').forEach(el => {
           el.setAttribute("contenteditable", "false");
         });
       }
@@ -1911,10 +1912,14 @@
 
         divNode.appendChild(divEbook);
         divEbook.book = book;
-        divNode.appendChild(createRemover(function () {
-          book.destroy();
-          if (editor.contains(divNode)) editor.removeChild(divNode);
-        }));
+        const readonly = divNode.getAttribute("data-readonly") ?? false;
+
+        if (!readonly) {
+          divNode.appendChild(createRemover(function () {
+            book.destroy();
+            if (editor.contains(divNode)) editor.removeChild(divNode);
+          }));
+        }
         divNode.setAttribute("class", "embedded-local-epub");
         divNode.setAttribute("contenteditable", "false");
         divNode.setAttribute("data-epub", epubData);
@@ -2425,6 +2430,8 @@
       }
       if (!block) {
         const p = document.createElement("p");
+        p.setAttribute("id", `text${generateUId()}`);
+        p.setAttribute("class", "text-block");
         p.innerHTML = "<br>";
         editor.appendChild(p);
         setCaret(p, 0);
@@ -2443,6 +2450,8 @@
 
       if (isAtEnd) {
         const newBlock = document.createElement("p");
+        newBlock.setAttribute("id", `text${generateUId()}`);
+        newBlock.setAttribute("class", "text-block");
         newBlock.innerHTML = "<br>";
         if (block.nextSibling) {
           editor.insertBefore(newBlock, block.nextSibling);
@@ -2452,6 +2461,8 @@
         setCaret(newBlock, 0);
       } else {
         const newBlock = document.createElement("p");
+        newBlock.setAttribute("id", `text${generateUId()}`);
+        newBlock.setAttribute("class", "text-block");
         const extractRange = range.cloneRange();
         extractRange.setEndAfter(block.lastChild || block);
         const extracted = extractRange.extractContents();
@@ -2499,7 +2510,7 @@
         return;
       }
       if (editor.innerHTML.trim() === "" || editor.innerHTML.trim() === "<br>") {
-        editor.innerHTML = "<p></p>";
+        editor.innerHTML = '<p class="text-block"></p>';
       }
     }
 
@@ -2667,6 +2678,10 @@
     window.addEventListener("beforeunload", unloadHandler);
 
     loadAllReferencedDocuments();
+
+    document.querySelectorAll(".text-block").forEach(el => {
+      if (!el.getAttribute("id")) el.setAttribute("id", `text${generateUId()}`);
+    });
 
     updateTitle();
 
