@@ -2528,7 +2528,7 @@
       let node = selection.anchorNode;
       const editor = document.getElementById("editor");
 
-      while (node && node.parentNode !== editor) {
+      while (node && node.parentNode !== editor) { // finds current node, child of editor
         if (NON_STYLABLE_NODE_NAMES.includes(node.nodeName)) return;
         if (node.nodeName === "TABLE") return;
         node = node.parentNode;
@@ -2540,13 +2540,14 @@
 
       const newBlock = document.createElement(tag);
 
-      while (node.firstChild) {
+      while (node.firstChild) { // adds current node's children to the new block, one by one; except if a child is a P and the new tag is not a H[1-6]
         if (
           node.firstChild.nodeType === Node.ELEMENT_NODE &&
           node.firstChild.matches("p") &&
           tag.match(/^H[1-6]$/)
         ) {
-
+          // then add the child's children directly to the new block
+          // (instead of adding the child directly: P into another P, or P into a SMALL, anything but not into H[1-6])
           let child = node.firstChild;
           while (child.firstChild) {
             newBlock.appendChild(child.firstChild);
@@ -2556,8 +2557,8 @@
           newBlock.appendChild(node.firstChild);
         }
       }
-      editor.replaceChild(newBlock, node);
-      const range = document.createRange();
+      editor.replaceChild(newBlock, node); // replaces the node with the new block
+      const range = document.createRange(); // keeps the selection (reconstructed)
       range.selectNodeContents(newBlock);
       range.collapse(false);
       selection.removeAllRanges();
