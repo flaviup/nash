@@ -2514,10 +2514,12 @@
       const editor = document.getElementById("editor");
       while (node && node.parentNode !== editor) {
         if (NON_STYLABLE_NODE_NAMES.includes(node.nodeName)) return;
+        if (node.nodeName === "TABLE") return;
         node = node.parentNode;
       }
       if (!node || node === editor) return;
       if (NON_STYLABLE_NODE_NAMES.includes(node.nodeName)) return;
+      if (node.nodeName === "TABLE") return;
       const newBlock = document.createElement(tag);
       while (node.firstChild) {
         if (
