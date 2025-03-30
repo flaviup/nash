@@ -2349,7 +2349,7 @@
       setCaret(divNode, 0);
     }
 
-    // Toggle dropdown visibility
+    // Toggles dropdown visibility
     function toggleDropdown(id) {
       const dropdown = document.getElementById(id);
       if (dropdown.classList.contains("show")) {
@@ -2361,14 +2361,14 @@
       }
     }
 
-    // Close dropdowns if clicking outside
+    // Closes dropdowns if clicking outside
     document.addEventListener("click", function (e) {
       if (!e.target.closest(".dropdown")) {
         document.querySelectorAll(".dropdown-content").forEach(el => el.classList.remove("show"));
       }
     });
 
-    // Helper: Place the caret at a given element and offset.
+    // Helper: Places the caret at a given element and offset.
     function setCaret(el, pos) {
       const selection = window.getSelection();
       const range = document.createRange();
@@ -2378,7 +2378,7 @@
       selection.addRange(range);
     }
 
-    // Wrap only the selected portions of text nodes.
+    // Wraps only the selected portions of text nodes.
     // If selection is entirely within one text node, process it directly.
     function wrapRangeText(range, tagName, style, hook) {
 
@@ -2453,34 +2453,44 @@
 
     // Basic inline formatting: wraps the selection in the specified tag.
     function applyFormat(tagName) {
+
       const selection = window.getSelection();
+
       if (!selection.rangeCount || selection.isCollapsed) return;
       const range = selection.getRangeAt(0);
       const editor = document.getElementById("editor");
+
       if (!editor.contains(range.commonAncestorContainer)) return;
       wrapRangeText(range, tagName);
       selection.removeAllRanges();
     }
 
-    // Apply inline style (e.g., font-size, text color, background color) by wrapping the selection in a <span>.
+    // Applies inline style (e.g., font-size, text color, background color) by wrapping the selection in a <span>.
     function applyStyle(styleString) {
+
       const selection = window.getSelection();
+
       if (!selection.rangeCount || selection.isCollapsed) return;
       const range = selection.getRangeAt(0);
       const editor = document.getElementById("editor");
+
       if (!editor.contains(range.commonAncestorContainer)) return;
       wrapRangeText(range, 'span', styleString);
       selection.removeAllRanges();
     }
 
-    // Apply inline url 
+    // Applies inline url 
     function applyURL() {
+
       const selection = window.getSelection();
+
       if (!selection.rangeCount || selection.isCollapsed) return;
       const range = selection.getRangeAt(0);
       const editor = document.getElementById("editor");
+
       if (!editor.contains(range.commonAncestorContainer)) return;
       const url = prompt("URL")?.trim();
+
       if (!url) return;
       wrapRangeText(range, 'a', null, function (element) {
         element.href = url;
@@ -2490,43 +2500,53 @@
 
     // Called by the text size dropdown.
     function applyTextSize(size) {
+
       if (!size) return;
       applyStyle("font-size: " + size + ";");
     }
 
     // Called when a text color swatch is clicked.
     function applyTextColor(color) {
+
       if (!color) return;
       applyStyle("color: var(--note-text-color-" + color + ");");
     }
 
     // Called when a highlight (background color) swatch is clicked.
     function applyHighlightColor(color) {
+
       if (!color) return;
       applyStyle("background-color: var(--note-highlight-color-" + color + ");");
     }
 
-    // Convert the current block (direct child of #editor) to the chosen tag.
+    // Converts the current block (direct child of #editor) to the chosen tag.
     function changeBlock(tag) {
+
       const selection = window.getSelection();
+
       if (!selection.rangeCount) return;
       let node = selection.anchorNode;
       const editor = document.getElementById("editor");
+
       while (node && node.parentNode !== editor) {
         if (NON_STYLABLE_NODE_NAMES.includes(node.nodeName)) return;
         if (node.nodeName === "TABLE") return;
         node = node.parentNode;
       }
+
       if (!node || node === editor) return;
       if (NON_STYLABLE_NODE_NAMES.includes(node.nodeName)) return;
       if (node.nodeName === "TABLE") return;
+
       const newBlock = document.createElement(tag);
+
       while (node.firstChild) {
         if (
           node.firstChild.nodeType === Node.ELEMENT_NODE &&
           node.firstChild.matches("p") &&
           tag.match(/^H[1-6]$/)
         ) {
+
           let child = node.firstChild;
           while (child.firstChild) {
             newBlock.appendChild(child.firstChild);
@@ -2546,6 +2566,7 @@
 
     // Splits the current block at the caret.
     function splitBlock() {
+
       const editor = document.getElementById("editor");
       const selection = window.getSelection();
       if (!selection.rangeCount) return;
@@ -2555,7 +2576,9 @@
       while (block && block.parentNode !== editor) {
         block = block.parentNode;
       }
-      if (!block) {
+
+      if (!block) { // adds a new empty text block (paragraph)
+
         const p = document.createElement("p");
         p.setAttribute("id", `text${generateUId()}`);
         p.setAttribute("class", "text-block");
@@ -2564,65 +2587,77 @@
         setCaret(p, 0);
         return;
       }
-
       const afterRange = range.cloneRange();
-      afterRange.setStart(range.endContainer, range.endOffset);
+      afterRange.setStart(range.endContainer, range.endOffset); // checks what follows after the caret in the current block
       afterRange.setEndAfter(block.lastChild || block);
       const afterContent = afterRange.cloneContents();
 
+      // caret is at end of current block:
+      // if the after range does not have some content (nested elements or non-empty text)
       const isAtEnd = !Array.from(afterContent.childNodes).some(n => {
         return (n.nodeType === Node.ELEMENT_NODE) ||
           (n.nodeType === Node.TEXT_NODE && n.textContent.trim());
       });
 
-      if (isAtEnd) {
-        const newBlock = document.createElement("p");
-        newBlock.setAttribute("id", `text${generateUId()}`);
-        newBlock.setAttribute("class", "text-block");
+      const newBlock = document.createElement("p");
+      newBlock.setAttribute("id", `text${generateUId()}`);
+      newBlock.setAttribute("class", "text-block");
+
+      if (isAtEnd) { // if the caret is at the end of current block, then add an empty text-block, next to current block
+
         newBlock.innerHTML = "<br>";
-        if (block.nextSibling) {
-          editor.insertBefore(newBlock, block.nextSibling);
-        } else {
-          editor.appendChild(newBlock);
-        }
-        setCaret(newBlock, 0);
-      } else {
-        const newBlock = document.createElement("p");
-        newBlock.setAttribute("id", `text${generateUId()}`);
-        newBlock.setAttribute("class", "text-block");
+      } else { // else append the last (from caret to end of block) children of the current block into a new text-block
+
         const extractRange = range.cloneRange();
         extractRange.setEndAfter(block.lastChild || block);
-        const extracted = extractRange.extractContents();
-        if (!extracted.childNodes.length) {
+        const extracted = extractRange.extractContents(); // selects all content from start of caret to end of current block
+
+        if (!extracted.childNodes.length) { // this should not happen: this means the caret is at the end of current block
           newBlock.innerHTML = "<br>";
         } else {
           newBlock.appendChild(extracted);
         }
-        if (block.nextSibling) {
-          editor.insertBefore(newBlock, block.nextSibling);
-        } else {
-          editor.appendChild(newBlock);
-        }
-        setCaret(newBlock, 0);
       }
+
+      if (block.nextSibling) {
+        editor.insertBefore(newBlock, block.nextSibling);
+      } else {
+        editor.appendChild(newBlock);
+      }
+      setCaret(newBlock, 0); // move the caret into the new block
 
       if (!block.textContent.trim() && !block.querySelector("img, video, iframe, embed, object")) {
         block.innerHTML = "<br>";
       }
     }
 
-    // Normalize stray text nodes and nested blocks.
+    // Normalizes stray text nodes and nested blocks.
     function normalizeEditor() {
+
       const editor = document.getElementById("editor");
       Array.from(editor.childNodes).forEach(node => {
+
         if (node.nodeType === Node.TEXT_NODE && node.textContent.trim()) {
+
           const p = document.createElement("p");
+          p.setAttribute("id", `text${generateUId()}`);
+          p.setAttribute("class", "text-block");
           p.textContent = node.textContent;
           editor.replaceChild(p, node);
         }
       });
       editor.querySelectorAll("p p, h1 p, h2 p, h3 p, h4 p, h5 p, h6 p, p font, small p").forEach(nested => {
+
         const parent = nested.parentNode;
+
+        if (!parent.id && nested.childElementCount === 1) {
+
+          parent.insertBefore(nested.firstChild, nested);
+          parent.removeChild(nested);
+          parent.id = nested.id;
+          return ;
+        }
+
         while (nested.firstChild) {
           parent.insertBefore(nested.firstChild, nested);
         }
@@ -2632,12 +2667,15 @@
 
     // Normalize stray text nodes and nested blocks.
     function cleanEditor() {
+
       const editor = document.getElementById("editor");
+
       if (editor.firstChild && ["H1", "H2", "H3", "H4", "H5", "H6", "P"].includes(editor.firstChild.nodeName)) {
         return;
       }
+
       if (editor.innerHTML.trim() === "" || editor.innerHTML.trim() === "<br>") {
-        editor.innerHTML = '<p class="text-block"></p>';
+        editor.innerHTML = `<p class="text-block" id="text${generateUId()}"></p>`;
       }
     }
 
