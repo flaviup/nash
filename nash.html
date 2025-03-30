@@ -2665,10 +2665,10 @@
       if (selection.rangeCount) {
         range = selection.getRangeAt(0);
       }
+      let block = range?.startContainer;
 
-      if (range?.startContainer) {
+      if (block) {
 
-        let block = range.startContainer;
         const blockedNodeClasses = [
           "embedded-local-epub",
           "embedded-local-pdf",
@@ -2693,11 +2693,11 @@
 
       if (e.key === "Enter" && !e.shiftKey) {
 
-        if (range) {
+        if (block) {
 
-          let block = range.startContainer;
-
-          if (block && block.nodeType === Node.TEXT_NODE && ((block.parentNode?.nodeName === "TH") || (block.parentNode?.nodeName === "TD"))) {
+          if (block.nodeName === "TD" ||
+              block.nodeName === "TH" ||
+              (block.nodeType === Node.TEXT_NODE && ((block.parentNode?.nodeName === "TH") || (block.parentNode?.nodeName === "TD")))) {
 
               e.stopImmediatePropagation();
               e.preventDefault();
