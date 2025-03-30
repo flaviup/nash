@@ -519,10 +519,10 @@
       cursor: pointer;
     }
 
-    .embedded-local-image:hover .x-remover,
-    .embedded-local-audio:hover .x-remover,
     .embedded-local-epub:hover .x-remover,
     .embedded-local-pdf:hover .x-remover,
+    .embedded-local-image:hover .x-remover,
+    .embedded-local-audio:hover .x-remover,
     .embedded-table:hover .x-remover,
     .image-link:hover .x-remover,
     .audio-link:hover .x-remover,
@@ -1639,7 +1639,7 @@
         audioRecordingInserter.audioRecordingNode.setAttribute("contenteditable", "false");
 
         const audioRecordingControlsNode = document.createElement("div");
-        audioRecordingControlsNode.setAttribute("class", "recording-control-buttons-container");
+        audioRecordingControlsNode.setAttribute("class", "recording-control-buttons-container non-selectable");
         audioRecordingControlsNode.setAttribute("contenteditable", "false");
         audioRecordingControlsNode.innerHTML = `
             <b class="cancel-recording-button non-selectable" contenteditable="false" aria-hidden="true">✖</b>
@@ -2659,13 +2659,42 @@
 
     function keydownHandler(e) {
 
+      let range = null;
+      const selection = window.getSelection();
+
+      if (selection.rangeCount) {
+        range = selection.getRangeAt(0);
+      }
+
+      if (range?.startContainer) {
+
+        let block = range.startContainer;
+        const blockedNodeClasses = [
+          "embedded-local-epub",
+          "embedded-local-pdf",
+          "embedded-local-image",
+          "embedded-local-audio",
+          "embedded-table",
+          "image-link",
+          "audio-link",
+          "video-link",
+          "pdf-link",
+          "audio-recording",
+          "recording-control-buttons-container"
+        ];
+
+        if (block.parentNode &&
+            [...block.parentNode.classList].some(c => blockedNodeClasses.indexOf(c) != -1)) {
+            e.stopImmediatePropagation();
+            e.preventDefault();
+            return;
+        }
+      }
+
       if (e.key === "Enter" && !e.shiftKey) {
 
-        const selection = window.getSelection();
+        if (range) {
 
-        if (selection.rangeCount) {
-
-          const range = selection.getRangeAt(0);
           let block = range.startContainer;
 
           if (block && block.nodeType === Node.TEXT_NODE && ((block.parentNode?.nodeName === "TH") || (block.parentNode?.nodeName === "TD"))) {
