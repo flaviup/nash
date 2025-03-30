@@ -429,6 +429,20 @@
       padding: 0 8px;
     }
 
+    .epub-loading::before {
+      content: "ePUB document is loading...";
+      display: block;
+      color: var(--note-placeholer-color);
+      margin: 0;
+    }
+
+    .pdf-loading::before {
+      content: "PDF document is loading...";
+      display: block;
+      color: var(--note-placeholer-color);
+      margin: 0;
+    }
+
     .thin-line::before {
       content: "";
       display: block;
@@ -1953,170 +1967,173 @@
         let reader = new FileReader();
         const nextSibling = getTopLevelNodeOfCurrentPosition(lastValidSelectionRange)?.nextSibling;
         reader.onload = async function (e) {
-          await loadEpub(e.target?.result, nextSibling);
+          loadEpub(e.target?.result, nextSibling);
         }
         reader.readAsDataURL(file);
       }
     }
 
-    async function loadEpub(epubData, nextSibling, element = null) {
+    function loadEpub(epubData, nextSibling, element = null) {
 
       if (epubData) {
 
         let book = null;
-
-        try {
-          //book = ePub(epubData, { openAs: "base64" }); // BUG: not working
-          book = ePub(await (await window.fetch(epubData)).blob());
-        } catch (error) { // we allow ePub loading only if epub library is available and the data could be loaded
-          console.log(error);
-          return;
-        }
-
         const epubId = generateUId();
         const strEpubId = `epub${epubId}`;
-        const strTocId = `toc${epubId}`;
-
-        const navButtons = document.createElement("div");
-        navButtons.style = "float: top; display: flow-root;";
-        navButtons.setAttribute("contenteditable", "false");
-        const prev = document.createElement("div");
-        const next = document.createElement("div");
-        prev.setAttribute("id", `prev${epubId}`);
-        next.setAttribute("id", `next${epubId}`);
-        prev.setAttribute("class", "non-selectable");
-        next.setAttribute("class", "non-selectable");
-        prev.textContent = "<PREV";
-        next.textContent = "NEXT>";
-        prev.style = "float: left; left: 0; margin: 5px 5px; cursor: pointer;";
-        next.style = "float: right; right: 0; margin: 5px 5px; cursor: pointer;";
-        prev.setAttribute("contenteditable", "false");
-        next.setAttribute("contenteditable", "false");
-        navButtons.appendChild(prev);
-        navButtons.appendChild(next);
-
         element?.replaceChildren();
         const divNode = element || document.createElement("div");
-        const selectToc = document.createElement("select");
-        const divEbook = document.createElement("div");
-        divEbook.style = "flex: top;";
-        divEbook.setAttribute("class", "ebook-content");
-        divEbook.setAttribute("id", strEpubId);
-        selectToc.style = "float: top; left: 0; margin: 5px 5px; background: inherit; color: inherit;";
-        selectToc.setAttribute("id", strTocId);
-        divNode.appendChild(selectToc);
-
-        divNode.appendChild(navButtons);
-
-        divNode.appendChild(divEbook);
-        divEbook.book = book;
-        const readonly = divNode.getAttribute("data-readonly") ?? false;
-
-        if (!readonly) {
-          divNode.appendChild(createRemover(function () {
-            book.destroy();
-            if (editor.contains(divNode)) editor.removeChild(divNode);
-          }));
-        }
-        divNode.setAttribute("class", "embedded-local-epub");
+        divNode.setAttribute("class", "embedded-local-epub epub-loading");
         divNode.setAttribute("contenteditable", "false");
         divNode.setAttribute("data-epub", epubData);
         if (!element) editor.insertBefore(divNode, nextSibling);
 
-        const rendition = book.renderTo(strEpubId, { flow: "scrolled",
-                                                     width: "100%", height: 600, replacements: "base64" /*, allowScriptedContent: true*/ });
+        setTimeout(async () => {
 
-        const keyListener = function (e) {
-
-          // Left Key
-          if ((e.keyCode || e.which) == 37) {
-            rendition?.prev();
+          try {
+            //book = ePub(epubData, { openAs: "base64" }); // BUG: not working
+            book = ePub(await (await window.fetch(epubData)).blob());
+          } catch (error) { // we allow ePub loading only if epub library is available and the data could be loaded
+            console.log(error);
+            if (editor.contains(divNode)) editor.removeChild(divNode);
+            return;
           }
+          const strTocId = `toc${epubId}`;
 
-          // Right Key
-          if ((e.keyCode || e.which) == 39) {
-            rendition?.next();
+          const navButtons = document.createElement("div");
+          navButtons.style = "float: top; display: flow-root;";
+          navButtons.setAttribute("contenteditable", "false");
+          const prev = document.createElement("div");
+          const next = document.createElement("div");
+          prev.setAttribute("id", `prev${epubId}`);
+          next.setAttribute("id", `next${epubId}`);
+          prev.setAttribute("class", "non-selectable");
+          next.setAttribute("class", "non-selectable");
+          prev.textContent = "<PREV";
+          next.textContent = "NEXT>";
+          prev.style = "float: left; left: 0; margin: 5px 5px; cursor: pointer;";
+          next.style = "float: right; right: 0; margin: 5px 5px; cursor: pointer;";
+          prev.setAttribute("contenteditable", "false");
+          next.setAttribute("contenteditable", "false");
+          navButtons.appendChild(prev);
+          navButtons.appendChild(next);
+
+          const selectToc = document.createElement("select");
+          const divEbook = document.createElement("div");
+          divEbook.style = "flex: top;";
+          divEbook.setAttribute("class", "ebook-content");
+          divEbook.setAttribute("id", strEpubId);
+          selectToc.style = "float: top; left: 0; margin: 5px 5px; background: inherit; color: inherit;";
+          selectToc.setAttribute("id", strTocId);
+          divNode.appendChild(selectToc);
+
+          divNode.appendChild(navButtons);
+
+          divNode.appendChild(divEbook);
+          divEbook.book = book;
+          const readonly = divNode.getAttribute("data-readonly") ?? false;
+
+          if (!readonly) {
+            divNode.appendChild(createRemover(function () {
+              book.destroy();
+              if (editor.contains(divNode)) editor.removeChild(divNode);
+            }));
           }
-        };
-        rendition?.on("keyup", keyListener);
-        document.addEventListener("keyup", keyListener, false);
+          const rendition = book.renderTo(strEpubId, { flow: "scrolled",
+                                                      width: "100%", height: 600, replacements: "base64" /*, allowScriptedContent: true*/ });
 
-        prev.addEventListener("click", function (e) {
-          rendition?.prev();
-          e.preventDefault();
-        }, false);
+          const keyListener = function (e) {
 
-        next.addEventListener("click", function (e) {
-          rendition?.next();
-          e.preventDefault();
-        }, false);
-
-        const displayed = rendition?.display();
-        book.loaded.navigation.then(function (toc) {
-
-          const docfrag = document.createDocumentFragment();
-
-          toc.forEach(function (chapter) {
-
-            const option = document.createElement("option");
-            option.textContent = chapter.label;
-            option.setAttribute("ref", chapter.href);
-
-            docfrag.appendChild(option);
-          });
-          selectToc.appendChild(docfrag);
-          selectToc.onchange = function () {
-
-              const index = selectToc.selectedIndex,
-                    url = selectToc.options[index].getAttribute("ref");
-              rendition?.display(url);
-
-              return false;
-          };
-        });
-        function navigatedTo(href) {
-
-          let result = false;
-
-          if (href) {
-
-            const selectToc = document.getElementById(strTocId);
-            const selectedOption = selectToc.querySelector("option[selected]");
-
-            if (selectedOption) {
-              selectedOption.removeAttribute("selected");
+            // Left Key
+            if ((e.keyCode || e.which) == 37) {
+              rendition?.prev();
             }
-            const allOptions = selectToc.querySelectorAll("option");
 
-            for (let i = 0; i < allOptions.length; ++i) {
+            // Right Key
+            if ((e.keyCode || e.which) == 39) {
+              rendition?.next();
+            }
+          };
+          rendition?.on("keyup", keyListener);
+          document.addEventListener("keyup", keyListener, false);
 
-              let selected = allOptions[i].getAttribute("ref") === href;
+          prev.addEventListener("click", function (e) {
+            rendition?.prev();
+            e.preventDefault();
+          }, false);
 
-              if (selected) {
-                allOptions[i].setAttribute("selected", "true");
-                selectToc.selectedIndex = i;
-                result = true;
+          next.addEventListener("click", function (e) {
+            rendition?.next();
+            e.preventDefault();
+          }, false);
+
+          const displayed = rendition?.display();
+          book.loaded.navigation.then(function (toc) {
+
+            divNode.classList.remove("epub-loading");
+            const docfrag = document.createDocumentFragment();
+
+            toc.forEach(function (chapter) {
+
+              const option = document.createElement("option");
+              option.textContent = chapter.label;
+              option.setAttribute("ref", chapter.href);
+
+              docfrag.appendChild(option);
+            });
+            selectToc.appendChild(docfrag);
+            selectToc.onchange = function () {
+
+                const index = selectToc.selectedIndex,
+                      url = selectToc.options[index].getAttribute("ref");
+                rendition?.display(url);
+
+                return false;
+            };
+          });
+          function navigatedTo(href) {
+
+            let result = false;
+
+            if (href) {
+
+              const selectToc = document.getElementById(strTocId);
+              const selectedOption = selectToc.querySelector("option[selected]");
+
+              if (selectedOption) {
+                selectedOption.removeAttribute("selected");
+              }
+              const allOptions = selectToc.querySelectorAll("option");
+
+              for (let i = 0; i < allOptions.length; ++i) {
+
+                let selected = allOptions[i].getAttribute("ref") === href;
+
+                if (selected) {
+                  allOptions[i].setAttribute("selected", "true");
+                  selectToc.selectedIndex = i;
+                  result = true;
+                }
               }
             }
+
+            return result;
           }
+          rendition?.on("rendered", function (section) {
 
-          return result;
-        }
-        rendition?.on("rendered", function (section) {
+            const current = book.navigation && book.navigation.get(section.href);
+            navigatedTo(current?.href);
+          });
+          rendition?.on("relocated", function (location) {
 
-          const current = book.navigation && book.navigation.get(section.href);
-          navigatedTo(current?.href);
-        });
-        rendition?.on("relocated", function (location) {
+            let current = book.navigation.get(location.start?.href);
 
-          let current = book.navigation.get(location.start?.href);
-
-          while (current?.parent) {
-            current = book.navigation.get(current.parent);
-          }
-          navigatedTo(current?.href);
-        });
-      }
+            while (current?.parent) {
+              current = book.navigation.get(current.parent);
+            }
+            navigatedTo(current?.href);
+          });
+        }, 0);
+      };
     }
 
     function insertPdf(event, element = null) {
@@ -2145,13 +2162,13 @@
         if (!strPdfId) {
           divNode.setAttribute("id", `pdf${generateUId()}`);
         }
-        divNode.setAttribute("class", "embedded-local-pdf");
+        divNode.setAttribute("class", "embedded-local-pdf pdf-loading");
         divNode.setAttribute("contenteditable", "false");
         //divNode.setAttribute("data-pdf", pdfData);
 
         if (!element) editor.insertBefore(divNode, nextSibling);
 
-        PDFObject.embed(pdfData, divNode, {
+        const pdfContainer = PDFObject.embed(pdfData, divNode, {
           height: "800px",
           pdfOpenParams: {
             navpanes: 1,
@@ -2159,6 +2176,11 @@
             pagemode: "thumbs"
           }
         });
+        function pdfLoad(event) {
+          divNode.classList.remove("pdf-loading");
+          pdfContainer.removeEventListener("load", pdfLoad);
+        }
+        pdfContainer.addEventListener("load", pdfLoad);
         divNode.appendChild(createRemover());
       }
     }
@@ -2170,12 +2192,12 @@
       const nextSibling = getTopLevelNodeOfCurrentPosition()?.nextSibling;
       const divNode = document.createElement("div");
       divNode.setAttribute("id", `pdf${generateUId()}`);
-      divNode.setAttribute("class", "pdf-link");
+      divNode.setAttribute("class", "pdf-link pdf-loading");
       divNode.setAttribute("contenteditable", "false");
 
       editor.insertBefore(divNode, nextSibling);
 
-      PDFObject.embed(url, divNode, {
+      const pdfContainer = PDFObject.embed(url, divNode, {
         height: "800px",
         pdfOpenParams: {
           navpanes: 1,
@@ -2183,6 +2205,11 @@
           pagemode: "thumbs"
         }
       });
+      function pdfLoad(event) {
+        divNode.classList.remove("pdf-loading");
+        pdfContainer.removeEventListener("load", pdfLoad);
+      }
+      pdfContainer.addEventListener("load", pdfLoad);
       divNode.appendChild(createRemover());
     }
 
