@@ -2541,6 +2541,8 @@
 
       const newBlock = document.createElement(tag);
 
+      if (node.nodeName === tag.toUpperCase()) return;
+
       while (node.firstChild) { // adds current node's children to the new block, one by one; except if a child is a P and the new tag is a H[1-6]
         if (
           node.firstChild.nodeType === Node.ELEMENT_NODE &&
