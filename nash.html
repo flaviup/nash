@@ -1338,7 +1338,7 @@
       }
     }; // END OF Media Recording
 
-    const NON_STYLABLE_NODE_NAMES = ["CODE", "IFRAME"];
+    const NON_STYLABLE_NODE_NAMES = ["CODE", "IFRAME", "IMG", "AUDIO", "VIDEO", "EMBED", "OBJECT", "TABLE"];
 
     function generateUId() {
       function s4() {
@@ -2425,6 +2425,19 @@
         }
       }
 
+      function applyCss(element, style, remove = false) {
+        
+        for (let property in style) {
+          
+          if (remove) {
+            if (element.style[property] === style[property]) element.style[property] = null;
+            else element.style[property] = style[property];
+          } else {
+            element.style[property] = style[property];
+          }
+        }
+      }
+
       textNodes.forEach(function (textNode) {
 
         let start = 0, end = textNode.textContent.length;
@@ -2440,20 +2453,33 @@
         if (start >= end) return;
 
         const parent = textNode.parentNode;
+        const text = textNode.textContent.substring(start, end);
+        const beforeText = textNode.textContent.substring(0, start);
+        const afterText = textNode.textContent.substring(end);
+
+        if (text === textNode.textContent &&
+            parent.nodeName === tagName.toUpperCase()) {
+
+            if (style) applyCss(parent, style, true);
+
+            if ((!hook || !hook(parent)) && parent.style.length < 1) {
+              parent.parentNode?.replaceChild(textNode, parent);
+            }
+
+            return;
+        }
         const wrapper = document.createElement(tagName);
 
         if (style) {
-          wrapper.style.cssText = style;
+          applyCss(wrapper, style);
         }
 
         if (hook) {
           hook(wrapper);
         }
-        wrapper.textContent = textNode.textContent.substring(start, end);
+        wrapper.textContent = text;
 
         const frag = document.createDocumentFragment();
-        const beforeText = textNode.textContent.substring(0, start);
-        const afterText = textNode.textContent.substring(end);
 
         if (beforeText) {
           frag.appendChild(document.createTextNode(beforeText));
@@ -2482,7 +2508,7 @@
     }
 
     // Applies inline style (e.g., font-size, text color, background color) by wrapping the selection in a <span>.
-    function applyStyle(styleString) {
+    function applyStyle(style) {
 
       const selection = window.getSelection();
 
@@ -2491,7 +2517,7 @@
       const editor = document.getElementById("editor");
 
       if (!editor.contains(range.commonAncestorContainer)) return;
-      wrapRangeText(range, 'span', styleString);
+      wrapRangeText(range, "span", style);
       selection.removeAllRanges();
     }
 
@@ -2508,8 +2534,16 @@
       const url = prompt("URL")?.trim();
 
       if (!url) return;
-      wrapRangeText(range, 'a', null, function (element) {
-        element.href = url;
+
+      wrapRangeText(range, "a", null, function (element) {
+
+        if (element.href !== url) {
+
+          element.href = url;
+          return true;
+        }
+
+        return false;
       });
       selection.removeAllRanges();
     }
@@ -2518,21 +2552,21 @@
     function applyTextSize(size) {
 
       if (!size) return;
-      applyStyle("font-size: " + size + ";");
+      applyStyle({"font-size": `${size}`});
     }
 
     // Called when a text color swatch is clicked.
     function applyTextColor(color) {
 
       if (!color) return;
-      applyStyle("color: var(--note-text-color-" + color + ");");
+      applyStyle({"color": `var(--note-text-color-${color})`});
     }
 
     // Called when a highlight (background color) swatch is clicked.
     function applyHighlightColor(color) {
 
       if (!color) return;
-      applyStyle("background-color: var(--note-highlight-color-" + color + ");");
+      applyStyle({"background-color": `var(--note-highlight-color-${color})`});
     }
 
     // Converts the current block (direct child of #editor) to the chosen tag.
