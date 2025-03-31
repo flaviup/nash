@@ -29,6 +29,8 @@
       --audio-recording-controls-bg-color: #e5e4e2;
       --audio-recording-controls-text-color: #333;
 
+      --table-border-color: #000;
+
       /* text background colors */
       --note-text-color-1: #000000;
       /* black */
@@ -85,6 +87,8 @@
 
         --audio-recording-controls-bg-color: #36454f;
         --audio-recording-controls-text-color: #fff;
+
+        --table-border-color: #fff;
 
         /*
                TODO: choose nicer colors :-)
@@ -416,7 +420,7 @@
       margin: 0 0;
       text-align: left;
       table-layout:fixed;
-      border: 1px solid black;
+      border: 1px solid var(--table-border-color);
       border-collapse: collapse;
       border-spacing: 0;
     }
@@ -424,7 +428,7 @@
     .embedded-table table th,
     .embedded-table table td {
       overflow: hidden;
-      border: 1px solid black;
+      border: 1px solid var(--table-border-color);
       margin: 0 0;
       padding: 0 8px;
     }
