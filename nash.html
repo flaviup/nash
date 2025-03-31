@@ -2540,19 +2540,20 @@
 
       const newBlock = document.createElement(tag);
 
-      while (node.firstChild) { // adds current node's children to the new block, one by one; except if a child is a P and the new tag is not a H[1-6]
+      while (node.firstChild) { // adds current node's children to the new block, one by one; except if a child is a P and the new tag is a H[1-6]
         if (
           node.firstChild.nodeType === Node.ELEMENT_NODE &&
           node.firstChild.matches("p") &&
           tag.match(/^H[1-6]$/)
         ) {
-          // then add the child's children directly to the new block
-          // (instead of adding the child directly: P into another P, or P into a SMALL, anything but not into H[1-6])
+          // then adds the child's children directly to the new block
+          // (instead of adding the child directly: P into another H[1-6])
           let child = node.firstChild;
+
           while (child.firstChild) {
             newBlock.appendChild(child.firstChild);
           }
-          node.removeChild(child);
+          node.removeChild(child); // removes the intermediary child P node
         } else {
           newBlock.appendChild(node.firstChild);
         }
