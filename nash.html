@@ -2384,6 +2384,7 @@
     function wrapRangeText(range, tagName, style, hook) {
 
       const textNodes = [];
+
       if (range.commonAncestorContainer.nodeType === Node.TEXT_NODE) {
         textNodes.push(range.commonAncestorContainer);
       } else {
@@ -2397,6 +2398,7 @@
               let nd = node;
 
               while (nd && nd.parentNode !== editor) {
+
                 if (NON_STYLABLE_NODE_NAMES.includes(nd.nodeName)) {
                   isRejectableTag = true;
                   break;
@@ -2413,26 +2415,33 @@
           }
         );
         let node;
+
         while (node = walker.nextNode()) {
           textNodes.push(node);
         }
       }
 
       textNodes.forEach(function (textNode) {
+
         let start = 0, end = textNode.textContent.length;
+
         if (textNode === range.startContainer) {
           start = range.startOffset;
         }
+
         if (textNode === range.endContainer) {
           end = range.endOffset;
         }
+
         if (start >= end) return;
 
         const parent = textNode.parentNode;
         const wrapper = document.createElement(tagName);
+
         if (style) {
           wrapper.style.cssText = style;
         }
+
         if (hook) {
           hook(wrapper);
         }
@@ -2441,10 +2450,12 @@
         const frag = document.createDocumentFragment();
         const beforeText = textNode.textContent.substring(0, start);
         const afterText = textNode.textContent.substring(end);
+
         if (beforeText) {
           frag.appendChild(document.createTextNode(beforeText));
         }
         frag.appendChild(wrapper);
+
         if (afterText) {
           frag.appendChild(document.createTextNode(afterText));
         }
@@ -2602,7 +2613,7 @@
       // if the after range does not have some content (nested elements or non-empty text)
       const isAtEnd = !Array.from(afterContent.childNodes).some(n => {
         return (n.nodeType === Node.ELEMENT_NODE) ||
-          (n.nodeType === Node.TEXT_NODE && n.textContent.trim());
+               (n.nodeType === Node.TEXT_NODE && n.textContent.trim());
       });
 
       const newBlock = document.createElement("p");
@@ -2620,6 +2631,7 @@
 
         if (!extracted.childNodes.length) { // this should not happen: this means the caret is at the end of current block
           newBlock.innerHTML = "<br>";
+          console.log("This should not have happened.");
         } else {
           newBlock.appendChild(extracted);
         }
