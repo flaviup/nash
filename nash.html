@@ -1421,7 +1421,7 @@
         setEditMode(true);
       }
 
-      if (save == false && navigator.canShare && navigator.canShare({ files: [file] })) {
+      if (save === false && navigator.canShare && navigator.canShare({ files: [file] })) {
         try {
           await navigator.share({
             files: [file],
@@ -2049,12 +2049,12 @@
           const keyListener = function (e) {
 
             // Left Key
-            if ((e.keyCode || e.which) == 37) {
+            if ((e.keyCode || e.which) === 37) {
               rendition?.prev();
             }
 
             // Right Key
-            if ((e.keyCode || e.which) == 39) {
+            if ((e.keyCode || e.which) === 39) {
               rendition?.next();
             }
           };
@@ -2521,6 +2521,39 @@
         return false;
       }
 
+      function compactNodeTree(node, tagName, style, hook) { // makes a DFS (depth first search) traversal of the tree
+
+        const elements = [...node.children].map((e) => { obj: e; counter: 0; });
+
+        while (elements.length > 0) {
+
+          let child = elements[elements.length - 1];
+          child.counter++;
+
+          if (child.counter > 1) {
+
+            elements.pop();
+            child = child.obj;
+            let node = child.hasChildren() ? child.firstChild : null;
+
+            while (node && node.nextSibling) {
+              if (!combineNodes(node, node.nextSibling)) node = node.nextSibling;
+            }
+
+            if (child.nodeName === tagName.toUpperCase()) {
+
+              if (style) applyCss(child, style, CssApplicationType.REMOVE_PROPERTIES);
+
+              if ((!hook || !hook(child)) && child.style.length < 1) { // applying the same style twice cancels it
+                child.replaceWith(...child.childNodes);
+              }
+            }
+          } else {
+            elements.push([...child.obj.children].map((e) => { obj: e; counter: 0; }));
+          }
+        }
+      }
+
       function applyStyleToNode(node, tagName, style, hook, advanceSameLevel, advanceUpperLevel) {
 
         function applyStyleToTree(node, tagName, style, hook) {
@@ -2547,35 +2580,7 @@
           }
           wrapper.append(...node.childNodes);
           node.appendChild(wrapper);
-          const elements = [...wrapper.children].map((e) => { obj: e; counter: 0; });
-
-          while (elements.length > 0) {
-
-            let child = elements[elements.length - 1];
-            child.counter++;
-
-            if (child.counter > 1) {
-
-              elements.pop();
-              child = child.obj;
-              let node = child.hasChildren() ? child.firstChild : null;
-
-              while (node && node.nextSibling) {
-                if (!combineNodes(node, node.nextSibling)) node = node.nextSibling;
-              }
-
-              if (child.nodeName === tagName.toUpperCase()) {
-
-                if (style) applyCss(child, style, CssApplicationType.REMOVE_PROPERTIES);
-
-                if ((!hook || !hook(child)) && child.style.length < 1) { // applying the same style twice cancels it
-                  child.replaceWith(...child.childNodes);
-                }
-              }
-            } else {
-              elements.push([...child.obj.children].map((e) => { obj: e; counter: 0; }));
-            }
-          }
+          compactNodeTree(wrapper, tagName, style, hook);
         }
 
         if (advanceSameLevel && advanceUpperLevel) {
@@ -2603,7 +2608,7 @@
         let p2 = end;
         while (p2.parentNode && p2.parentNode !== range.commonAncestorContainer) p2 = p2.parentNode;
 
-        if (start.nodeType == Node.TEXT_NODE) applyStyleToTextNode(start, range.startOffset, false, tagName, style, hook);
+        if (start.nodeType === Node.TEXT_NODE) applyStyleToTextNode(start, range.startOffset, false, tagName, style, hook);
         else applyStyleToNode(start, tagName, style, hook, null, null);
 
         applyStyleToNode(start, tagName, style, hook, (node) => node?.nextSibling !== p2 ? node?.nextSibling : null,
@@ -2611,7 +2616,7 @@
         applyStyleToNode(end, tagName, style, hook, (node) => node?.previousSibling !== p2.previousSibling ? node?.previousSibling : null,
                                                     (node) => node?.parentNode?.previousSibling !== p2.previousSibling ? node?.parentNode?.previousSibling : null);
 
-        if (end.nodeType == Node.TEXT_NODE) applyStyleToTextNode(end, range.endOffset, true, tagName, style, hook);
+        if (end.nodeType === Node.TEXT_NODE) applyStyleToTextNode(end, range.endOffset, true, tagName, style, hook);
         else applyStyleToNode(end, tagName, style, hook, null, null);
       }
     }
@@ -3011,7 +3016,7 @@
             const brNode = document.createElement("br");
             textNode.parentNode.insertBefore(brNode, textNode.nextSibling);
             setCaret(brNode, 0);
-          } else if (textNode.nodeType === Node.TEXT_NODE && textNode.nodeName == "#text") {
+          } else if (textNode.nodeType === Node.TEXT_NODE) {
 
             //printSelectionInfo();
             const text1 = textNode.textContent.substring(0, range.startOffset);
@@ -3087,7 +3092,7 @@
         ];
 
         if (block.parentNode &&
-            [...block.parentNode.classList].some(c => blockedNodeClasses.indexOf(c) != -1)) {
+            [...block.parentNode.classList].some(c => blockedNodeClasses.indexOf(c) !== -1)) {
             e.stopImmediatePropagation();
             e.preventDefault();
             return;
