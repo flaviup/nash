@@ -2383,11 +2383,245 @@
       selection.addRange(range);
     }
 
+    class CssApplicationType {
+      static #_APPLY = 0;
+      static #_REMOVE_IDENTICAL = 1;
+      static #_REMOVE_PROPERTIES = 2;
+
+      static get APPLY() { return this.#_APPLY; }
+      static get REMOVE_IDENTICAL() { return this.#_REMOVE_IDENTICAL; }
+      static get REMOVE_PROPERTIES() { return this.#_REMOVE_PROPERTIES; }
+    }
+
+    // Helper: Applies CSS style to the element, removing any styles that are identical if specified by removeIdentical
+    function applyCss(element, style, applicationType = CssApplicationType.APPLY) {
+        
+      for (let property in style) {
+
+        switch (applicationType) {
+          case CssApplicationType.REMOVE_IDENTICAL:
+            if (element.style[property] === style[property]) element.style[property] = null;
+            else element.style[property] = style[property];
+            break;
+          case CssApplicationType.REMOVE_PROPERTIES:
+            if (element.style[property]) element.style[property] = null;
+            break;
+          default: element.style[property] = style[property];
+        }
+      }
+    }
+
     // Wraps only the selected portions of text nodes.
     // If selection is entirely within one text node, process it directly.
     function wrapRangeText(range, tagName, style, hook) {
 
+      function applyStyleToTextNode(textNode, position, firstPart, tagName, style, hook) {
+
+        const beforeText = textNode.textContent.substring(0, position);
+        const afterText = textNode.textContent.substring(position);
+        const text = firstPart ? beforeText : afterText;
+
+        if (!text) return;
+
+        const wrapper = document.createElement(tagName);
+        wrapper.textContent = text;
+
+        if (style) {
+          applyCss(wrapper, style);
+        }
+
+        if (hook) {
+          hook(wrapper);
+        }
+        const text2 = firstPart ? afterText : beforeText;
+
+        if (!text2) {
+          textNode.parentNode.replaceChild(wrapper, textNode);
+          return;
+        }
+        const frag = document.createDocumentFragment();
+
+        if (firstPart) {
+          frag.appendChild(wrapper);
+          frag.appendChild(document.createTextNode(text2));
+        } else {
+          frag.appendChild(document.createTextNode(text2));
+          frag.appendChild(wrapper);
+        }
+        textNode.parentNode.replaceChild(frag, textNode);
+      }
+
+      function applyStyleToTextRange(textNode, start, end, tagName, style, hook) {
+
+        if (start >= end) return;
+
+        const parent = textNode.parentNode;
+        const text = textNode.textContent.substring(start, end);
+        const beforeText = textNode.textContent.substring(0, start);
+        const afterText = textNode.textContent.substring(end);
+
+        if (text === textNode.textContent &&
+            parent.nodeName === tagName.toUpperCase()) {
+
+            if (style) applyCss(parent, style, CssApplicationType.REMOVE_IDENTICAL);
+
+            if ((!hook || !hook(parent)) && parent.style.length < 1) { // applying the same style twice cancels it
+              parent.parentNode?.replaceChild(textNode, parent);
+            }
+
+            return;
+        }
+        const wrapper = document.createElement(tagName);
+
+        if (style) {
+          applyCss(wrapper, style);
+        }
+
+        if (hook) {
+          hook(wrapper);
+        }
+        wrapper.textContent = text;
+        const frag = document.createDocumentFragment();
+
+        if (beforeText) {
+          frag.appendChild(document.createTextNode(beforeText));
+        }
+        frag.appendChild(wrapper);
+
+        if (afterText) {
+          frag.appendChild(document.createTextNode(afterText));
+        }
+        parent.replaceChild(frag, textNode);
+      }
+
+      function combineNodes(node1, node2) {
+
+        if (node1.nodeType === node2.nodeType) {
+
+          if (node1.nodeType === Node.TEXT_NODE) {
+            node1.textContent = node1.textContent + node2.textContent;
+            node2.parent?.removeChild(node2);
+            return true;
+          } else if (node1.nodeType === Node.ELEMENT_NODE &&
+                     node1.style === node2.style &&
+                     node1.classList === node2.classList &&
+                     node1.hasAttributes() === node2.hasAttributes() && (!node1.hasAttributes() || node1.getAttributeNames() === node2.getAttributeNames())) {
+
+            for (let attrName of node1.getAttributeNames()) {
+              if (node1.getAttribute(attrName) !== node2.getAttribute(attrName)) {
+                return false;
+              }
+            }
+            node1.append(...node2.childNodes);
+            node2.parent?.removeChild(node2);
+            return true;
+          }
+        }
+
+        return false;
+      }
+
+      function applyStyleToNode(node, tagName, style, hook, advanceSameLevel, advanceUpperLevel) {
+
+        function applyStyleToTree(node, tagName, style, hook) {
+
+          if (node.nodeName === tagName.toUpperCase()) {
+
+            if (style) applyCss(node, style, CssApplicationType.REMOVE_IDENTICAL);
+
+            if ((!hook || !hook(node)) && node.style.length < 1) { // applying the same style twice cancels it
+              node.replaceWith(...node.childNodes);
+              node = parentNode;
+            }
+
+            return;
+          }
+          const wrapper = document.createElement(tagName);
+
+          if (style) {
+            applyCss(wrapper, style);
+          }
+
+          if (hook) {
+            hook(wrapper);
+          }
+          wrapper.append(...node.childNodes);
+          node.appendChild(wrapper);
+          const elements = [...wrapper.children].map((e) => { obj: e; counter: 0; });
+
+          while (elements.length > 0) {
+
+            let child = elements[elements.length - 1];
+            child.counter++;
+
+            if (child.counter > 1) {
+
+              elements.pop();
+              child = child.obj;
+              let node = child.hasChildren() ? child.firstChild : null;
+
+              while (node && node.nextSibling) {
+                if (!combineNodes(node, node.nextSibling)) node = node.nextSibling;
+              }
+
+              if (child.nodeName === tagName.toUpperCase()) {
+
+                if (style) applyCss(child, style, CssApplicationType.REMOVE_PROPERTIES);
+
+                if ((!hook || !hook(child)) && child.style.length < 1) { // applying the same style twice cancels it
+                  child.replaceWith(...child.childNodes);
+                }
+              }
+            } else {
+              elements.push([...child.obj.children].map((e) => { obj: e; counter: 0; }));
+            }
+          }
+        }
+
+        if (advanceSameLevel && advanceUpperLevel) {
+
+          while (node = advanceSameLevel(node) || advanceUpperLevel(node)) {
+            if (node.nodeType === Node.TEXT_NODE) applyStyleToTextNode(node, 0, false, tagName, style, hook);
+            else applyStyleToTree(node, tagName, style, hook);
+          }
+        } else if (node) {
+          if (node.nodeType === Node.TEXT_NODE) applyStyleToTextNode(node, 0, false, tagName, style, hook);
+          else applyStyleToTree(node, tagName, style, hook);
+        }
+      }
+
+      if (range.commonAncestorContainer.nodeType === Node.TEXT_NODE) {
+        applyStyleToTextRange(range.commonAncestorContainer, range.startOffset, range.endOffset, tagName, style, hook);
+      } else {
+
+        const start = range.startContainer;
+        const end = range.endContainer;
+
+        let p1 = start;
+        while (p1.parentNode && p1.parentNode !== range.commonAncestorContainer) p1 = p1.parentNode;
+
+        let p2 = end;
+        while (p2.parentNode && p2.parentNode !== range.commonAncestorContainer) p2 = p2.parentNode;
+
+        if (start.nodeType == Node.TEXT_NODE) applyStyleToTextNode(start, range.startOffset, false, tagName, style, hook);
+        else applyStyleToNode(start, tagName, style, hook, null, null);
+
+        applyStyleToNode(start, tagName, style, hook, (node) => node?.nextSibling !== p2 ? node?.nextSibling : null,
+                                                      (node) => node?.parentNode?.nextSibling !== p2 ? node?.parentNode?.nextSibling : null);
+        applyStyleToNode(end, tagName, style, hook, (node) => node?.previousSibling !== p2.previousSibling ? node?.previousSibling : null,
+                                                    (node) => node?.parentNode?.previousSibling !== p2.previousSibling ? node?.parentNode?.previousSibling : null);
+
+        if (end.nodeType == Node.TEXT_NODE) applyStyleToTextNode(end, range.endOffset, true, tagName, style, hook);
+        else applyStyleToNode(end, tagName, style, hook, null, null);
+      }
+    }
+
+    // Wraps only the selected portions of text nodes.
+    // If selection is entirely within one text node, process it directly.
+    function wrapRangeText2(range, tagName, style, hook) {
+
       const textNodes = [];
+      console.log("ROOT: ", range.commonAncestorContainer, "RANGE: ", range);
 
       if (range.commonAncestorContainer.nodeType === Node.TEXT_NODE) {
         textNodes.push(range.commonAncestorContainer);
@@ -2425,18 +2659,7 @@
         }
       }
 
-      function applyCss(element, style, remove = false) {
-        
-        for (let property in style) {
-          
-          if (remove) {
-            if (element.style[property] === style[property]) element.style[property] = null;
-            else element.style[property] = style[property];
-          } else {
-            element.style[property] = style[property];
-          }
-        }
-      }
+      //console.log("NODES: ", textNodes);
 
       textNodes.forEach(function (textNode) {
 
@@ -2457,10 +2680,13 @@
         const beforeText = textNode.textContent.substring(0, start);
         const afterText = textNode.textContent.substring(end);
 
+        if (!parent?.parentNode)
+          console.log("PARENT: ", parent?.nodeName, " -> ", tagName.toUpperCase(), " ", parent, parent?.parentNode);
+
         if (text === textNode.textContent &&
             parent.nodeName === tagName.toUpperCase()) {
 
-            if (style) applyCss(parent, style, true);
+            if (style) applyCss(parent, style, CssApplicationType.REMOVE_IDENTICAL);
 
             if ((!hook || !hook(parent)) && parent.style.length < 1) {
               parent.parentNode?.replaceChild(textNode, parent);
@@ -2537,7 +2763,7 @@
 
       wrapRangeText(range, "a", null, function (element) {
 
-        if (element.href !== url) {
+        if (url) {
 
           element.href = url;
           return true;
