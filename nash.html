@@ -1339,6 +1339,48 @@
     }; // END OF Media Recording
 
     const NON_STYLABLE_NODE_NAMES = ["CODE", "IFRAME", "IMG", "AUDIO", "VIDEO", "EMBED", "OBJECT", "TABLE"];
+    const STYLES = [
+      { tagName: "strong", style: null, attributes: null },
+      { tagName: "em", style: null, attributes: null },
+      { tagName: "u", style: null, attributes: null },
+      { tagName: "span", style: { "color": "var(--note-text-color-1)" }, attributes: null },
+      { tagName: "span", style: { "color": "var(--note-text-color-2)" }, attributes: null },
+      { tagName: "span", style: { "color": "var(--note-text-color-3)" }, attributes: null },
+      { tagName: "span", style: { "color": "var(--note-text-color-4)" }, attributes: null },
+      { tagName: "span", style: { "color": "var(--note-text-color-5)" }, attributes: null },
+      { tagName: "span", style: { "color": "var(--note-text-color-6)" }, attributes: null },
+      { tagName: "span", style: { "color": "var(--note-text-color-7)" }, attributes: null },
+      { tagName: "span", style: { "color": "var(--note-text-color-8)" }, attributes: null },
+      { tagName: "span", style: { "background-color": "var(--note-highlight-color-1)" }, attributes: null },
+      { tagName: "span", style: { "background-color": "var(--note-highlight-color-2)" }, attributes: null },
+      { tagName: "span", style: { "background-color": "var(--note-highlight-color-3)" }, attributes: null },
+      { tagName: "span", style: { "background-color": "var(--note-highlight-color-4)" }, attributes: null },
+      { tagName: "span", style: { "background-color": "var(--note-highlight-color-5)" }, attributes: null },
+      { tagName: "span", style: { "background-color": "var(--note-highlight-color-6)" }, attributes: null },
+      { tagName: "span", style: { "background-color": "var(--note-highlight-color-7)" }, attributes: null },
+      { tagName: "span", style: { "background-color": "var(--note-highlight-color-8)" }, attributes: null }
+    ];
+    const STYLE_STRONG_INDEX = 0;
+    const STYLE_EM_INDEX = 1;
+    const STYLE_U_INDEX = 2;
+    const STYLE_TEXT_COLOR_BASE_INDEX = 2;
+    const STYLE_HIGHLIGHT_COLOR_BASE_INDEX = STYLE_TEXT_COLOR_BASE_INDEX + 8;
+    const STYLE_LINK_BASE_INDEX = STYLE_HIGHLIGHT_COLOR_BASE_INDEX + 8;
+
+    // Helper: gets all the distinct links in the text and indexes them as styles
+    function updateLinkStyles(editor) {
+
+      const links = new Set();
+      editor.querySelectorAll("a").forEach((linkNode) => {
+        if (linkNode.hasAttribute("href")) links.add(linkNode.getAttribute("href"));
+      });
+
+      while (STYLES[STYLES.length - 1].tagName === "a") {
+        STYLES.pop();
+      }
+
+      for(let link of links) STYLES.push({tagName: "a", style: null, attributes: { "href": link }});
+    }
 
     function generateUId() {
       function s4() {
@@ -2413,7 +2455,7 @@
 
     // Wraps only the selected portions of text nodes.
     // If selection is entirely within one text node, process it directly.
-    function wrapRangeText(range, tagName, style, hook) {
+    function wrapRangeText2(range, tagName, style, hook) {
 
       function applyStyleToTextNode(textNode, position, firstPart, tagName, style, hook) {
 
@@ -2498,6 +2540,13 @@
 
         if (node1.nodeType === node2.nodeType) {
 
+          if (node1.nodeType === Node.ELEMENT_NODE) {
+            if (node1.style !== node2.style) { console.log("STYLE DIFF", node1, node2); return false; }
+            if (node1.classList !== node2.classList) { console.log("CLASS DIFF", node1, node2); return false; }
+            if (node1.hasAttributes() !== node2.hasAttributes()) { console.log("HAS_ATTR DIFF", node1, node2); return false; }
+            if (node1.hasAttributes() || node1.getAttributeNames() !== node2.getAttributeNames()) { console.log("ATTR_NAMES DIFF", node1, node2); return false; }
+          }
+
           if (node1.nodeType === Node.TEXT_NODE) {
             node1.textContent = node1.textContent + node2.textContent;
             node2.parent?.removeChild(node2);
@@ -2564,7 +2613,6 @@
 
             if ((!hook || !hook(node)) && node.style.length < 1) { // applying the same style twice cancels it
               node.replaceWith(...node.childNodes);
-              node = parentNode;
             }
 
             return;
@@ -2621,9 +2669,406 @@
       }
     }
 
+    class BitArray {
+
+      #_bitCount = 0;
+      #_a;
+
+      constructor(bitCount) {
+        this.#_bitCount = bitCount;
+        this.#_a = Uint32Array(Math.ceil(bitCount / 32)).fill(0);
+      }
+
+      get length() {
+        return this.#_bitCount;
+      }
+
+      get isZero() {
+
+        const n = this.#_a.length;
+
+        for (let i = 0; i < n; ++i) {
+          if (this.#_a[i] !== 0) return false;
+        }
+
+        return true;
+      }
+
+      identical(ba) {
+
+        if (this.#_a.length === ba.#_a.length) {
+
+          const n = this.#_a.length;
+
+          for (let i = 0; i < n; ++i) {
+            if (this.#_a[i] !== ba.#_a[i]) return false;
+          }
+          return true;
+        }
+        
+        return false;
+      }
+
+      clone() {
+
+        const ba = new BitArray(this.#_bitCount);
+        ba.#_a = Uint32Array.from(this.#_a);
+
+        return ba;
+      }
+
+      // Set the i-th bit to 1
+      set(i) {
+
+        const bigIndex = Math.floor(i / 32);
+        const smallIndex = i % 32;
+
+        this.#_a[bigIndex] = this.#_a[bigIndex] | (1 << smallIndex);
+      }
+
+      // Clear the i-th bit
+      clear(i) {
+
+        const bigIndex = Math.floor(i / 32);
+        const smallIndex = i % 32;
+
+        this.#_a[bigIndex] = this.#_a[bigIndex] & (~(1 << smallIndex));
+      }
+
+      setValue(i, value) {
+
+        if (value) set(i);
+        else clear(i);
+      }
+
+      // Return the value of the i-th bit
+      get(i) {
+
+        const bigIndex = Math.floor(i / 32);
+        const smallIndex = i % 32;
+
+        const value = vec[bigIndex] & (1 << smallIndex);
+        // we convert to boolean to make sure the result is always 0 or 1,
+        // instead of what is returned by the mask
+        return value != 0;
+      }
+
+      bitOrAssign(ba) {
+
+        const n = Math.min(this.#_a.length, ba.#_a.length);
+
+        for (let i = 0; i < n; ++i) {
+          this.#_a[i] |= ba.#_a[i];
+        }
+
+        return this;
+      }
+
+      bitOr(ba) {
+        return this.clone().bitOrAssign(ba);
+      }
+
+      bitAndAssign(ba) {
+
+        const n = Math.min(this.#_a.length, ba.#_a.length);
+
+        for (let i = 0; i < n; ++i) {
+          this.#_a[i] &= ba.#_a[i];
+        }
+
+        return this;
+      }
+
+      bitAnd(ba) {
+        return this.clone().bitAndAssign(ba);
+      }
+
+      invertAssign() {
+
+        const n = this.#_a.length;
+
+        for (let i = 0; i < n; ++i) {
+          this.#_a[i] = ~this.#_a[i];
+        }
+
+        return this;
+      }
+
+      invert() {
+        return this.clone().invertAssign();
+      }
+    }
+
+    function wrapRangeText(range, styleIndex) {
+
+      const editor = document.getElementById("editor");
+
+      function nodeHasSameStyle(node, tagName, style, attributes) {
+
+        if (node.nodeName === tagName) {
+
+          let styleOk = true;
+
+          if (style) {
+            for (let property in style) {
+              if (node.style[property] !== style[property]) {
+                styleOk = false;
+                break;
+              }
+            }
+          }
+          let attributesOk = true;
+
+          if (attributes) {
+            for (let attribute in attributes) {
+              if (((!node.hasAttribute(attribute) || !node.getAttribute(attribute)) && attributes[attribute]) ||
+                  node.getAttribute(attribute) !== attributes[attribute]) {
+                attributesOk = false;
+                break;
+              }
+            }
+          }
+
+          if (styleOk && attributesOk) return true;
+        }
+
+        return false;
+      }
+
+      function getNodePositions(node) {
+
+        if (!node?.textContent) return {};
+
+        const positions = {
+          node: {
+            start: 0,
+            end: node.textContent.length
+          }
+        };
+        const elements = [];
+        node = node.hasChildNodes ? node.firstChild : null;
+
+        while (node) {
+
+          if (node.nodeType === Node.ELEMENT_NODE) {
+            elements.push(...node.childNodes);
+          }
+
+          if (node.nodeType === Node.ELEMENT_NODE ||
+              node.nodeType === Node.TEXT_NODE) {
+
+            let prevSibling = node.previousSibling;
+
+            while (prevSibling && !(prevSibling in positions))
+              prevSibling = prevSibling.previousSibling;
+
+            const start = prevSibling ? positions[prevSibling].end : positions[node.parentNode].start;
+            const end = start + node.textContent.length;
+
+            if (start < end) {
+              positions[node] = {
+                start: start,
+                end: start + node.textContent.length
+              };
+            }
+
+            while (node.nextSibling &&
+                  node.nextSibling.nodeType !== Node.TEXT_NODE &&
+                  node.nextSibling.nodeType !== Node.ELEMENT_NODE)
+              node = node.nextSibling;
+          }
+          node = node.nextSibling ?? (elements.length > 0 ? elements.shift() : null);
+        }
+
+        return positions;
+      }
+
+      function getStyledPositions(positions, styles, maxTextLength) {
+
+        const styledPositions = new Array(maxTextLength + 1).fill(new BitArray(styles.length));
+        const a = new Int32Array(maxTextLength + 1);
+        let styleIndex = 0;
+
+        for (const [tagName, style, attributes] of styles) {
+
+          const styleBitPattern = new BitArray(styles.length);
+          styleBitPattern.set(styleIndex++);
+          const entries = Object.entries(positions).filter(([node, _]) => nodeHasSameStyle(node, tagName.toUpperCase(), style, attributes));
+          a.fill(0);
+
+          for (const [key, value] of entries) {
+            a[value.start] += 1;
+            a[value.end] -= 1;
+          }
+
+          for (let i = 0; i < a.length - 1; ++i) {
+
+            a[i + 1] += a[i];
+
+            if (a[i]) styledPositions[i].bitOrAssign(styleBitPattern);
+          }
+        }
+
+        return styledPositions;
+      }
+
+      function getTopLevelNodeOf(childNode, editor) {
+
+        while (childNode && childNode.parentNode !== editor) {
+          childNode = childNode.parentNode;
+        }
+
+        return childNode;
+      }
+
+      function getSelectionPositions(editor, useSelectionRange = null) {
+
+        const selPositions = [];
+        let range = useSelectionRange;
+
+        if (!range) {
+
+          let selection = window.getSelection();
+
+          if (selection?.rangeCount) {
+            range = selection.getRangeAt(0);
+          }
+        }
+
+        if (range) {
+
+          if (range.commonAncestorContainer.nodeType === Node.TEXT_NODE) {
+
+            const node = getTopLevelNodeOf(range.startContainer, editor);
+            const positions = getNodePositions(node);
+            const start = positions[range.startContainer].start + range.startOffset;
+            const end = start + range.endOffset - range.startOffset;
+
+            if (node) selPositions.push({ node: node, start: start, end: end, positions: positions });
+          } else {
+
+            const nodeStart = getTopLevelNodeOf(range.startContainer, editor);
+            const nodeEnd = getTopLevelNodeOf(range.endContainer, editor);
+
+            if (nodeStart && nodeEnd) {
+
+              if (nodeStart === nodeEnd) {
+
+                const positions = getNodePositions(nodeStart);
+                const start = positions[range.startContainer].start + range.startOffset;
+                const end = positions[range.endContainer].start + range.endOffset;
+
+                selPositions.push({ node: nodeStart, start: start, end: end, positions: positions });
+              } else {
+
+                let positions = getNodePositions(nodeStart);
+                let start = positions[range.startContainer].start + range.startOffset;
+                let end = positions[nodeStart].end;
+                selPositions.push({ node: nodeStart, start: start, end: end, positions: positions });
+
+                let node = nodeStart.nextSibling;
+
+                while (node && node !== nodeEnd) {
+
+                  if (node.parentNode === editor) {
+
+                    positions = getNodePositions(node);
+                    start = positions[node].start;
+                    end = positions[node].end;
+                    selPositions.push({ node: node, start: start, end: end, positions: positions });
+                  }
+                  node = node.nextSibling;
+                }
+
+                positions = getNodePositions(nodeEnd);
+                start = positions[nodeEnd].start;
+                end = positions[range.endContainer].start + range.endOffset;
+                selPositions.push({ node: nodeEnd, start: start, end: end, positions: positions });
+              }
+            }
+          }
+        }
+
+        return selPositions;
+      }
+
+      function createHtmlNode(parentNode, text, styleBitPattern) {
+
+        if (styleBitPattern.isZero) {
+          parentNode.append(text);
+        } else {
+
+          for (let i = 0; i < styleBitPattern.length; ++i) {
+            if (styleBitPattern.get(i)) {
+              const child = document.createElement(STYLES[i].tagName);
+              
+              if (STYLES[i].style) {
+                applyCss(child, STYLES[i].style);
+              }
+
+              if (STYLES[i].attributes) {
+                for (let attribute in STYLES[i].attributes) {
+                  child.setAttribute(attribute, STYLES[i].attributes[attribute]);
+                }
+              }
+              parentNode.appendChild(child);
+              parentNode = child;
+            }
+          }
+        }
+      }
+
+      function buildHtmlTree(editor, node, styledPositions) {
+
+        const text = node.textContent;
+        const length = text.length;
+        let p = 0;
+        const frag = document.createDocumentFragment();
+
+        for (let i = 1; i < length; ++i) {
+          if (!styledPositions[i].identical(styledPositions[p])) {
+            createHtmlNode(frag, text.substring(p, i), styledPositions[p]);
+            p = i;
+          }
+        }
+
+        if (p < length) {
+          createHtmlNode(frag, text.substring(p), styledPositions[p]);
+        }
+        node.replaceChildren(frag);
+      }
+      const styleBitPattern = new BitArray(styles.length);
+      styleBitPattern.set(styleIndex);
+      const selPositions = getSelectionPositions(editor);
+      const styledPositions = [];
+      let removeStyle = true;
+
+      for (const p of selPositions) {
+
+        const styled = getStyledPositions(p.positions, STYLES, p.positions[p.node].end);
+
+        for (let i = p.start; i < p.end; ++i) {
+          if (styled[i].bitAnd(styleBitPattern).isZero()) removeStyle = false; // if there area characters that don't have the style then we must apply the new style
+        }                                                                      // otherwise we remove the style on all the characters in the range
+        styledPositions.push(styled);
+      }
+      const styleInvertedBitPattern = removeStyle ? styleBitPattern.invert() : null;
+
+      for (let i = 0; i < selPositions.length; ++i) {
+
+        const styled = styledPositions[i];
+
+        for (let j = selPositions[i].start; j < selPositions[i].end; ++j) {
+          if (removeStyle) styled[j].bitAndAssign(styleInvertedBitPattern);
+          else styled[j].bitOrAssign(styleBitPattern);
+        }
+        buildHtmlTree(editor, selPositions[i].node, styled);
+      }
+    }
+
     // Wraps only the selected portions of text nodes.
     // If selection is entirely within one text node, process it directly.
-    function wrapRangeText2(range, tagName, style, hook) {
+    function wrapRangeText1(range, tagName, style, hook) {
 
       const textNodes = [];
       console.log("ROOT: ", range.commonAncestorContainer, "RANGE: ", range);
@@ -2725,7 +3170,7 @@
     }
 
     // Basic inline formatting: wraps the selection in the specified tag.
-    function applyFormat(tagName) {
+    function applyFormat(styleIndex) {
 
       const selection = window.getSelection();
 
@@ -2734,12 +3179,13 @@
       const editor = document.getElementById("editor");
 
       if (!editor.contains(range.commonAncestorContainer)) return;
-      wrapRangeText(range, tagName);
+      updateLinkStyles(editor);
+      wrapRangeText(range, styleIndex);
       selection.removeAllRanges();
     }
 
     // Applies inline style (e.g., font-size, text color, background color) by wrapping the selection in a <span>.
-    function applyStyle(style) {
+    function applyStyle(styleIndex) {
 
       const selection = window.getSelection();
 
@@ -2748,7 +3194,8 @@
       const editor = document.getElementById("editor");
 
       if (!editor.contains(range.commonAncestorContainer)) return;
-      wrapRangeText(range, "span", style);
+      updateLinkStyles(editor);
+      wrapRangeText(range, styleIndex);
       selection.removeAllRanges();
     }
 
@@ -2765,17 +3212,22 @@
       const url = prompt("URL")?.trim();
 
       if (!url) return;
+      updateLinkStyles(editor);
 
-      wrapRangeText(range, "a", null, function (element) {
-
-        if (url) {
-
-          element.href = url;
-          return true;
+      for (let linkStyleIndex = STYLES.length - 1; linkStyleIndex > STYLE_LINK_BASE_INDEX; linkStyleIndex--) {
+        if (STYLES[linkStyleIndex].tagName === "a" &&
+            STYLES[linkStyleIndex].attributes &&
+            STYLES[linkStyleIndex].attributes["href"] === url) {
+          break;
         }
+      }
 
-        return false;
-      });
+      if (linkStyleIndex <= STYLE_LINK_BASE_INDEX) {
+        STYLES.push({tagName: "a", style: null, attributes: { "href": url }});
+        linkStyleIndex = STYLES.length - 1;
+      }
+
+      wrapRangeText(range, linkStyleIndex);
       selection.removeAllRanges();
     }
 
@@ -2783,21 +3235,21 @@
     function applyTextSize(size) {
 
       if (!size) return;
-      applyStyle({"font-size": `${size}`});
+      //applyStyle({"font-size": `${size}`});
     }
 
     // Called when a text color swatch is clicked.
     function applyTextColor(color) {
 
       if (!color) return;
-      applyStyle({"color": `var(--note-text-color-${color})`});
+      applyStyle(STYLE_TEXT_COLOR_BASE_INDEX + color);
     }
 
     // Called when a highlight (background color) swatch is clicked.
     function applyHighlightColor(color) {
 
       if (!color) return;
-      applyStyle({"background-color": `var(--note-highlight-color-${color})`});
+      applyStyle(STYLE_HIGHLIGHT_COLOR_BASE_INDEX + color);
     }
 
     // Converts the current block (direct child of #editor) to the chosen tag.
@@ -3192,9 +3644,9 @@
     document.getElementById("btnM").addEventListener("click", (e) => changeBlock("p"));
     document.getElementById("btnS").addEventListener("click", (e) => changeBlock("small"));
 
-    document.getElementById("btnB").addEventListener("click", (e) => applyFormat("strong"));
-    document.getElementById("btnI").addEventListener("click", (e) => applyFormat("em"));
-    document.getElementById("btnU").addEventListener("click", (e) => applyFormat("u"));
+    document.getElementById("btnB").addEventListener("click", (e) => applyFormat(STYLE_STRONG_INDEX));
+    document.getElementById("btnI").addEventListener("click", (e) => applyFormat(STYLE_EM_INDEX));
+    document.getElementById("btnU").addEventListener("click", (e) => applyFormat(STYLE_U_INDEX));
     document.getElementById("btnLink").addEventListener("click", (e) => applyURL());
 
     document.getElementById("imageUpload").addEventListener("change", (e) => insertImage(e));
@@ -3204,7 +3656,7 @@
     
     for (let i = 1; i < 9; ++i) {
       document.getElementById(`btnTextColor${i}`).addEventListener("click", (e) => {
-        applyTextColor(`${i}`);
+        applyTextColor(i);
         toggleDropdown("textColorDropdown");
       });
     }
@@ -3213,7 +3665,7 @@
     
     for (let i = 1; i < 9; ++i) {
       document.getElementById(`btnTextHighlight${i}`).addEventListener("click", (e) => {
-        applyHighlightColor(`${i}`);
+        applyHighlightColor(i);
         toggleDropdown("highlightDropdown");
       });
     }
