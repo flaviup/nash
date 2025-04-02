@@ -2771,7 +2771,6 @@
             if (styleBitPattern.get(i)) {
 
               const child = document.createElement(STYLES[i].tagName);
-              child.textContent = text;
               
               if (STYLES[i].style) {
                 applyCss(child, STYLES[i].style);
@@ -2786,6 +2785,7 @@
               parentNode = child;
             }
           }
+          parentNode.append(text);
         }
       }
 
