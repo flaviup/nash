@@ -2603,43 +2603,47 @@
       function getNodePositions(node) {
 
         const positions = new Map();
+        let text = node?.textContent;
 
-        if (!node?.textContent) return positions;
-
+        if (!text) {
+          return positions;
+        }
         positions.set(node, {
           start: 0,
-          end: node.textContent.length
+          end: text.length
         });
         const elements = [];
         node = node.hasChildNodes ? node.firstChild : null;
 
         while (node) {
 
-          if (node.nodeType === Node.ELEMENT_NODE) {
+          if (node.nodeType === Node.ELEMENT_NODE && !NON_STYLABLE_NODE_NAMES.includes(node.nodeName)) {
             elements.push(...node.childNodes);
           }
 
-          if (node.nodeType === Node.ELEMENT_NODE ||
-              node.nodeType === Node.TEXT_NODE) {
+          if ((node.nodeType === Node.ELEMENT_NODE ||
+              node.nodeType === Node.TEXT_NODE) &&
+              !NON_STYLABLE_NODE_NAMES.includes(node.nodeName)) {
 
             let prevSibling = node.previousSibling;
 
             while (prevSibling && !positions.has(prevSibling))
               prevSibling = prevSibling.previousSibling;
 
+            text = node.textContent;
             const start = prevSibling ? positions.get(prevSibling).end : positions.get(node.parentNode).start;
-            const end = start + node.textContent.length;
+            const end = start + text.length;
 
             if (start < end) {
               positions.set(node, {
                 start: start,
-                end: start + node.textContent.length
+                end: end
               });
             }
 
             while (node.nextSibling &&
-                  node.nextSibling.nodeType !== Node.TEXT_NODE &&
-                  node.nextSibling.nodeType !== Node.ELEMENT_NODE)
+                   node.nextSibling.nodeType !== Node.TEXT_NODE &&
+                   node.nextSibling.nodeType !== Node.ELEMENT_NODE)
               node = node.nextSibling;
           }
           node = node.nextSibling ?? (elements.length > 0 ? elements.shift() : null);
@@ -2709,11 +2713,18 @@
           if (range.commonAncestorContainer.nodeType === Node.TEXT_NODE) {
 
             const node = getTopLevelNodeOf(range.startContainer, editor);
-            const positions = getNodePositions(node);
-            const start = positions.get(range.startContainer).start + range.startOffset;
-            const end = start + range.endOffset - range.startOffset;
 
-            if (node) selPositions.push({ node: node, start: start, end: end, positions: positions });
+            if (node) {
+
+              const positions = getNodePositions(node);
+
+              if (positions.size) {
+
+                const start = positions.get(range.startContainer).start + range.startOffset;
+                const end = start + range.endOffset - range.startOffset;
+                selPositions.push({ node: node, start: start, end: end, positions: positions });
+              }
+            }
           } else {
 
             const nodeStart = getTopLevelNodeOf(range.startContainer, editor);
@@ -2724,16 +2735,23 @@
               if (nodeStart === nodeEnd) {
 
                 const positions = getNodePositions(nodeStart);
-                const start = positions.get(range.startContainer).start + range.startOffset;
-                const end = positions.get(range.endContainer).start + range.endOffset;
 
-                selPositions.push({ node: nodeStart, start: start, end: end, positions: positions });
+                if (positions.size) {
+
+                  const start = positions.get(range.startContainer).start + range.startOffset;
+                  const end = positions.get(range.endContainer).start + range.endOffset;
+                  selPositions.push({ node: nodeStart, start: start, end: end, positions: positions });
+                }
               } else {
 
                 let positions = getNodePositions(nodeStart);
-                let start = positions.get(range.startContainer).start + range.startOffset;
-                let end = positions.get(nodeStart).end;
-                selPositions.push({ node: nodeStart, start: start, end: end, positions: positions });
+
+                if (positions.size) {
+
+                  let start = positions.get(range.startContainer).start + range.startOffset;
+                  let end = positions.get(nodeStart).end;
+                  selPositions.push({ node: nodeStart, start: start, end: end, positions: positions });
+                }
 
                 let node = nodeStart.nextSibling;
 
@@ -2741,18 +2759,26 @@
 
                   if (node.parentNode === editor) {
 
-                    positions = getNodePositions(node);
-                    start = positions.get(node).start;
-                    end = positions.get(node).end;
-                    selPositions.push({ node: node, start: start, end: end, positions: positions });
+                    const positions = getNodePositions(node);
+
+                    if (positions.size) {
+
+                      const start = positions.get(node).start;
+                      const end = positions.get(node).end;
+                      selPositions.push({ node: node, start: start, end: end, positions: positions });
+                    }
                   }
                   node = node.nextSibling;
                 }
 
                 positions = getNodePositions(nodeEnd);
-                start = positions.get(nodeEnd).start;
-                end = positions.get(range.endContainer).start + range.endOffset;
-                selPositions.push({ node: nodeEnd, start: start, end: end, positions: positions });
+
+                if (positions.size) {
+
+                  const start = positions.get(nodeEnd).start;
+                  const end = positions.get(range.endContainer).start + range.endOffset;
+                  selPositions.push({ node: nodeEnd, start: start, end: end, positions: positions });
+                }
               }
             }
           }
@@ -2792,7 +2818,7 @@
 
       function buildHtmlTree(editor, node, styledPositions) {
 
-        const text = node.textContent;
+        const text = node?.textContent;
         const length = text.length;
         let p = 0;
         const frag = document.createDocumentFragment();
@@ -2965,13 +2991,11 @@
 
       while (node && node.parentNode !== editor) { // finds current node, child of editor
         if (NON_STYLABLE_NODE_NAMES.includes(node.nodeName)) return;
-        if (node.nodeName === "TABLE") return;
         node = node.parentNode;
       }
 
       if (!node || node === editor) return;
       if (NON_STYLABLE_NODE_NAMES.includes(node.nodeName)) return;
-      if (node.nodeName === "TABLE") return;
 
       const newBlock = document.createElement(tag);
 
