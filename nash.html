@@ -2601,15 +2601,14 @@
 
       function getNodePositions(node) {
 
-        const positions = {};
+        const positions = new Map();
 
         if (!node?.textContent) return positions;
 
-        positions[node] = {
-          node: node,
+        positions.set(node, {
           start: 0,
           end: node.textContent.length
-        };
+        });
         const elements = [];
         node = node.hasChildNodes ? node.firstChild : null;
 
@@ -2624,18 +2623,17 @@
 
             let prevSibling = node.previousSibling;
 
-            while (prevSibling && !(prevSibling in positions))
+            while (prevSibling && !positions.has(prevSibling))
               prevSibling = prevSibling.previousSibling;
 
-            const start = prevSibling ? positions[prevSibling].end : positions[node.parentNode].start;
+            const start = prevSibling ? positions.get(prevSibling).end : positions.get(node.parentNode).start;
             const end = start + node.textContent.length;
 
             if (start < end) {
-              positions[node] = {
-                node: node,
+              positions.set(node, {
                 start: start,
                 end: start + node.textContent.length
-              };
+              });
             }
 
             while (node.nextSibling &&
@@ -2663,10 +2661,10 @@
 
           const styleBitPattern = new BitArray(styles.length);
           styleBitPattern.set(styleIndex++);
-          const entries = Object.entries(positions).filter(([node, value]) => nodeHasSameStyle(value.node, style.tagName.toUpperCase(), style.style, style.attributes));
+          const entries = Object.entries(positions).filter(([node, value]) => nodeHasSameStyle(node, style.tagName.toUpperCase(), style.style, style.attributes));
           a.fill(0);
 
-          for (const [key, value] of entries) {
+          for (const [_, value] of entries) {
             a[value.start] += 1;
             a[value.end] -= 1;
           }
@@ -2711,7 +2709,7 @@
 
             const node = getTopLevelNodeOf(range.startContainer, editor);
             const positions = getNodePositions(node);
-            const start = positions[range.startContainer].start + range.startOffset;
+            const start = positions.get(range.startContainer).start + range.startOffset;
             const end = start + range.endOffset - range.startOffset;
 
             if (node) selPositions.push({ node: node, start: start, end: end, positions: positions });
@@ -2725,15 +2723,15 @@
               if (nodeStart === nodeEnd) {
 
                 const positions = getNodePositions(nodeStart);
-                const start = positions[range.startContainer].start + range.startOffset;
-                const end = positions[range.endContainer].start + range.endOffset;
+                const start = positions.get(range.startContainer).start + range.startOffset;
+                const end = positions.get(range.endContainer).start + range.endOffset;
 
                 selPositions.push({ node: nodeStart, start: start, end: end, positions: positions });
               } else {
 
                 let positions = getNodePositions(nodeStart);
-                let start = positions[range.startContainer].start + range.startOffset;
-                let end = positions[nodeStart].end;
+                let start = positions.get(range.startContainer).start + range.startOffset;
+                let end = positions.get(nodeStart).end;
                 selPositions.push({ node: nodeStart, start: start, end: end, positions: positions });
 
                 let node = nodeStart.nextSibling;
@@ -2743,16 +2741,16 @@
                   if (node.parentNode === editor) {
 
                     positions = getNodePositions(node);
-                    start = positions[node].start;
-                    end = positions[node].end;
+                    start = positions.get(node).start;
+                    end = positions.get(node).end;
                     selPositions.push({ node: node, start: start, end: end, positions: positions });
                   }
                   node = node.nextSibling;
                 }
 
                 positions = getNodePositions(nodeEnd);
-                start = positions[nodeEnd].start;
-                end = positions[range.endContainer].start + range.endOffset;
+                start = positions.get(nodeEnd).start;
+                end = positions.get(range.endContainer).start + range.endOffset;
                 selPositions.push({ node: nodeEnd, start: start, end: end, positions: positions });
               }
             }
@@ -2818,11 +2816,11 @@
 
       for (const p of selPositions) {
 
-        const styled = getStyledPositions(p.positions, STYLES, p.positions[p.node].end);
+        const styled = getStyledPositions(p.positions, STYLES, p.positions.get(p.node).end);
 
         for (let i = p.start; i < p.end; ++i) {
           if (styled[i].bitAnd(styleBitPattern).isZero) removeStyle = false; // if there area characters that don't have the style then we must apply the new style
-        }                                                                      // otherwise we remove the style on all the characters in the range
+        }                                                                    // otherwise we remove the style on all the characters in the range
         styledPositions.push(styled);
       }
       const styleInvertedBitPattern = removeStyle ? styleBitPattern.invert() : null;
