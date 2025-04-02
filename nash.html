@@ -2914,8 +2914,9 @@
 
       if (!url) return;
       updateLinkStyles(editor);
+      let linkStyleIndex = STYLES.length - 1;
 
-      for (let linkStyleIndex = STYLES.length - 1; linkStyleIndex > STYLE_LINK_BASE_INDEX; linkStyleIndex--) {
+      for ( ; linkStyleIndex > STYLE_LINK_BASE_INDEX; linkStyleIndex--) {
         if (STYLES[linkStyleIndex].tagName === "a" &&
             STYLES[linkStyleIndex].attributes &&
             STYLES[linkStyleIndex].attributes["href"] === url) {
