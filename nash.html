@@ -2511,7 +2511,7 @@
         const bigIndex = Math.floor(i / 32);
         const smallIndex = i % 32;
 
-        const value = vec[bigIndex] & (1 << smallIndex);
+        const value = this.#_a[bigIndex] & (1 << smallIndex);
         // we convert to boolean to make sure the result is always 0 or 1,
         // instead of what is returned by the mask
         return value != 0;
@@ -2601,13 +2601,13 @@
 
       function getNodePositions(node) {
 
-        if (!node?.textContent) return {};
+        const positions = {};
 
-        const positions = {
-          node: {
-            start: 0,
-            end: node.textContent.length
-          }
+        if (!node?.textContent) return positions;
+
+        positions[node] = {
+          start: 0,
+          end: node.textContent.length
         };
         const elements = [];
         node = node.hasChildNodes ? node.firstChild : null;
@@ -2653,11 +2653,11 @@
         const a = new Int32Array(maxTextLength + 1);
         let styleIndex = 0;
 
-        for (const [tagName, style, attributes] of styles) {
+        for (const style of styles) {
 
           const styleBitPattern = new BitArray(styles.length);
           styleBitPattern.set(styleIndex++);
-          const entries = Object.entries(positions).filter(([node, _]) => nodeHasSameStyle(node, tagName.toUpperCase(), style, attributes));
+          const entries = Object.entries(positions).filter(([node, _]) => nodeHasSameStyle(node, style.tagName.toUpperCase(), style.style, style.attributes));
           a.fill(0);
 
           for (const [key, value] of entries) {
@@ -2812,7 +2812,7 @@
         const styled = getStyledPositions(p.positions, STYLES, p.positions[p.node].end);
 
         for (let i = p.start; i < p.end; ++i) {
-          if (styled[i].bitAnd(styleBitPattern).isZero()) removeStyle = false; // if there area characters that don't have the style then we must apply the new style
+          if (styled[i].bitAnd(styleBitPattern).isZero) removeStyle = false; // if there area characters that don't have the style then we must apply the new style
         }                                                                      // otherwise we remove the style on all the characters in the range
         styledPositions.push(styled);
       }
