@@ -2649,7 +2649,11 @@
 
       function getStyledPositions(positions, styles, maxTextLength) {
 
-        const styledPositions = new Array(maxTextLength + 1).fill(new BitArray(styles.length));
+        const styledPositions = new Array(maxTextLength + 1);
+
+        for (let i = 0; i < maxTextLength + 1; i++)
+          styledPositions[i] = new BitArray(styles.length);
+
         const a = new Int32Array(maxTextLength + 1);
         let styleIndex = 0;
 
