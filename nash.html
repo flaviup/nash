@@ -2606,6 +2606,7 @@
         if (!node?.textContent) return positions;
 
         positions[node] = {
+          node: node,
           start: 0,
           end: node.textContent.length
         };
@@ -2631,6 +2632,7 @@
 
             if (start < end) {
               positions[node] = {
+                node: node,
                 start: start,
                 end: start + node.textContent.length
               };
@@ -2661,7 +2663,7 @@
 
           const styleBitPattern = new BitArray(styles.length);
           styleBitPattern.set(styleIndex++);
-          const entries = Object.entries(positions).filter(([node, _]) => nodeHasSameStyle(node, style.tagName.toUpperCase(), style.style, style.attributes));
+          const entries = Object.entries(positions).filter(([node, value]) => nodeHasSameStyle(value.node, style.tagName.toUpperCase(), style.style, style.attributes));
           a.fill(0);
 
           for (const [key, value] of entries) {
