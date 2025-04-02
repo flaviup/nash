@@ -2440,7 +2440,7 @@
 
       constructor(bitCount) {
         this.#_bitCount = bitCount;
-        this.#_a = Uint32Array(Math.ceil(bitCount / 32)).fill(0);
+        this.#_a = new Uint32Array(Math.ceil(bitCount / 32)).fill(0);
       }
 
       get length() {
@@ -2801,7 +2801,7 @@
         }
         node.replaceChildren(frag);
       }
-      const styleBitPattern = new BitArray(styles.length);
+      const styleBitPattern = new BitArray(STYLES.length);
       styleBitPattern.set(styleIndex);
       const selPositions = getSelectionPositions(editor);
       const styledPositions = [];
