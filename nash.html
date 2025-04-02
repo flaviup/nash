@@ -1366,6 +1366,7 @@
     const STYLE_TEXT_COLOR_BASE_INDEX = 2;
     const STYLE_HIGHLIGHT_COLOR_BASE_INDEX = STYLE_TEXT_COLOR_BASE_INDEX + 8;
     const STYLE_LINK_BASE_INDEX = STYLE_HIGHLIGHT_COLOR_BASE_INDEX + 8;
+    const STYLE_GROUPS = [[3, 10], [11, 18]];
 
     // Helper: gets all the distinct links in the text and indexes them as styles
     function updateLinkStyles(editor) {
@@ -2823,17 +2824,49 @@
         }                                                                    // otherwise we remove the style on all the characters in the range
         styledPositions.push(styled);
       }
-      const styleInvertedBitPattern = removeStyle ? styleBitPattern.invert() : null;
 
-      for (let i = 0; i < selPositions.length; ++i) {
+      if (removeStyle) {
 
-        const styled = styledPositions[i];
+        styleBitPattern.invertAssign();
 
-        for (let j = selPositions[i].start; j < selPositions[i].end; ++j) {
-          if (removeStyle) styled[j].bitAndAssign(styleInvertedBitPattern);
-          else styled[j].bitOrAssign(styleBitPattern);
+        for (let i = 0; i < selPositions.length; ++i) {
+
+          const styled = styledPositions[i];
+
+          for (let j = selPositions[i].start; j < selPositions[i].end; ++j) {
+            styled[j].bitAndAssign(styleBitPattern);
+          }
+          buildHtmlTree(editor, selPositions[i].node, styled);
         }
-        buildHtmlTree(editor, selPositions[i].node, styled);
+      } else {
+
+        let styleGroupClearBitPattern = null;
+
+        for (let styleGroup of STYLE_GROUPS) {
+
+          if (styleIndex >= styleGroup[0] && styleIndex <= styleGroup[1]) {
+
+            styleGroupClearBitPattern = new BitArray(STYLES.length);
+
+            for (let i = styleGroup[0]; i <= styleGroup[1]; i++) {
+              styleGroupClearBitPattern.set(i);
+            }
+            styleGroupClearBitPattern.invertAssign();
+            styleGroupClearBitPattern.set(styleIndex);
+            break;
+          }
+        }
+
+        for (let i = 0; i < selPositions.length; ++i) {
+
+          const styled = styledPositions[i];
+
+          for (let j = selPositions[i].start; j < selPositions[i].end; ++j) {
+            if (styleGroupClearBitPattern) styled[j].bitAndAssign(styleGroupClearBitPattern);
+            styled[j].bitOrAssign(styleBitPattern);
+          }
+          buildHtmlTree(editor, selPositions[i].node, styled);
+        }
       }
     }
 
