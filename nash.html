@@ -2613,13 +2613,12 @@
 
         while (node) {
 
-          if (node.nodeType === Node.ELEMENT_NODE && !NON_STYLABLE_NODE_NAMES.includes(node.nodeName)) {
+          if (node.nodeType === Node.ELEMENT_NODE) {
             elements.push(...node.childNodes);
           }
 
-          if ((node.nodeType === Node.ELEMENT_NODE ||
-              node.nodeType === Node.TEXT_NODE) &&
-              !NON_STYLABLE_NODE_NAMES.includes(node.nodeName)) {
+          if (node.nodeType === Node.ELEMENT_NODE ||
+              node.nodeType === Node.TEXT_NODE) {
 
             let prevSibling = node.previousSibling;
 
@@ -2690,6 +2689,10 @@
         return childNode;
       }
 
+      function isSelectableNodeForStyling(node) {
+        return node && node.nodeName.match(/^H[1-6]$|^P$|^SMALL$/);
+      }
+
       function getSelectionPositions(editor, useSelectionRange = null) {
 
         const selPositions = [];
@@ -2723,8 +2726,18 @@
             }
           } else {
 
-            const nodeStart = getTopLevelNodeOf(range.startContainer, editor);
-            const nodeEnd = getTopLevelNodeOf(range.endContainer, editor);
+            let nodeStart = getTopLevelNodeOf(range.startContainer, editor);
+            let nodeEnd = getTopLevelNodeOf(range.endContainer, editor);
+
+            while (nodeStart &&
+                   nodeStart !== nodeEnd &&
+                   !isSelectableNodeForStyling(nodeStart))
+              nodeStart = nodeStart.nextSibling;
+
+            while (nodeEnd &&
+                   nodeStart !== nodeEnd &&
+                   !isSelectableNodeForStyling(nodeEnd))
+              nodeEnd = nodeEnd.previousSibling;
 
             if (nodeStart && nodeEnd) {
 
@@ -2753,7 +2766,7 @@
 
                 while (node && node !== nodeEnd) {
 
-                  if (node.parentNode === editor) {
+                  if (node.parentNode === editor && isSelectableNodeForStyling(node)) {
 
                     const positions = getNodePositions(node);
 
