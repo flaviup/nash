@@ -2562,8 +2562,6 @@
 
     function wrapRangeText(range, styleIndex) {
 
-      const editor = document.getElementById("editor");
-
       function nodeHasSameStyle(node, tagName, style, attributes) {
 
         if (node.nodeName === tagName) {
@@ -2680,9 +2678,9 @@
         return styledPositions;
       }
 
-      function getTopLevelNodeOf(childNode, editor) {
+      function getTopLevelNodeOf(childNode, rootContainer) {
 
-        while (childNode && childNode.parentNode !== editor) {
+        while (childNode && childNode.parentNode !== rootContainer) {
           childNode = childNode.parentNode;
         }
 
@@ -2690,28 +2688,18 @@
       }
 
       function isSelectableNodeForStyling(node) {
-        return node && node.nodeName.match(/^H[1-6]$|^P$|^SMALL$/);
+        return node && (node.nodeName.match(/^H[1-6]$|^P$|^SMALL$/) || ["TH", "TD"].includes(node.parentNode?.nodeName));
       }
 
-      function getSelectionPositions(editor, useSelectionRange = null) {
+      function getSelectionPositions(rootContainer, range) {
 
         const selPositions = [];
-        let range = useSelectionRange;
-
-        if (!range) {
-
-          let selection = window.getSelection();
-
-          if (selection?.rangeCount) {
-            range = selection.getRangeAt(0);
-          }
-        }
 
         if (range) {
 
           if (range.commonAncestorContainer.nodeType === Node.TEXT_NODE) {
 
-            const node = getTopLevelNodeOf(range.startContainer, editor);
+            const node = getTopLevelNodeOf(range.startContainer, rootContainer);
 
             if (node) {
 
@@ -2726,8 +2714,8 @@
             }
           } else {
 
-            let nodeStart = getTopLevelNodeOf(range.startContainer, editor);
-            let nodeEnd = getTopLevelNodeOf(range.endContainer, editor);
+            let nodeStart = getTopLevelNodeOf(range.startContainer, rootContainer);
+            let nodeEnd = getTopLevelNodeOf(range.endContainer, rootContainer);
 
             while (nodeStart &&
                    nodeStart !== nodeEnd &&
@@ -2766,7 +2754,7 @@
 
                 while (node && node !== nodeEnd) {
 
-                  if (node.parentNode === editor && isSelectableNodeForStyling(node)) {
+                  if (node.parentNode === rootContainer && isSelectableNodeForStyling(node)) {
 
                     const positions = getNodePositions(node);
 
@@ -2825,7 +2813,7 @@
         }
       }
 
-      function buildHtmlTree(editor, node, styledPositions) {
+      function buildHtmlTree(node, styledPositions) {
 
         const text = node?.textContent;
         const length = text.length;
@@ -2842,13 +2830,38 @@
         if (p < length) {
           createHtmlNode(frag, text.substring(p), styledPositions[p]);
         }
-        node.replaceChildren(frag);
+
+        if (node.nodeType === Node.ELEMENT_NODE) {
+          node.replaceChildren(frag);
+        } else if (node.nodeType === Node.TEXT_NODE) {
+          node.replaceWith(frag);
+        }
       }
-      const styleBitPattern = new BitArray(STYLES.length);
-      styleBitPattern.set(styleIndex);
-      const selPositions = getSelectionPositions(editor);
+      
+      if (!range) {
+        const selection = window.getSelection();
+
+        if (selection?.rangeCount) {
+          range = selection.getRangeAt(0);
+        }
+      }
+      let rootNode = range?.commonAncestorContainer;
+      let rootContainer = document.getElementById("editor");
+
+      while (rootNode && rootNode !== rootContainer) {
+
+        if (["TH", "TD"].includes(rootNode.nodeName)) {
+          rootContainer = rootNode;
+          break;
+        }
+        rootNode = rootNode.parentNode;
+      }
+      const selPositions = getSelectionPositions(rootContainer, range);
       const styledPositions = [];
       let removeStyle = true;
+
+      const styleBitPattern = new BitArray(STYLES.length);
+      styleBitPattern.set(styleIndex);
 
       for (const p of selPositions) {
 
@@ -2871,7 +2884,7 @@
           for (let j = selPositions[i].start; j < selPositions[i].end; ++j) {
             styled[j].bitAndAssign(styleBitPattern);
           }
-          buildHtmlTree(editor, selPositions[i].node, styled);
+          buildHtmlTree(selPositions[i].node, styled);
         }
       } else {
 
@@ -2900,7 +2913,7 @@
             if (styleGroupClearBitPattern) styled[j].bitAndAssign(styleGroupClearBitPattern);
             styled[j].bitOrAssign(styleBitPattern);
           }
-          buildHtmlTree(editor, selPositions[i].node, styled);
+          buildHtmlTree(selPositions[i].node, styled);
         }
       }
     }
