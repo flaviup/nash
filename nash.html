@@ -784,7 +784,7 @@
 
     <div id="editorContainer" class="thin-line">
       <div id="editor" contenteditable="true">
-        <p class="text-block"></p>
+        <p class="text-block"><br/></p>
       </div>
     </div>
 
@@ -3064,7 +3064,7 @@
         const p = document.createElement("p");
         p.setAttribute("id", `text${generateUId()}`);
         p.setAttribute("class", "text-block");
-        p.innerHTML = "<br>";
+        p.innerHTML = "<br/>";
         editor.appendChild(p);
         setCaret(p, 0);
         return;
@@ -3087,7 +3087,7 @@
 
       if (isAtEnd) { // if the caret is at the end of current block, then add an empty text-block, next to current block
 
-        newBlock.innerHTML = "<br>";
+        newBlock.innerHTML = "<br/>";
       } else { // else append the last (from caret to end of block) children of the current block into a new text-block
 
         const extractRange = range.cloneRange();
@@ -3110,7 +3110,7 @@
       setCaret(newBlock, 0); // move the caret into the new block
 
       if (!block.textContent.trim() && !block.querySelector("img, video, iframe, embed, object")) {
-        block.innerHTML = "<br>";
+        block.innerHTML = "<br/>";
       }
     }
 
