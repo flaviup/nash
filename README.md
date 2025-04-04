@@ -25,6 +25,9 @@ Features:
 
 TODO:
 - Undo and redo (most important)
+- Text alignment
+- Different font size styling in the same paragraph
+- Font selection and embedding
 - Epub link embedding
 - Epub embedding from url
 - Allow epub in continuous scrolling mode (fix EPUBjs library)
@@ -35,7 +38,6 @@ TODO:
 - Embedded page resizing
 - Video embedding (?)
 - Better text editing
-- Font selection and embedding
 - Better icons
 - Lists (todos)
 - Data sources embedding
