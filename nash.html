@@ -656,6 +656,22 @@
     }
     /* END OF Audio Recording UI */
 
+    .left-text {
+      text-align: left;
+    }
+
+    .center-text {
+      text-align: center;
+    }
+
+    .right-text {
+      text-align: right;
+    }
+
+    .justify-text {
+      text-align: justify;
+    }
+
     @media print {
       .no-print {
         display: none !important;
@@ -763,6 +779,16 @@
           <div id="tableDropdown" class="dropdown-content">
             <button id="btnSimpleTable" title="Add simple table">Simple Table</button>
             <button id="btnHeadlessTable" title="Add headless table">Headless Table</button>
+          </div>
+        </div>
+
+        <div class="dropdown">
+          <button id="btnAlign" title="Align text"><b>Align</b></button>
+          <div id="alignDropdown" class="dropdown-content">
+            <button id="btnLeftTextAlign" title="Align text to the left">Left</button>
+            <button id="btnCenterTextAlign" title="Align text to the center">Center</button>
+            <button id="btnRightTextAlign" title="Align text to the right">Right</button>
+            <button id="btnJustifyTextAlign" title="Justify text">Justify</button>
           </div>
         </div>
 
@@ -2393,6 +2419,53 @@
       setCaret(divNode, 0);
     }
 
+    function alignText(alignmentClass) {
+
+      let range = null;
+
+      if (!range) {
+
+        const selection = window.getSelection();
+
+        if (selection?.rangeCount) {
+          range = selection.getRangeAt(0);
+        }
+      }
+
+      if (!range) return;
+
+      let rootNode = range.startContainer;
+      let editor = document.getElementById("editor");
+
+      while (rootNode && rootNode.parentNode !== editor) {
+
+        if (["TH", "TD"].includes(rootNode.nodeName)) {
+
+          let p = 1;
+          let child = rootNode;
+
+          while (child.previousSibling) {
+            child = child.previousSibling;
+            if (child.nodeName === rootNode.nodeName) ++p;
+          };
+          let tableNode = rootNode;
+
+          while (tableNode && tableNode.nodeName !== "TABLE") {
+            tableNode = tableNode.parentNode;
+          }
+          tableNode?.querySelectorAll(`tr th:nth-child(${p}), tr td:nth-child(${p})`)?.forEach((el) => {
+
+            el.classList.remove("left-text", "center-text", "right-text", "justify-text");
+            el.classList.add(alignmentClass);
+          });
+          return;
+        }
+        rootNode = rootNode.parentNode;
+      }
+      rootNode?.classList?.remove("left-text", "center-text", "right-text", "justify-text");
+      rootNode?.classList?.add(alignmentClass);
+    }
+
     // Toggles dropdown visibility
     function toggleDropdown(id) {
       const dropdown = document.getElementById(id);
@@ -2833,7 +2906,7 @@
           node.replaceWith(frag);
         }
       }
-      
+
       if (!range) {
 
         const selection = window.getSelection();
@@ -2842,7 +2915,10 @@
           range = selection.getRangeAt(0);
         }
       }
-      let rootNode = range?.commonAncestorContainer;
+
+      if (!range) return;
+
+      let rootNode = range.commonAncestorContainer;
       let rootContainer = document.getElementById("editor");
 
       while (rootNode && rootNode !== rootContainer) {
@@ -3435,6 +3511,24 @@
     document.getElementById("btnHeadlessTable").addEventListener("click", (e) => {
       toggleDropdown("tableDropdown");
       insertTable(true);
+    });
+
+    document.getElementById("btnAlign").addEventListener("click", (e) => toggleDropdown("alignDropdown"));
+    document.getElementById("btnLeftTextAlign").addEventListener("click", (e) => {
+      toggleDropdown("alignDropdown");
+      alignText("left-text");
+    });
+    document.getElementById("btnCenterTextAlign").addEventListener("click", (e) => {
+      toggleDropdown("alignDropdown");
+      alignText("center-text");
+    });
+    document.getElementById("btnRightTextAlign").addEventListener("click", (e) => {
+      toggleDropdown("alignDropdown");
+      alignText("right-text");
+    });
+    document.getElementById("btnJustifyTextAlign").addEventListener("click", (e) => {
+      toggleDropdown("alignDropdown");
+      alignText("justify-text");
     });
 
     document.getElementById("btnSaveMenu").addEventListener("click", (e) => toggleDropdown("saveDropdown"));
