@@ -2564,7 +2564,7 @@
 
       function nodeHasSameStyle(node, tagName, style, attributes) {
 
-        if (node.nodeName === tagName) {
+        if (node?.nodeName === tagName) {
 
           let styleOk = true;
 
@@ -2594,14 +2594,19 @@
         return false;
       }
 
+      function getNodeText(node) {
+
+        if (node) {
+          return (node.nodeType === Node.TEXT_NODE ? (node.textContent ?? "") : ((node.nodeName === "BR") ? "\n" : (node.innerText ?? "")));
+        }
+
+        return "";
+      }
+
       function getNodePositions(node) {
 
         const positions = new Map();
-        let text = node?.textContent;
-
-        if (!text) {
-          return positions;
-        }
+        let text = getNodeText(node);
         positions.set(node, {
           start: 0,
           end: text.length
@@ -2623,16 +2628,14 @@
             while (prevSibling && !positions.has(prevSibling))
               prevSibling = prevSibling.previousSibling;
 
-            text = node.textContent;
+            text = getNodeText(node);
             const start = prevSibling ? positions.get(prevSibling).end : positions.get(node.parentNode).start;
             const end = start + text.length;
 
-            if (start < end) {
-              positions.set(node, {
-                start: start,
-                end: end
-              });
-            }
+            positions.set(node, {
+              start: start,
+              end: end
+            });
 
             while (node.nextSibling &&
                    node.nextSibling.nodeType !== Node.TEXT_NODE &&
@@ -2704,13 +2707,9 @@
             if (node) {
 
               const positions = getNodePositions(node);
-
-              if (positions.size) {
-
-                const start = positions.get(range.startContainer).start + range.startOffset;
-                const end = start + range.endOffset - range.startOffset;
-                selPositions.push({ node: node, start: start, end: end, positions: positions });
-              }
+              const start = positions.get(range.startContainer).start + range.startOffset;
+              const end = start + range.endOffset - range.startOffset;
+              selPositions.push({ node: node, start: start, end: end, positions: positions });
             }
           } else {
 
@@ -2732,23 +2731,15 @@
               if (nodeStart === nodeEnd) {
 
                 const positions = getNodePositions(nodeStart);
-
-                if (positions.size) {
-
-                  const start = positions.get(range.startContainer).start + range.startOffset;
-                  const end = positions.get(range.endContainer).start + range.endOffset;
-                  selPositions.push({ node: nodeStart, start: start, end: end, positions: positions });
-                }
+                const start = positions.get(range.startContainer).start + range.startOffset;
+                const end = positions.get(range.endContainer).start + range.endOffset;
+                selPositions.push({ node: nodeStart, start: start, end: end, positions: positions });
               } else {
 
                 let positions = getNodePositions(nodeStart);
-
-                if (positions.size) {
-
-                  let start = positions.get(range.startContainer).start + range.startOffset;
-                  let end = positions.get(nodeStart).end;
-                  selPositions.push({ node: nodeStart, start: start, end: end, positions: positions });
-                }
+                let start = positions.get(range.startContainer).start + range.startOffset;
+                let end = positions.get(nodeStart).end;
+                selPositions.push({ node: nodeStart, start: start, end: end, positions: positions });
 
                 let node = nodeStart.nextSibling;
 
@@ -2756,26 +2747,18 @@
 
                   if (node.parentNode === rootContainer && isSelectableNodeForStyling(node)) {
 
-                    const positions = getNodePositions(node);
-
-                    if (positions.size) {
-
-                      const start = positions.get(node).start;
-                      const end = positions.get(node).end;
-                      selPositions.push({ node: node, start: start, end: end, positions: positions });
-                    }
+                    positions = getNodePositions(node);
+                    start = positions.get(node).start;
+                    end = positions.get(node).end;
+                    selPositions.push({ node: node, start: start, end: end, positions: positions });
                   }
                   node = node.nextSibling;
                 }
 
                 positions = getNodePositions(nodeEnd);
-
-                if (positions.size) {
-
-                  const start = positions.get(nodeEnd).start;
-                  const end = positions.get(range.endContainer).start + range.endOffset;
-                  selPositions.push({ node: nodeEnd, start: start, end: end, positions: positions });
-                }
+                start = positions.get(nodeEnd).start;
+                end = positions.get(range.endContainer).start + range.endOffset;
+                selPositions.push({ node: nodeEnd, start: start, end: end, positions: positions });
               }
             }
           }
@@ -2784,10 +2767,23 @@
         return selPositions;
       }
 
+      function createHtmlElementsFromText(text) {
+
+        const elements = text.split("\n");
+
+        for (let i = elements.length - 1; i > 0; i--) {
+          elements.splice(i, 0, document.createElement("br"));
+        }
+
+        return elements;
+      }
+
       function createHtmlNode(parentNode, text, styleBitPattern) {
 
+        text = text.replace(/\t/, "&nbsp;"); // "&emsp;" "&ensp;"
+
         if (styleBitPattern.isZero) {
-          parentNode.append(text);
+          parentNode.append(...createHtmlElementsFromText(text));
         } else {
 
           for (let i = 0; i < styleBitPattern.length; ++i) {
@@ -2809,13 +2805,13 @@
               parentNode = child;
             }
           }
-          parentNode.append(text);
+          parentNode.append(...createHtmlElementsFromText(text));
         }
       }
 
       function buildHtmlTree(node, styledPositions) {
 
-        const text = node?.textContent;
+        const text = getNodeText(node);
         const length = text.length;
         let p = 0;
         const frag = document.createDocumentFragment();
