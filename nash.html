@@ -3181,10 +3181,10 @@
         return (n.nodeType === Node.ELEMENT_NODE) ||
                (n.nodeType === Node.TEXT_NODE && n.textContent.trim());
       });
-
-      const newBlock = document.createElement("p");
+      const isTextBlock = block.classList?.contains("text-block");
+      const newBlock = document.createElement(isTextBlock ? block.nodeName.toLowerCase() : "p");
       newBlock.setAttribute("id", `text${generateUId()}`);
-      newBlock.setAttribute("class", block.nodeName === "P" ? block.getAttribute("class") : "text-block");
+      newBlock.setAttribute("class", isTextBlock ? block.getAttribute("class") : "text-block");
 
       if (isAtEnd) { // if the caret is at the end of current block, then add an empty text-block, next to current block
 
