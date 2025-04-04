@@ -3090,9 +3090,11 @@
       if (!node || node === editor) return;
       if (NON_STYLABLE_NODE_NAMES.includes(node.nodeName)) return;
 
-      const newBlock = document.createElement(tag);
-
       if (node.nodeName === tag.toUpperCase()) return;
+
+      const newBlock = document.createElement(tag);
+      newBlock.id = node.id;
+      newBlock.setAttribute("class", node.getAttribute("class"));
 
       while (node.firstChild) { // adds current node's children to the new block, one by one; except if a child is a P and the new tag is a H[1-6]
         if (
