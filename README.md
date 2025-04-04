@@ -8,6 +8,7 @@ Features:
 - Text coloring
 - Text highlighting
 - Text links
+- Text alignment
 - Source code text style
 - Image embedding
 - Image link embedding
@@ -25,7 +26,6 @@ Features:
 
 TODO:
 - Undo and redo (most important)
-- Text alignment
 - Different font size styling in the same paragraph
 - Font selection and embedding
 - Epub link embedding
