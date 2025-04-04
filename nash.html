@@ -2835,6 +2835,7 @@
       }
       
       if (!range) {
+
         const selection = window.getSelection();
 
         if (selection?.rangeCount) {
@@ -2912,6 +2913,7 @@
           buildHtmlTree(selPositions[i].node, styled);
         }
       }
+      window.getSelection().removeAllRanges();
     }
 
     // Basic inline formatting: wraps the selection in the specified tag.
@@ -2926,7 +2928,6 @@
       if (!editor.contains(range.commonAncestorContainer)) return;
       updateLinkStyles(editor);
       wrapRangeText(range, styleIndex);
-      selection.removeAllRanges();
     }
 
     // Applies inline style (e.g., font-size, text color, background color) by wrapping the selection in a <span>.
@@ -2941,7 +2942,6 @@
       if (!editor.contains(range.commonAncestorContainer)) return;
       updateLinkStyles(editor);
       wrapRangeText(range, styleIndex);
-      selection.removeAllRanges();
     }
 
     // Applies inline url 
@@ -2974,7 +2974,6 @@
       }
 
       wrapRangeText(range, linkStyleIndex);
-      selection.removeAllRanges();
     }
 
     // Called by the text size dropdown.
