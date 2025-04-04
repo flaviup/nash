@@ -2848,7 +2848,7 @@
       while (rootNode && rootNode !== rootContainer) {
 
         if (["TH", "TD"].includes(rootNode.nodeName)) {
-          rootContainer = rootNode;
+          rootContainer = rootNode.parentNode;
           break;
         }
         rootNode = rootNode.parentNode;
