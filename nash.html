@@ -2499,14 +2499,6 @@
       selection.addRange(range);
     }
 
-    // Helper: Applies CSS style to the element
-    function applyCss(element, style) {
-        
-      for (let property in style) {
-        element.style[property] = style[property];
-      }
-    }
-
     class BitArray {
 
       #_bitCount = 0;
@@ -2637,8 +2629,11 @@
       }
     }
 
+    // The core function that does the styling
+    // using binary indexed trees
     function wrapRangeText(range, styleIndex) {
 
+      // Checks if the node has the specified tag, style properties and attributes
       function nodeHasSameStyle(node, tagName, style, attributes) {
 
         if (node?.nodeName === tagName) {
@@ -2671,6 +2666,7 @@
         return false;
       }
 
+      // Gets the node's text
       function getNodeText(node) {
 
         if (node) {
@@ -2680,6 +2676,7 @@
         return "";
       }
 
+      // For each node in the node tree returns the start and end positions in the text of the root node (specified as the argument)
       function getNodePositions(node) {
 
         const positions = new Map();
@@ -2725,6 +2722,8 @@
         return positions;
       }
 
+      // For each character in the root node text (having maxTextLength) gets the styles applied to it as a bit pattern
+      // (the binary indexed tree implementation)
       function getStyledPositions(positions, styles, maxTextLength) {
 
         const styledPositions = new Array(maxTextLength + 1);
@@ -2758,6 +2757,9 @@
         return styledPositions;
       }
 
+      // Gets the top parent node of the child node, parent that has root container as its direct parent
+      // the root container argument is either the editor or a TR element (for a table's th or td cell)
+      // we are working on this top parent node text to style it
       function getTopLevelNodeOf(childNode, rootContainer) {
 
         while (childNode && childNode.parentNode !== rootContainer) {
@@ -2767,10 +2769,12 @@
         return childNode;
       }
 
+      // determines which type of nodes are stylable (H1-H6, P, SMALL, or any direct child of TH or TD)
       function isSelectableNodeForStyling(node) {
         return node && (node.nodeName.match(/^H[1-6]$|^P$|^SMALL$/) || ["TH", "TD"].includes(node.parentNode?.nodeName));
       }
 
+      // Gets the list of text positions of all the nodes within the root container and within the specified range
       function getSelectionPositions(rootContainer, range) {
 
         const selPositions = [];
@@ -2844,6 +2848,7 @@
         return selPositions;
       }
 
+      // Creates HTML text elements and BR elements from the specified text
       function createHtmlElementsFromText(text) {
 
         const elements = text.split("\n");
@@ -2855,6 +2860,15 @@
         return elements;
       }
 
+      // Applies CSS style to the element
+      function applyCss(element, style) {
+
+        for (let property in style) {
+          element.style[property] = style[property];
+        }
+      }
+
+      // Creates the HTML node with the specified text and styles, having the specified parent
       function createHtmlNode(parentNode, text, styleBitPattern) {
 
         text = text.replace(/\t/, "&nbsp;"); // "&emsp;" "&ensp;"
@@ -2886,6 +2900,7 @@
         }
       }
 
+      // Rebuilds the HTML tree rooted at node and with the specified styles (specified as an array of style bit patterns, one style bit pattern for each character)
       function buildHtmlTree(node, styledPositions) {
 
         const text = getNodeText(node);
@@ -2911,6 +2926,7 @@
         }
       }
 
+      // gets the current range
       if (!range) {
 
         const selection = window.getSelection();
@@ -2922,6 +2938,7 @@
 
       if (!range) return;
 
+      // finds the current root container to work on
       let rootNode = range.commonAncestorContainer;
       let rootContainer = document.getElementById("editor");
 
@@ -2933,40 +2950,43 @@
         }
         rootNode = rootNode.parentNode;
       }
+      // gets all the selected nodes within the root container as a list of start and end positions within each root container's direct child text
       const selPositions = getSelectionPositions(rootContainer, range);
       const styledPositions = [];
       let removeStyle = true;
 
       const styleBitPattern = new BitArray(STYLES.length);
-      styleBitPattern.set(styleIndex);
+      styleBitPattern.set(styleIndex); // the bit pattern of the style we want to apply over the selected text
 
+      // for each root container's direct selected child we get the current styling (getStyledPositions)
       for (const p of selPositions) {
 
         const styled = getStyledPositions(p.positions, STYLES, p.positions.get(p.node).end);
 
-        for (let i = p.start; i < p.end; ++i) {
+        for (let i = p.start; i < p.end; ++i) { // we compare with the current style pattern, if all the selected text contains the style completely it means we want to remove the styling
           if (styled[i].bitAnd(styleBitPattern).isZero) removeStyle = false; // if there area characters that don't have the style then we must apply the new style
         }                                                                    // otherwise we remove the style on all the characters in the range
         styledPositions.push(styled);
       }
 
-      if (removeStyle) {
+      if (removeStyle) { // if we want to remove the styling
 
-        styleBitPattern.invertAssign();
+        styleBitPattern.invertAssign(); // we invert the current style bit pattern
 
-        for (let i = 0; i < selPositions.length; ++i) {
+        for (let i = 0; i < selPositions.length; ++i) { // for each root container's direct selected child text
 
           const styled = styledPositions[i];
 
           for (let j = selPositions[i].start; j < selPositions[i].end; ++j) {
-            styled[j].bitAndAssign(styleBitPattern);
-          }
-          buildHtmlTree(selPositions[i].node, styled);
+            styled[j].bitAndAssign(styleBitPattern);      // we remove the style by applying the inverted bit pattern
+          }                                               // to each of the characters' style pattern in the range
+          buildHtmlTree(selPositions[i].node, styled);    // we rebuild the HTML tree rooted at node
         }
       } else {
 
-        let styleGroupClearBitPattern = null;
-
+        let styleGroupClearBitPattern = null; // if the current style is part of a style group, we create a clear styles bit pattern
+                                              // to remove the other styles in the group applied to the selected text
+                                              // (for example the text color styles, we don't want to apply multiple text colors over the same text)
         for (let styleGroup of STYLE_GROUPS) {
 
           if (styleIndex >= styleGroup[0] && styleIndex <= styleGroup[1]) {
@@ -2976,24 +2996,24 @@
             for (let i = styleGroup[0]; i <= styleGroup[1]; i++) {
               styleGroupClearBitPattern.set(i);
             }
-            styleGroupClearBitPattern.invertAssign();
-            styleGroupClearBitPattern.set(styleIndex);
+            styleGroupClearBitPattern.invertAssign();  // we invert the bit pattern for all the styles in the group
+            styleGroupClearBitPattern.set(styleIndex); // we let the current style bit pattern on
             break;
           }
         }
 
-        for (let i = 0; i < selPositions.length; ++i) {
+        for (let i = 0; i < selPositions.length; ++i) { // for each root container's direct selected child text
 
           const styled = styledPositions[i];
 
           for (let j = selPositions[i].start; j < selPositions[i].end; ++j) {
-            if (styleGroupClearBitPattern) styled[j].bitAndAssign(styleGroupClearBitPattern);
-            styled[j].bitOrAssign(styleBitPattern);
-          }
-          buildHtmlTree(selPositions[i].node, styled);
+            if (styleGroupClearBitPattern) styled[j].bitAndAssign(styleGroupClearBitPattern); // we remove other style(s) in the same group with the current style, for each selected character
+            styled[j].bitOrAssign(styleBitPattern);     // we apply the style by applying the style bit pattern
+          }                                             // to each of the characters' style pattern in the range
+          buildHtmlTree(selPositions[i].node, styled);  // we rebuild the HTML tree rooted at node
         }
       }
-      window.getSelection().removeAllRanges();
+      window.getSelection().removeAllRanges(); // we remove all selection's ranges after HTML tree rebuild
     }
 
     // Basic inline formatting: wraps the selection in the specified tag.
