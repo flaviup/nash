@@ -3184,7 +3184,7 @@
 
       const newBlock = document.createElement("p");
       newBlock.setAttribute("id", `text${generateUId()}`);
-      newBlock.setAttribute("class", "text-block");
+      newBlock.setAttribute("class", block.nodeName === "P" ? block.getAttribute("class") : "text-block");
 
       if (isAtEnd) { // if the caret is at the end of current block, then add an empty text-block, next to current block
 
