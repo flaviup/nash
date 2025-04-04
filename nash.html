@@ -2629,6 +2629,16 @@
       }
     }
 
+    // Helper: gets the node's text
+    function getNodeText(node) {
+
+      if (node) {
+        return (node.nodeType === Node.TEXT_NODE ? (node.textContent ?? "") : ((node.nodeName === "BR") ? "\n" : (node.innerText ?? "")));
+      }
+
+      return "";
+    }
+
     // The core function that does the styling
     // using binary indexed trees
     function wrapRangeText(range, styleIndex) {
@@ -2664,16 +2674,6 @@
         }
 
         return false;
-      }
-
-      // Gets the node's text
-      function getNodeText(node) {
-
-        if (node) {
-          return (node.nodeType === Node.TEXT_NODE ? (node.textContent ?? "") : ((node.nodeName === "BR") ? "\n" : (node.innerText ?? "")));
-        }
-
-        return "";
       }
 
       // For each node in the node tree returns the start and end positions in the text of the root node (specified as the argument)
@@ -3195,8 +3195,8 @@
         extractRange.setEndAfter(block.lastChild || block);
         const extracted = extractRange.extractContents(); // selects all content from start of caret to end of current block
 
-        if (!extracted.childNodes.length) { // this should not happen: this means the caret is at the end of current block
-          newBlock.innerHTML = "<br>";
+        if (!extracted.childNodes.length || !getNodeText(extracted).length) { // this should not happen: this means the caret is at the end of current block
+          newBlock.innerHTML = "<br/>";
           console.log("This should not have happened.");
         } else {
           newBlock.appendChild(extracted);
@@ -3257,15 +3257,18 @@
       if (editor.firstChild && ["H1", "H2", "H3", "H4", "H5", "H6", "P"].includes(editor.firstChild.nodeName)) {
         return;
       }
+      const htmlText = editor.innerHTML.trim();
 
-      if (editor.innerHTML.trim() === "" || editor.innerHTML.trim() === "<br>") {
+      if (htmlText === "" || htmlText === "<br>" || htmlText === "<br/>") {
         editor.innerHTML = `<p class="text-block" id="text${generateUId()}"></p>`;
       }
     }
 
     function updateTitle() {
+
       let filename = document.getElementById("filename");
-      if (filename.innerHTML === "<br>") {
+
+      if (filename.innerHTML === "<br>" || filename.innerHTML === "<br/>") {
         filename.innerHTML = "";
       }
       document.title = filename.innerHTML.trim() || "Nash Note";
