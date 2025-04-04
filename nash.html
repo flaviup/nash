@@ -3197,7 +3197,6 @@
 
         if (!extracted.childNodes.length || !getNodeText(extracted).length) { // this should not happen: this means the caret is at the end of current block
           newBlock.innerHTML = "<br/>";
-          console.log("This should not have happened.");
         } else {
           newBlock.appendChild(extracted);
         }
