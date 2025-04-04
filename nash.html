@@ -314,10 +314,6 @@
       color: var(--note-link-color);
     }
 
-    #editor a::before {
-      content: "🔗";
-    }
-
     #editor pre code {
       margin-top: 0.5em;
       margin-bottom: 0.5em;
@@ -788,7 +784,7 @@
 
     <div id="editorContainer" class="thin-line">
       <div id="editor" contenteditable="true">
-        <p class="text-block"></p>
+        <p class="text-block"><br/></p>
       </div>
     </div>
 
@@ -1339,6 +1335,49 @@
     }; // END OF Media Recording
 
     const NON_STYLABLE_NODE_NAMES = ["CODE", "IFRAME", "IMG", "AUDIO", "VIDEO", "EMBED", "OBJECT", "TABLE"];
+    const STYLES = [
+      { tagName: "strong", style: null, attributes: null },
+      { tagName: "em", style: null, attributes: null },
+      { tagName: "u", style: null, attributes: null },
+      { tagName: "span", style: { "color": "var(--note-text-color-1)" }, attributes: null },
+      { tagName: "span", style: { "color": "var(--note-text-color-2)" }, attributes: null },
+      { tagName: "span", style: { "color": "var(--note-text-color-3)" }, attributes: null },
+      { tagName: "span", style: { "color": "var(--note-text-color-4)" }, attributes: null },
+      { tagName: "span", style: { "color": "var(--note-text-color-5)" }, attributes: null },
+      { tagName: "span", style: { "color": "var(--note-text-color-6)" }, attributes: null },
+      { tagName: "span", style: { "color": "var(--note-text-color-7)" }, attributes: null },
+      { tagName: "span", style: { "color": "var(--note-text-color-8)" }, attributes: null },
+      { tagName: "span", style: { "background-color": "var(--note-highlight-color-1)" }, attributes: null },
+      { tagName: "span", style: { "background-color": "var(--note-highlight-color-2)" }, attributes: null },
+      { tagName: "span", style: { "background-color": "var(--note-highlight-color-3)" }, attributes: null },
+      { tagName: "span", style: { "background-color": "var(--note-highlight-color-4)" }, attributes: null },
+      { tagName: "span", style: { "background-color": "var(--note-highlight-color-5)" }, attributes: null },
+      { tagName: "span", style: { "background-color": "var(--note-highlight-color-6)" }, attributes: null },
+      { tagName: "span", style: { "background-color": "var(--note-highlight-color-7)" }, attributes: null },
+      { tagName: "span", style: { "background-color": "var(--note-highlight-color-8)" }, attributes: null }
+    ];
+    const STYLE_STRONG_INDEX = 0;
+    const STYLE_EM_INDEX = 1;
+    const STYLE_U_INDEX = 2;
+    const STYLE_TEXT_COLOR_BASE_INDEX = 2;
+    const STYLE_HIGHLIGHT_COLOR_BASE_INDEX = STYLE_TEXT_COLOR_BASE_INDEX + 8;
+    const STYLE_LINK_BASE_INDEX = STYLE_HIGHLIGHT_COLOR_BASE_INDEX + 8;
+    const STYLE_GROUPS = [[3, 10], [11, 18]];
+
+    // Helper: gets all the distinct links in the text and indexes them as styles
+    function updateLinkStyles(editor) {
+
+      const links = new Set();
+      editor.querySelectorAll("a").forEach((linkNode) => {
+        if (linkNode.hasAttribute("href")) links.add(linkNode.getAttribute("href"));
+      });
+
+      while (STYLES[STYLES.length - 1].tagName === "a") {
+        STYLES.pop();
+      }
+
+      for(let link of links) STYLES.push({tagName: "a", style: null, attributes: { "href": link }});
+    }
 
     function generateUId() {
       function s4() {
@@ -1421,7 +1460,7 @@
         setEditMode(true);
       }
 
-      if (save == false && navigator.canShare && navigator.canShare({ files: [file] })) {
+      if (save === false && navigator.canShare && navigator.canShare({ files: [file] })) {
         try {
           await navigator.share({
             files: [file],
@@ -2049,12 +2088,12 @@
           const keyListener = function (e) {
 
             // Left Key
-            if ((e.keyCode || e.which) == 37) {
+            if ((e.keyCode || e.which) === 37) {
               rendition?.prev();
             }
 
             // Right Key
-            if ((e.keyCode || e.which) == 39) {
+            if ((e.keyCode || e.which) === 39) {
               rendition?.next();
             }
           };
@@ -2383,118 +2422,502 @@
       selection.addRange(range);
     }
 
-    // Wraps only the selected portions of text nodes.
-    // If selection is entirely within one text node, process it directly.
-    function wrapRangeText(range, tagName, style, hook) {
+    // Helper: Applies CSS style to the element
+    function applyCss(element, style) {
+        
+      for (let property in style) {
+        element.style[property] = style[property];
+      }
+    }
 
-      const textNodes = [];
+    class BitArray {
 
-      if (range.commonAncestorContainer.nodeType === Node.TEXT_NODE) {
-        textNodes.push(range.commonAncestorContainer);
-      } else {
-        const walker = document.createTreeWalker(
-          range.commonAncestorContainer,
-          NodeFilter.SHOW_TEXT,
-          {
-            acceptNode: function (node) {
+      #_bitCount = 0;
+      #_a;
 
-              let isRejectableTag = false;
-              let nd = node;
+      constructor(bitCount) {
+        this.#_bitCount = bitCount;
+        this.#_a = new Uint32Array(Math.ceil(bitCount / 32)).fill(0);
+      }
 
-              while (nd && nd.parentNode !== editor) {
+      get length() {
+        return this.#_bitCount;
+      }
 
-                if (NON_STYLABLE_NODE_NAMES.includes(nd.nodeName)) {
-                  isRejectableTag = true;
-                  break;
+      get isZero() {
+
+        const n = this.#_a.length;
+
+        for (let i = 0; i < n; ++i) {
+          if (this.#_a[i] !== 0) return false;
+        }
+
+        return true;
+      }
+
+      identical(ba) {
+
+        if (this.#_a.length === ba.#_a.length) {
+
+          const n = this.#_a.length;
+
+          for (let i = 0; i < n; ++i) {
+            if (this.#_a[i] !== ba.#_a[i]) return false;
+          }
+          return true;
+        }
+        
+        return false;
+      }
+
+      clone() {
+
+        const ba = new BitArray(this.#_bitCount);
+        ba.#_a = Uint32Array.from(this.#_a);
+
+        return ba;
+      }
+
+      // Set the i-th bit to 1
+      set(i) {
+
+        const bigIndex = Math.floor(i / 32);
+        const smallIndex = i % 32;
+
+        this.#_a[bigIndex] = this.#_a[bigIndex] | (1 << smallIndex);
+      }
+
+      // Clear the i-th bit
+      clear(i) {
+
+        const bigIndex = Math.floor(i / 32);
+        const smallIndex = i % 32;
+
+        this.#_a[bigIndex] = this.#_a[bigIndex] & (~(1 << smallIndex));
+      }
+
+      setValue(i, value) {
+
+        if (value) set(i);
+        else clear(i);
+      }
+
+      // Return the value of the i-th bit
+      get(i) {
+
+        const bigIndex = Math.floor(i / 32);
+        const smallIndex = i % 32;
+
+        const value = this.#_a[bigIndex] & (1 << smallIndex);
+        // we convert to boolean to make sure the result is always 0 or 1,
+        // instead of what is returned by the mask
+        return value != 0;
+      }
+
+      bitOrAssign(ba) {
+
+        const n = Math.min(this.#_a.length, ba.#_a.length);
+
+        for (let i = 0; i < n; ++i) {
+          this.#_a[i] |= ba.#_a[i];
+        }
+
+        return this;
+      }
+
+      bitOr(ba) {
+        return this.clone().bitOrAssign(ba);
+      }
+
+      bitAndAssign(ba) {
+
+        const n = Math.min(this.#_a.length, ba.#_a.length);
+
+        for (let i = 0; i < n; ++i) {
+          this.#_a[i] &= ba.#_a[i];
+        }
+
+        return this;
+      }
+
+      bitAnd(ba) {
+        return this.clone().bitAndAssign(ba);
+      }
+
+      invertAssign() {
+
+        const n = this.#_a.length;
+
+        for (let i = 0; i < n; ++i) {
+          this.#_a[i] = ~this.#_a[i];
+        }
+
+        return this;
+      }
+
+      invert() {
+        return this.clone().invertAssign();
+      }
+    }
+
+    function wrapRangeText(range, styleIndex) {
+
+      function nodeHasSameStyle(node, tagName, style, attributes) {
+
+        if (node?.nodeName === tagName) {
+
+          let styleOk = true;
+
+          if (style) {
+            for (let property in style) {
+              if (node.style[property] !== style[property]) {
+                styleOk = false;
+                break;
+              }
+            }
+          }
+          let attributesOk = true;
+
+          if (attributes) {
+            for (let attribute in attributes) {
+              if (((!node.hasAttribute(attribute) || !node.getAttribute(attribute)) && attributes[attribute]) ||
+                  node.getAttribute(attribute) !== attributes[attribute]) {
+                attributesOk = false;
+                break;
+              }
+            }
+          }
+
+          if (styleOk && attributesOk) return true;
+        }
+
+        return false;
+      }
+
+      function getNodeText(node) {
+
+        if (node) {
+          return (node.nodeType === Node.TEXT_NODE ? (node.textContent ?? "") : ((node.nodeName === "BR") ? "\n" : (node.innerText ?? "")));
+        }
+
+        return "";
+      }
+
+      function getNodePositions(node) {
+
+        const positions = new Map();
+        let text = getNodeText(node);
+        positions.set(node, {
+          start: 0,
+          end: text.length
+        });
+        const elements = [];
+        node = node.hasChildNodes ? node.firstChild : null;
+
+        while (node) {
+
+          if (node.nodeType === Node.ELEMENT_NODE) {
+            elements.push(...node.childNodes);
+          }
+
+          if (node.nodeType === Node.ELEMENT_NODE ||
+              node.nodeType === Node.TEXT_NODE) {
+
+            let prevSibling = node.previousSibling;
+
+            while (prevSibling && !positions.has(prevSibling))
+              prevSibling = prevSibling.previousSibling;
+
+            text = getNodeText(node);
+            const start = prevSibling ? positions.get(prevSibling).end : positions.get(node.parentNode).start;
+            const end = start + text.length;
+
+            positions.set(node, {
+              start: start,
+              end: end
+            });
+
+            while (node.nextSibling &&
+                   node.nextSibling.nodeType !== Node.TEXT_NODE &&
+                   node.nextSibling.nodeType !== Node.ELEMENT_NODE)
+              node = node.nextSibling;
+          }
+          node = node.nextSibling ?? (elements.length > 0 ? elements.shift() : null);
+        }
+
+        return positions;
+      }
+
+      function getStyledPositions(positions, styles, maxTextLength) {
+
+        const styledPositions = new Array(maxTextLength + 1);
+
+        for (let i = 0; i < maxTextLength + 1; i++)
+          styledPositions[i] = new BitArray(styles.length);
+
+        const a = new Int32Array(maxTextLength + 1);
+        let styleIndex = 0;
+
+        for (const style of styles) {
+
+          const styleBitPattern = new BitArray(styles.length);
+          styleBitPattern.set(styleIndex++);
+          const entries = positions.entries().filter(([node, value]) => nodeHasSameStyle(node, style.tagName.toUpperCase(), style.style, style.attributes));
+          a.fill(0);
+
+          for (const [_, value] of entries) {
+            a[value.start] += 1;
+            a[value.end] -= 1;
+          }
+
+          for (let i = 0; i < a.length - 1; ++i) {
+
+            a[i + 1] += a[i];
+
+            if (a[i]) styledPositions[i].bitOrAssign(styleBitPattern);
+          }
+        }
+
+        return styledPositions;
+      }
+
+      function getTopLevelNodeOf(childNode, rootContainer) {
+
+        while (childNode && childNode.parentNode !== rootContainer) {
+          childNode = childNode.parentNode;
+        }
+
+        return childNode;
+      }
+
+      function isSelectableNodeForStyling(node) {
+        return node && (node.nodeName.match(/^H[1-6]$|^P$|^SMALL$/) || ["TH", "TD"].includes(node.parentNode?.nodeName));
+      }
+
+      function getSelectionPositions(rootContainer, range) {
+
+        const selPositions = [];
+
+        if (range) {
+
+          if (range.commonAncestorContainer.nodeType === Node.TEXT_NODE) {
+
+            const node = getTopLevelNodeOf(range.startContainer, rootContainer);
+
+            if (node) {
+
+              const positions = getNodePositions(node);
+              const start = positions.get(range.startContainer).start + range.startOffset;
+              const end = start + range.endOffset - range.startOffset;
+              selPositions.push({ node: node, start: start, end: end, positions: positions });
+            }
+          } else {
+
+            let nodeStart = getTopLevelNodeOf(range.startContainer, rootContainer);
+            let nodeEnd = getTopLevelNodeOf(range.endContainer, rootContainer);
+
+            while (nodeStart &&
+                   nodeStart !== nodeEnd &&
+                   !isSelectableNodeForStyling(nodeStart))
+              nodeStart = nodeStart.nextSibling;
+
+            while (nodeEnd &&
+                   nodeStart !== nodeEnd &&
+                   !isSelectableNodeForStyling(nodeEnd))
+              nodeEnd = nodeEnd.previousSibling;
+
+            if (nodeStart && nodeEnd) {
+
+              if (nodeStart === nodeEnd) {
+
+                const positions = getNodePositions(nodeStart);
+                const start = positions.get(range.startContainer).start + range.startOffset;
+                const end = positions.get(range.endContainer).start + range.endOffset;
+                selPositions.push({ node: nodeStart, start: start, end: end, positions: positions });
+              } else {
+
+                let positions = getNodePositions(nodeStart);
+                let start = positions.get(range.startContainer).start + range.startOffset;
+                let end = positions.get(nodeStart).end;
+                selPositions.push({ node: nodeStart, start: start, end: end, positions: positions });
+
+                let node = nodeStart.nextSibling;
+
+                while (node && node !== nodeEnd) {
+
+                  if (node.parentNode === rootContainer && isSelectableNodeForStyling(node)) {
+
+                    positions = getNodePositions(node);
+                    start = positions.get(node).start;
+                    end = positions.get(node).end;
+                    selPositions.push({ node: node, start: start, end: end, positions: positions });
+                  }
+                  node = node.nextSibling;
                 }
-                nd = nd.parentNode;
+
+                positions = getNodePositions(nodeEnd);
+                start = positions.get(nodeEnd).start;
+                end = positions.get(range.endContainer).start + range.endOffset;
+                selPositions.push({ node: nodeEnd, start: start, end: end, positions: positions });
+              }
+            }
+          }
+        }
+
+        return selPositions;
+      }
+
+      function createHtmlElementsFromText(text) {
+
+        const elements = text.split("\n");
+
+        for (let i = elements.length - 1; i > 0; i--) {
+          elements.splice(i, 0, document.createElement("br"));
+        }
+
+        return elements;
+      }
+
+      function createHtmlNode(parentNode, text, styleBitPattern) {
+
+        text = text.replace(/\t/, "&nbsp;"); // "&emsp;" "&ensp;"
+
+        if (styleBitPattern.isZero) {
+          parentNode.append(...createHtmlElementsFromText(text));
+        } else {
+
+          for (let i = 0; i < styleBitPattern.length; ++i) {
+
+            if (styleBitPattern.get(i)) {
+
+              const child = document.createElement(STYLES[i].tagName);
+              
+              if (STYLES[i].style) {
+                applyCss(child, STYLES[i].style);
               }
 
-              if (nd && NON_STYLABLE_NODE_NAMES.includes(nd.nodeName)) isRejectableTag = true;
-
-              return !isRejectableTag && range.intersectsNode(node)
-                ? NodeFilter.FILTER_ACCEPT
-                : NodeFilter.FILTER_REJECT;
+              if (STYLES[i].attributes) {
+                for (let attribute in STYLES[i].attributes) {
+                  child.setAttribute(attribute, STYLES[i].attributes[attribute]);
+                }
+              }
+              parentNode.appendChild(child);
+              parentNode = child;
             }
           }
-        );
-        let node;
-
-        while (node = walker.nextNode()) {
-          textNodes.push(node);
+          parentNode.append(...createHtmlElementsFromText(text));
         }
       }
 
-      function applyCss(element, style, remove = false) {
-        
-        for (let property in style) {
-          
-          if (remove) {
-            if (element.style[property] === style[property]) element.style[property] = null;
-            else element.style[property] = style[property];
-          } else {
-            element.style[property] = style[property];
-          }
-        }
-      }
+      function buildHtmlTree(node, styledPositions) {
 
-      textNodes.forEach(function (textNode) {
-
-        let start = 0, end = textNode.textContent.length;
-
-        if (textNode === range.startContainer) {
-          start = range.startOffset;
-        }
-
-        if (textNode === range.endContainer) {
-          end = range.endOffset;
-        }
-
-        if (start >= end) return;
-
-        const parent = textNode.parentNode;
-        const text = textNode.textContent.substring(start, end);
-        const beforeText = textNode.textContent.substring(0, start);
-        const afterText = textNode.textContent.substring(end);
-
-        if (text === textNode.textContent &&
-            parent.nodeName === tagName.toUpperCase()) {
-
-            if (style) applyCss(parent, style, true);
-
-            if ((!hook || !hook(parent)) && parent.style.length < 1) {
-              parent.parentNode?.replaceChild(textNode, parent);
-            }
-
-            return;
-        }
-        const wrapper = document.createElement(tagName);
-
-        if (style) {
-          applyCss(wrapper, style);
-        }
-
-        if (hook) {
-          hook(wrapper);
-        }
-        wrapper.textContent = text;
-
+        const text = getNodeText(node);
+        const length = text.length;
+        let p = 0;
         const frag = document.createDocumentFragment();
 
-        if (beforeText) {
-          frag.appendChild(document.createTextNode(beforeText));
+        for (let i = 1; i < length; ++i) {
+          if (!styledPositions[i].identical(styledPositions[p])) {
+            createHtmlNode(frag, text.substring(p, i), styledPositions[p]);
+            p = i;
+          }
         }
-        frag.appendChild(wrapper);
 
-        if (afterText) {
-          frag.appendChild(document.createTextNode(afterText));
+        if (p < length) {
+          createHtmlNode(frag, text.substring(p), styledPositions[p]);
         }
-        parent.replaceChild(frag, textNode);
-      });
+
+        if (node.nodeType === Node.ELEMENT_NODE) {
+          node.replaceChildren(frag);
+        } else if (node.nodeType === Node.TEXT_NODE) {
+          node.replaceWith(frag);
+        }
+      }
+      
+      if (!range) {
+
+        const selection = window.getSelection();
+
+        if (selection?.rangeCount) {
+          range = selection.getRangeAt(0);
+        }
+      }
+      let rootNode = range?.commonAncestorContainer;
+      let rootContainer = document.getElementById("editor");
+
+      while (rootNode && rootNode !== rootContainer) {
+
+        if (["TH", "TD"].includes(rootNode.nodeName)) {
+          rootContainer = rootNode.parentNode;
+          break;
+        }
+        rootNode = rootNode.parentNode;
+      }
+      const selPositions = getSelectionPositions(rootContainer, range);
+      const styledPositions = [];
+      let removeStyle = true;
+
+      const styleBitPattern = new BitArray(STYLES.length);
+      styleBitPattern.set(styleIndex);
+
+      for (const p of selPositions) {
+
+        const styled = getStyledPositions(p.positions, STYLES, p.positions.get(p.node).end);
+
+        for (let i = p.start; i < p.end; ++i) {
+          if (styled[i].bitAnd(styleBitPattern).isZero) removeStyle = false; // if there area characters that don't have the style then we must apply the new style
+        }                                                                    // otherwise we remove the style on all the characters in the range
+        styledPositions.push(styled);
+      }
+
+      if (removeStyle) {
+
+        styleBitPattern.invertAssign();
+
+        for (let i = 0; i < selPositions.length; ++i) {
+
+          const styled = styledPositions[i];
+
+          for (let j = selPositions[i].start; j < selPositions[i].end; ++j) {
+            styled[j].bitAndAssign(styleBitPattern);
+          }
+          buildHtmlTree(selPositions[i].node, styled);
+        }
+      } else {
+
+        let styleGroupClearBitPattern = null;
+
+        for (let styleGroup of STYLE_GROUPS) {
+
+          if (styleIndex >= styleGroup[0] && styleIndex <= styleGroup[1]) {
+
+            styleGroupClearBitPattern = new BitArray(STYLES.length);
+
+            for (let i = styleGroup[0]; i <= styleGroup[1]; i++) {
+              styleGroupClearBitPattern.set(i);
+            }
+            styleGroupClearBitPattern.invertAssign();
+            styleGroupClearBitPattern.set(styleIndex);
+            break;
+          }
+        }
+
+        for (let i = 0; i < selPositions.length; ++i) {
+
+          const styled = styledPositions[i];
+
+          for (let j = selPositions[i].start; j < selPositions[i].end; ++j) {
+            if (styleGroupClearBitPattern) styled[j].bitAndAssign(styleGroupClearBitPattern);
+            styled[j].bitOrAssign(styleBitPattern);
+          }
+          buildHtmlTree(selPositions[i].node, styled);
+        }
+      }
+      window.getSelection().removeAllRanges();
     }
 
     // Basic inline formatting: wraps the selection in the specified tag.
-    function applyFormat(tagName) {
+    function applyFormat(styleIndex) {
 
       const selection = window.getSelection();
 
@@ -2503,12 +2926,12 @@
       const editor = document.getElementById("editor");
 
       if (!editor.contains(range.commonAncestorContainer)) return;
-      wrapRangeText(range, tagName);
-      selection.removeAllRanges();
+      updateLinkStyles(editor);
+      wrapRangeText(range, styleIndex);
     }
 
     // Applies inline style (e.g., font-size, text color, background color) by wrapping the selection in a <span>.
-    function applyStyle(style) {
+    function applyStyle(styleIndex) {
 
       const selection = window.getSelection();
 
@@ -2517,8 +2940,8 @@
       const editor = document.getElementById("editor");
 
       if (!editor.contains(range.commonAncestorContainer)) return;
-      wrapRangeText(range, "span", style);
-      selection.removeAllRanges();
+      updateLinkStyles(editor);
+      wrapRangeText(range, styleIndex);
     }
 
     // Applies inline url 
@@ -2534,39 +2957,44 @@
       const url = prompt("URL")?.trim();
 
       if (!url) return;
+      updateLinkStyles(editor);
+      let linkStyleIndex = STYLES.length - 1;
 
-      wrapRangeText(range, "a", null, function (element) {
-
-        if (element.href !== url) {
-
-          element.href = url;
-          return true;
+      for ( ; linkStyleIndex > STYLE_LINK_BASE_INDEX; linkStyleIndex--) {
+        if (STYLES[linkStyleIndex].tagName === "a" &&
+            STYLES[linkStyleIndex].attributes &&
+            STYLES[linkStyleIndex].attributes["href"] === url) {
+          break;
         }
+      }
 
-        return false;
-      });
-      selection.removeAllRanges();
+      if (linkStyleIndex <= STYLE_LINK_BASE_INDEX) {
+        STYLES.push({tagName: "a", style: null, attributes: { "href": url }});
+        linkStyleIndex = STYLES.length - 1;
+      }
+
+      wrapRangeText(range, linkStyleIndex);
     }
 
     // Called by the text size dropdown.
     function applyTextSize(size) {
 
       if (!size) return;
-      applyStyle({"font-size": `${size}`});
+      //applyStyle({"font-size": `${size}`});
     }
 
     // Called when a text color swatch is clicked.
     function applyTextColor(color) {
 
       if (!color) return;
-      applyStyle({"color": `var(--note-text-color-${color})`});
+      applyStyle(STYLE_TEXT_COLOR_BASE_INDEX + color);
     }
 
     // Called when a highlight (background color) swatch is clicked.
     function applyHighlightColor(color) {
 
       if (!color) return;
-      applyStyle({"background-color": `var(--note-highlight-color-${color})`});
+      applyStyle(STYLE_HIGHLIGHT_COLOR_BASE_INDEX + color);
     }
 
     // Converts the current block (direct child of #editor) to the chosen tag.
@@ -2580,13 +3008,11 @@
 
       while (node && node.parentNode !== editor) { // finds current node, child of editor
         if (NON_STYLABLE_NODE_NAMES.includes(node.nodeName)) return;
-        if (node.nodeName === "TABLE") return;
         node = node.parentNode;
       }
 
       if (!node || node === editor) return;
       if (NON_STYLABLE_NODE_NAMES.includes(node.nodeName)) return;
-      if (node.nodeName === "TABLE") return;
 
       const newBlock = document.createElement(tag);
 
@@ -2637,7 +3063,7 @@
         const p = document.createElement("p");
         p.setAttribute("id", `text${generateUId()}`);
         p.setAttribute("class", "text-block");
-        p.innerHTML = "<br>";
+        p.innerHTML = "<br/>";
         editor.appendChild(p);
         setCaret(p, 0);
         return;
@@ -2660,7 +3086,7 @@
 
       if (isAtEnd) { // if the caret is at the end of current block, then add an empty text-block, next to current block
 
-        newBlock.innerHTML = "<br>";
+        newBlock.innerHTML = "<br/>";
       } else { // else append the last (from caret to end of block) children of the current block into a new text-block
 
         const extractRange = range.cloneRange();
@@ -2683,7 +3109,7 @@
       setCaret(newBlock, 0); // move the caret into the new block
 
       if (!block.textContent.trim() && !block.querySelector("img, video, iframe, embed, object")) {
-        block.innerHTML = "<br>";
+        block.innerHTML = "<br/>";
       }
     }
 
@@ -2785,7 +3211,7 @@
             const brNode = document.createElement("br");
             textNode.parentNode.insertBefore(brNode, textNode.nextSibling);
             setCaret(brNode, 0);
-          } else if (textNode.nodeType === Node.TEXT_NODE && textNode.nodeName == "#text") {
+          } else if (textNode.nodeType === Node.TEXT_NODE) {
 
             //printSelectionInfo();
             const text1 = textNode.textContent.substring(0, range.startOffset);
@@ -2861,7 +3287,7 @@
         ];
 
         if (block.parentNode &&
-            [...block.parentNode.classList].some(c => blockedNodeClasses.indexOf(c) != -1)) {
+            [...block.parentNode.classList].some(c => blockedNodeClasses.indexOf(c) !== -1)) {
             e.stopImmediatePropagation();
             e.preventDefault();
             return;
@@ -2961,9 +3387,9 @@
     document.getElementById("btnM").addEventListener("click", (e) => changeBlock("p"));
     document.getElementById("btnS").addEventListener("click", (e) => changeBlock("small"));
 
-    document.getElementById("btnB").addEventListener("click", (e) => applyFormat("strong"));
-    document.getElementById("btnI").addEventListener("click", (e) => applyFormat("em"));
-    document.getElementById("btnU").addEventListener("click", (e) => applyFormat("u"));
+    document.getElementById("btnB").addEventListener("click", (e) => applyFormat(STYLE_STRONG_INDEX));
+    document.getElementById("btnI").addEventListener("click", (e) => applyFormat(STYLE_EM_INDEX));
+    document.getElementById("btnU").addEventListener("click", (e) => applyFormat(STYLE_U_INDEX));
     document.getElementById("btnLink").addEventListener("click", (e) => applyURL());
 
     document.getElementById("imageUpload").addEventListener("change", (e) => insertImage(e));
@@ -2973,7 +3399,7 @@
     
     for (let i = 1; i < 9; ++i) {
       document.getElementById(`btnTextColor${i}`).addEventListener("click", (e) => {
-        applyTextColor(`${i}`);
+        applyTextColor(i);
         toggleDropdown("textColorDropdown");
       });
     }
@@ -2982,7 +3408,7 @@
     
     for (let i = 1; i < 9; ++i) {
       document.getElementById(`btnTextHighlight${i}`).addEventListener("click", (e) => {
-        applyHighlightColor(`${i}`);
+        applyHighlightColor(i);
         toggleDropdown("highlightDropdown");
       });
     }
