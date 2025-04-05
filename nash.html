@@ -3207,7 +3207,7 @@
       }
       setCaret(newBlock, 0); // move the caret into the new block
 
-      if (!block.textContent.trim() && !block.querySelector("img, video, iframe, embed, object")) {
+      if (!block.textContent?.trim() && !block?.querySelector("img, video, iframe, embed, object")) {
         block.innerHTML = "<br/>";
       }
     }
