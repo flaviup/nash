@@ -2633,7 +2633,8 @@
     function getNodeText(node) {
 
       if (node) {
-        return (node.nodeType === Node.TEXT_NODE ? (node.textContent ?? "") : ((node.nodeName === "BR") ? "\n" : (node.innerText ?? "")));
+        return ((node.nodeType === Node.TEXT_NODE || node.nodeType === Node.DOCUMENT_FRAGMENT_NODE)
+            ? (node.textContent ?? "") : ((node.nodeName === "BR") ? "\n" : (node.innerText ?? "")));
       }
 
       return "";
@@ -3147,13 +3148,10 @@
     }
 
     // Splits the current block at the caret.
-    function splitBlock() {
+    function splitBlock(range) {
 
+      if (!range) return;
       const editor = document.getElementById("editor");
-      const selection = window.getSelection();
-      if (!selection.rangeCount) return;
-      const range = selection.getRangeAt(0);
-
       let block = range.startContainer;
 
       while (block && block.parentNode !== editor) {
@@ -3283,14 +3281,8 @@
       }
     }*/
 
-    function handleEnterKey(parentNodeNames) {
+    function handleEnterKey(range, parentNodeNames) {
 
-      let range = null;
-      const selection = window.getSelection();
-
-      if (selection.rangeCount) {
-        range = selection.getRangeAt(0);
-      }
       let block = range?.startContainer;
 
       while (block && block !== editor) {
@@ -3400,14 +3392,14 @@
 
       if (e.key === "Enter" && !e.shiftKey) {
 
-        if (block && handleEnterKey(["CODE", "TD", "TH"])) {
+        if (block && handleEnterKey(range, ["CODE", "TD", "TH"])) {
 
           e.stopImmediatePropagation();
           e.preventDefault();
           return;
         }
         e.preventDefault();
-        splitBlock();
+        splitBlock(range);
         return;
       }
 
@@ -3415,11 +3407,39 @@
 
         const topNode = getTopLevelNodeOfCurrentPosition();
 
-        // blocks moving of the current line in the code block into the previous sibling p node
-        if (topNode && topNode.classList.contains("code-block") && !(block?.previousSibling)) {
-          e.stopImmediatePropagation();
-          e.preventDefault();
-          return;
+        if (topNode) {
+
+          // blocks moving of the current line in the code block into the previous sibling p node
+          if (topNode.classList.contains("code-block") && !(block?.previousSibling)) {
+            e.stopImmediatePropagation();
+            e.preventDefault();
+            return;
+          }
+
+          if (topNode.classList.contains("text-block")) {
+
+            if (!block.previousSibling && (!topNode.previousElementSibling ||
+                !topNode.previousElementSibling.classList?.contains("text-block"))) {
+              e.stopImmediatePropagation();
+              e.preventDefault();
+              return;
+            }
+
+            if (topNode === block &&
+                (!topNode.previousElementSibling ||
+                !topNode.previousElementSibling.classList?.contains("text-block"))) {
+              e.stopImmediatePropagation();
+              e.preventDefault();
+              return;
+            }
+
+            if (topNode.previousElementSibling &&
+                !topNode.previousElementSibling.classList?.contains("text-block")) {
+              e.stopImmediatePropagation();
+              e.preventDefault();
+              return;
+            }
+          }
         }
       }
 

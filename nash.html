@@ -2633,7 +2633,8 @@
     function getNodeText(node) {
 
       if (node) {
-        return (node.nodeType === Node.TEXT_NODE ? (node.textContent ?? "") : ((node.nodeName === "BR") ? "\n" : (node.innerText ?? "")));
+        return ((node.nodeType === Node.TEXT_NODE || node.nodeType === Node.DOCUMENT_FRAGMENT_NODE)
+            ? (node.textContent ?? "") : ((node.nodeName === "BR") ? "\n" : (node.innerText ?? "")));
       }
 
       return "";
@@ -3147,13 +3148,10 @@
     }
 
     // Splits the current block at the caret.
-    function splitBlock() {
+    function splitBlock(range) {
 
+      if (!range) return;
       const editor = document.getElementById("editor");
-      const selection = window.getSelection();
-      if (!selection.rangeCount) return;
-      const range = selection.getRangeAt(0);
-
       let block = range.startContainer;
 
       while (block && block.parentNode !== editor) {
@@ -3401,7 +3399,7 @@
           return;
         }
         e.preventDefault();
-        splitBlock();
+        splitBlock(range);
         return;
       }
 
@@ -3418,12 +3416,29 @@
             return;
           }
 
-          if (topNode.classList.contains("text-block") &&
-              topNode.previousSibling &&
-              !topNode.previousSibling.classList?.contains("text-block")) {
-            e.stopImmediatePropagation();
-            e.preventDefault();
-            return;
+          if (topNode.classList.contains("text-block")) {
+
+            if (!block.previousSibling && (!topNode.previousElementSibling ||
+                !topNode.previousElementSibling.classList?.contains("text-block"))) {
+              e.stopImmediatePropagation();
+              e.preventDefault();
+              return;
+            }
+
+            if (topNode === block &&
+                (!topNode.previousElementSibling ||
+                !topNode.previousElementSibling.classList?.contains("text-block"))) {
+              e.stopImmediatePropagation();
+              e.preventDefault();
+              return;
+            }
+
+            if (topNode.previousElementSibling &&
+                !topNode.previousElementSibling.classList?.contains("text-block")) {
+              e.stopImmediatePropagation();
+              e.preventDefault();
+              return;
+            }
           }
         }
       }
