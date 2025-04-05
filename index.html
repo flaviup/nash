@@ -325,13 +325,6 @@
       border-radius: 6px;
     }
 
-    #editor:empty::before,
-    #editor p:empty::before {
-      content: "Write your note here...";
-      color: var(--note-placeholder-color);
-      display: block;
-    }
-
     #footer {
       text-align: center;
       margin-top: 20px;
@@ -556,6 +549,8 @@
     .stop-recording-button {
       font-size: 32px;
       cursor: pointer;
+      background-color: transparent;
+      border-color: transparent;
     }
 
     .cancel-recording-button {
@@ -1716,12 +1711,12 @@
         audioRecordingControlsNode.setAttribute("class", "recording-control-buttons-container non-selectable");
         audioRecordingControlsNode.setAttribute("contenteditable", "false");
         audioRecordingControlsNode.innerHTML = `
-            <b class="cancel-recording-button non-selectable" contenteditable="false" aria-hidden="true">✖</b>
-            <div class="recording-elapsed-time" contenteditable="false">
+            <button class="cancel-recording-button non-selectable" contenteditable="false" aria-hidden="true">✖</button>
+            <div class="recording-elapsed-time non-selectable" contenteditable="false">
               <b class="red-recording-dot non-selectable" contenteditable="false" aria-hidden="true">🔴</b>
               <p class="elapsed-time non-selectable" style="font-size: 28px;" contenteditable="false">00:00</p>
             </div>
-            <b class="stop-recording-button non-selectable" contenteditable="false" aria-hidden="true">✓</b>`;
+            <button class="stop-recording-button non-selectable" contenteditable="false" aria-hidden="true">✓</button>`;
         audioRecordingInserter.audioRecordingNode.appendChild(audioRecordingControlsNode);
 
         if (audioRecorder.recordingState === MediaRecordingStatus.CLOSED) {
@@ -3207,7 +3202,7 @@
       }
       setCaret(newBlock, 0); // move the caret into the new block
 
-      if (!block.textContent.trim() && !block.querySelector("img, video, iframe, embed, object")) {
+      if (!block.textContent?.trim() && !block?.querySelector("img, video, iframe, embed, object")) {
         block.innerHTML = "<br/>";
       }
     }
@@ -3257,7 +3252,7 @@
       const htmlText = editor.innerHTML.trim();
 
       if (htmlText === "" || htmlText === "<br>" || htmlText === "<br/>") {
-        editor.innerHTML = `<p class="text-block" id="text${generateUId()}"></p>`;
+        editor.innerHTML = `<p class="text-block" id="text${generateUId()}"><br/></p>`;
       }
     }
 
@@ -3293,8 +3288,6 @@
 
           if (parentNodeNames.includes(textNode.nodeName)) {
 
-            //printSelectionInfo();
-
             if (textNode.childNodes.length > range.startOffset) {
               textNode.insertBefore(document.createElement("br"), textNode.childNodes[range.startOffset]);
             } else {
@@ -3303,13 +3296,11 @@
             setCaret(textNode, range.startOffset + 1);
           } else if (textNode.nodeName === "BR") {
 
-            //printSelectionInfo();
             const brNode = document.createElement("br");
             textNode.parentNode.insertBefore(brNode, textNode.nextSibling);
             setCaret(brNode, 0);
           } else if (textNode.nodeType === Node.TEXT_NODE) {
 
-            //printSelectionInfo();
             const text1 = textNode.textContent.substring(0, range.startOffset);
             const text2 = textNode.textContent.substring(range.startOffset);
             const newTextNode = (text2 && text2 !== "") ? document.createTextNode(text2) : null;
