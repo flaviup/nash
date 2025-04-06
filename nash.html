@@ -323,6 +323,7 @@
       margin: 0;
       padding: 8px;
       border-radius: 6px;
+      white-space: pre-line;
     }
 
     #footer {
@@ -1552,6 +1553,7 @@
       }
       divNode.setAttribute("class", "x-remover non-selectable");
       divNode.setAttribute("contenteditable", "false");
+
       return divNode;
     }
 
@@ -2388,7 +2390,6 @@
       const pre = document.createElement("pre");
       const code = document.createElement("code");
       code.setAttribute("contenteditable", "plaintext-only");
-      code.style = "white-space: pre;"
       code.innerText = "\n";
       pre.appendChild(code);
       divNode.appendChild(pre);
