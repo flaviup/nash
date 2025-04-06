@@ -3359,6 +3359,42 @@
       return false;
     }
 
+    function handleBackspaceInEmptyTextContent(topNode, e) {
+
+      if (!topNode.textContent?.length) { // if the node has empty string (this includes the case with invisible <br/>: and innerText is not empty)
+
+        e.stopImmediatePropagation();  // cancel the event
+        e.preventDefault();
+        let sibling = topNode.previousElementSibling; // find a previous text or code sibling node to move the focus to (the cursor caret)
+
+        while (sibling &&
+              !sibling.classList?.contains("text-block") &&
+              !sibling.classList?.contains("code-block")) {
+          sibling = sibling.previousElementSibling;
+        }
+
+        if (sibling) {   // if a sibling was found
+
+          const selection = window.getSelection(); // remove all selections
+          selection.removeAllRanges();
+          topNode.replaceChildren();
+          topNode.remove();
+          let lastChild = null; // get the last deepest child of the text or code block
+
+          if (sibling.classList?.contains("code-block")) {
+            lastChild = getLastDeepestChild(sibling.querySelector("code"));
+          } else {
+            lastChild = getLastDeepestChild(sibling);
+          }
+          if (lastChild) setCaret(lastChild, lastChild.textContent?.length ?? 0); // and set the caret at the end of it
+        }
+
+        return true; // node with empty text was handled
+      }
+
+      return false;
+    }
+
     function keydownHandler(e) {
 
       let range = null;
@@ -3414,6 +3450,9 @@
 
           // blocks moving of the current line in the code block into the previous sibling p node
           if (topNode.classList.contains("code-block") && !(block?.previousSibling)) {
+
+            if (handleBackspaceInEmptyTextContent(topNode, e)) return;
+
             e.stopImmediatePropagation();
             e.preventDefault();
             return;
@@ -3421,34 +3460,7 @@
 
           if (topNode.classList.contains("text-block")) {
 
-            if (!topNode.textContent?.length) {
-
-              e.stopImmediatePropagation();
-              e.preventDefault();
-              let sibling = topNode.previousElementSibling;
-
-              while (sibling &&
-                    !sibling.classList?.contains("text-block") &&
-                    !sibling.classList?.contains("code-block")) {
-                sibling = sibling.previousElementSibling;
-              }
-
-              if (sibling) {
-
-                selection.removeAllRanges();
-                topNode.replaceChildren();
-                topNode.remove();
-                let lastChild = null;
-
-                if (sibling.classList?.contains("code-block")) {
-                  lastChild = getLastDeepestChild(sibling.querySelector("code"));
-                } else {
-                  lastChild = getLastDeepestChild(sibling);
-                }
-                if (lastChild) setCaret(lastChild, lastChild.textContent?.length ?? 0);
-                return;
-              }
-            }
+            if (handleBackspaceInEmptyTextContent(topNode, e)) return;
 
             if (!block.previousSibling && (!topNode.previousElementSibling ||
                 !topNode.previousElementSibling.classList?.contains("text-block"))) {
