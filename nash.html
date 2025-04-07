@@ -3369,6 +3369,17 @@
       }
     }*/
 
+    function getFirstDeepestChild(node) {
+
+      if (!node) return node;
+
+      while (node.firstChild) {
+        node = node.firstChild;
+      }
+
+      return node;
+    }
+
     function getLastDeepestChild(node) {
 
       if (!node) return node;
@@ -3541,14 +3552,17 @@
         return;
       }
 
-      if (e.key === "Backspace" && range.startContainer === range.endContainer && range.startOffset === range.endOffset && range.startOffset === 0) {
+      if (e.key === "Backspace" &&
+          range.startContainer === range.endContainer &&
+          range.startOffset === range.endOffset &&
+          range.startOffset === 0) {
 
         const topNode = getTopLevelNodeOfCurrentPosition();
 
         if (topNode) {
 
           // blocks moving of the current line in the code block into the previous sibling p node
-          if (topNode.classList.contains("code-block") && !(block?.previousSibling)) {
+          if (topNode.classList?.contains("code-block") && !(block?.previousSibling)) {
 
             if (handleBackspaceInEmptyTextContent(topNode, e)) return;
 
@@ -3557,30 +3571,54 @@
             return;
           }
 
-          if (topNode.classList.contains("text-block")) {
+          if (topNode.classList?.contains("text-block")) {
 
             if (handleBackspaceInEmptyTextContent(topNode, e)) return;
 
-            if (!block.previousSibling && (!topNode.previousElementSibling ||
-                !topNode.previousElementSibling.classList?.contains("text-block"))) {
-              e.stopImmediatePropagation();
-              e.preventDefault();
-              return;
-            }
+            const previousElementSibling = topNode.previousElementSibling;
 
-            if (topNode === block &&
-                (!topNode.previousElementSibling ||
-                !topNode.previousElementSibling.classList?.contains("text-block"))) {
+            if ((topNode === block || !block.previousSibling) &&
+                (!previousElementSibling ||
+                !previousElementSibling.classList?.contains("text-block"))) {
+
               e.stopImmediatePropagation();
               e.preventDefault();
               return;
             }
 
             if (topNode.previousElementSibling &&
-                !topNode.previousElementSibling.classList?.contains("text-block")) {
+                !previousElementSibling.classList?.contains("text-block")) {
+
               e.stopImmediatePropagation();
               e.preventDefault();
               return;
+            }
+
+            if (previousElementSibling) {
+
+              let focusChild = getFirstDeepestChild(topNode);
+              const lastBrChild = getLastDeepestChild(previousElementSibling);
+              previousElementSibling.append(...topNode.childNodes);
+
+              if (lastBrChild?.nodeName === "BR") {
+
+                lastBrChild.remove();
+                previousElementSibling.append(lastBrChild);
+              }
+              topNode.replaceChildren();
+              topNode.remove();
+              focusChild = focusChild || getLastDeepestChild(previousElementSibling);
+
+              if (focusChild) {
+
+                setCaret(focusChild, 0);
+              } else {
+
+                selection.removeAllRanges();
+                editor?.focus();
+              }
+              e.stopImmediatePropagation();
+              e.preventDefault();
             }
           }
         }
