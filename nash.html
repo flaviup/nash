@@ -223,7 +223,7 @@
     }
 
     /* Dropdown button style */
-    .dropdown>button {
+    .dropdown > button {
       padding: 6px 10px;
     }
 
@@ -244,6 +244,49 @@
 
     /* Show dropdown when .show is added */
     .dropdown-content.show {
+      display: block;
+    }
+
+    /* Text dropdown container */
+    .text-dropdown {
+      position: relative;
+      display: inline-block;
+    }
+
+    /* Text dropdown button style */
+    .text-dropdown > button {
+      padding: 6px 10px;
+    }
+
+    .text-dropdown button {
+      width: 100%;
+      text-align: left;
+    }
+
+    .text-dropdown .fileUpload label {
+      max-width: 100%;
+      text-align: left;
+      display: block;
+    }
+
+    /* Text dropdown content (hidden by default) */
+    .text-dropdown-content {
+      display: none;
+      position: absolute;
+      width: 200px;
+      top: 110%;
+      left: 0;
+      background: var(--control-bg-color);
+      border: 1px solid var(--control-bg-color);
+      color: var(--control-text-color);
+      padding: 8px;
+      border-radius: 4px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+      z-index: 10;
+    }
+
+    /* Show text dropdown when .show is added */
+    .text-dropdown-content.show {
       display: block;
     }
 
@@ -268,22 +311,22 @@
       box-shadow: 0 0 4px rgba(0, 0, 0, 0.3);
     }
 
+    #alignDropdown {
+      width: 100px;
+    }
+
+    #linksDropdown {
+      width: 180px;
+    }
+
+    #embedDropdown {
+      width: 130px;
+    }
+
     #saveDropdown {
       width: 250px;
-    }
-
-    #saveDropdown button {
-      width: 100%;
-      text-align: left;
-    }
-
-    #tableDropdown {
-      width: 200px;
-    }
-
-    #tableDropdown button {
-      width: 100%;
-      text-align: left;
+      right: 0;
+      left: auto;
     }
 
     #editor {
@@ -701,12 +744,6 @@
         <button id="btnB" title="Bold text"><b>B</b></button>
         <button id="btnI" title="Italic text"><i>I</i></button>
         <button id="btnU" title="Underline text"><u>U</u></button>
-        <button id="btnLink" title="Make text link">🔗</button>
-
-        <label for="imageUpload" title="Embed image">📷</label>
-        <input type="file" id="imageUpload" accept="image/*" onclick="this.value = null">
-
-        <button id="btnImageLink" title="Insert image link">🔗📷</button>
 
         <div class="dropdown">
           <button id="btnTextColorMenu" title="Colorize text">Color</button>
@@ -756,35 +793,10 @@
             </div>
           </div>
         </div>
-        <button id="btnText" title="Add text"><b>T</b></button>
-        <button id="btnCode" title="Add source code text">🖥</button>
-        <button id="btnEmbedContent" title="Embed HTML">🗂</button>
 
-        <label for="audioUpload" title="Embed audio file">🔈</label>
-        <input type="file" id="audioUpload" accept="audio/*" onclick="this.value = null">
-
-        <button id="btnAudioLink" title="Insert audio link">🔗🔈</button>
-        <button id="btnRecordAudio" title="Record audio">🎤</button>
-        <button id="btnVideoLink" title="Insert video link">🔗📽</button>
-
-        <label for="epubUpload" title="Embed ePUB file">📖</label>
-        <input type="file" id="epubUpload" accept=".epub" onclick="this.value = null">
-
-        <label for="pdfUpload" title="Embed PDF file"><b>PDF</b></label>
-        <input type="file" id="pdfUpload" accept=".pdf" onclick="this.value = null">
-
-        <button id="btnPdfLink" title="Insert PDF link">🔗<b>PDF</b></button>
-        <div class="dropdown">
-          <button id="btnTable" title="Add table"><b>Table</b></button>
-          <div id="tableDropdown" class="dropdown-content">
-            <button id="btnSimpleTable" title="Add simple table">Simple Table</button>
-            <button id="btnHeadlessTable" title="Add headless table">Headless Table</button>
-          </div>
-        </div>
-
-        <div class="dropdown">
-          <button id="btnAlign" title="Align text"><b>Align</b></button>
-          <div id="alignDropdown" class="dropdown-content">
+        <div class="text-dropdown">
+          <button id="btnAlign" title="Align text">Align</button>
+          <div id="alignDropdown" class="text-dropdown-content">
             <button id="btnLeftTextAlign" title="Align text to the left">Left</button>
             <button id="btnCenterTextAlign" title="Align text to the center">Center</button>
             <button id="btnRightTextAlign" title="Align text to the right">Right</button>
@@ -792,11 +804,62 @@
           </div>
         </div>
 
+        <button id="btnText" title="Add text">📝</button>
+        <button id="btnCode" title="Add source code text">🖥</button>
+
+        <div class="text-dropdown">
+          <button id="btnLinks" title="Insert links">🔗</button>
+          <div id="linksDropdown" class="text-dropdown-content">
+            <button id="btnLinkText" title="Make text link">📝 Text Link</button>
+            <button id="btnLinkImage" title="Insert image link">📷 Image Link</button>
+            <button id="btnLinkAudio" title="Insert audio link">🔈 Audio Link</button>
+            <button id="btnLinkVideo" title="Insert video link">🎞 Video Link</button>
+            <button id="btnLinkPdf" title="Insert PDF file link">📖 PDF Link</button>
+          </div>
+        </div>
+
+        <div class="text-dropdown">
+          <button id="btnEmbed" title="Embed contents">📎</button>
+          <div id="embedDropdown" class="text-dropdown-content">
+            <button id="btnEmbedWeb" title="Embed web page or HTML object">🌎 Web</button>
+
+            <div class="fileUpload">
+              <label for="imageUpload" title="Embed image file">📷 Image</label>
+              <input type="file" id="imageUpload" accept="image/*" onclick="this.value = null">
+            </div>
+
+            <div class="fileUpload">
+              <label for="audioUpload" title="Embed audio file">🔈 Audio</label>
+              <input type="file" id="audioUpload" accept="audio/*" onclick="this.value = null">
+            </div>
+
+            <div class="fileUpload">
+              <label for="pdfUpload" title="Embed PDF file">📖 PDF</label>
+              <input type="file" id="pdfUpload" accept=".pdf" onclick="this.value = null">
+            </div>
+
+            <div class="fileUpload">
+              <label for="epubUpload" title="Embed ePUB file">📖 ePub</label>
+              <input type="file" id="epubUpload" accept=".epub" onclick="this.value = null">
+            </div>
+          </div>
+        </div>
+
+        <button id="btnRecordAudio" title="Record audio">🎤</button>
+
+        <div class="text-dropdown">
+          <button id="btnTable" title="Add table">Table</button>
+          <div id="tableDropdown" class="text-dropdown-content">
+            <button id="btnSimpleTable" title="Add simple table">Simple Table</button>
+            <button id="btnHeadlessTable" title="Add headless table">Headless Table</button>
+          </div>
+        </div>
+
         <div id="splitbar">|</div>
         <!-- Block conversion -->
-        <div class="dropdown">
+        <div class="text-dropdown">
           <button id="btnSaveMenu" title="Save or Share">💾</button>
-          <div id="saveDropdown" class="dropdown-content">
+          <div id="saveDropdown" class="text-dropdown-content">
             <button id="btnSave">Save</button>
             <button id="btnShare">Share</button>
             <button id="btnSaveReadOnly">Save as Read-Only</button>
@@ -2468,20 +2531,27 @@
 
     // Toggles dropdown visibility
     function toggleDropdown(id) {
+
       const dropdown = document.getElementById(id);
+
       if (dropdown.classList.contains("show")) {
         dropdown.classList.remove("show");
       } else {
         // Close any open dropdowns first
-        document.querySelectorAll(".dropdown-content").forEach(el => el.classList.remove("show"));
+        document.querySelectorAll(".dropdown-content, .text-dropdown-content").forEach(el => el.classList.remove("show"));
         dropdown.classList.add("show");
       }
     }
 
     // Closes dropdowns if clicking outside
     document.addEventListener("click", function (e) {
+
       if (!e.target.closest(".dropdown")) {
         document.querySelectorAll(".dropdown-content").forEach(el => el.classList.remove("show"));
+      }
+
+      if (!e.target.closest(".text-dropdown")) {
+        document.querySelectorAll(".text-dropdown-content").forEach(el => el.classList.remove("show"));
       }
     });
 
@@ -3565,10 +3635,6 @@
     document.getElementById("btnB").addEventListener("click", (e) => applyFormat(STYLE_STRONG_INDEX));
     document.getElementById("btnI").addEventListener("click", (e) => applyFormat(STYLE_EM_INDEX));
     document.getElementById("btnU").addEventListener("click", (e) => applyFormat(STYLE_U_INDEX));
-    document.getElementById("btnLink").addEventListener("click", (e) => applyURL());
-
-    document.getElementById("imageUpload").addEventListener("change", (e) => insertImage(e));
-    document.getElementById("btnImageLink").addEventListener("click", (e) => insertImageLink());
 
     document.getElementById("btnTextColorMenu").addEventListener("click", (e) => toggleDropdown("textColorDropdown"));
     
@@ -3588,30 +3654,6 @@
       });
     }
 
-    document.getElementById("btnText").addEventListener("click", (e) => insertText());
-    document.getElementById("btnCode").addEventListener("click", (e) => insertCode());
-    document.getElementById("btnEmbedContent").addEventListener("click", (e) => insertEmbeddedContent());
-
-    document.getElementById("audioUpload").addEventListener("change", (e) => insertAudio(event));
-
-    document.getElementById("btnAudioLink").addEventListener("click", (e) => insertAudioLink());
-    document.getElementById("btnRecordAudio").addEventListener("click", (e) => insertAudioRecording());
-    document.getElementById("btnVideoLink").addEventListener("click", (e) => insertVideoLink());
-
-    document.getElementById("epubUpload").addEventListener("change", (e) => insertEpub(e));
-    document.getElementById("pdfUpload").addEventListener("change", (e) => insertPdf(e));
-
-    document.getElementById("btnPdfLink").addEventListener("click", (e) => insertPdfLink());
-    document.getElementById("btnTable").addEventListener("click", (e) => toggleDropdown("tableDropdown"));
-    document.getElementById("btnSimpleTable").addEventListener("click", (e) => {
-      toggleDropdown("tableDropdown");
-      insertTable(false);
-    });
-    document.getElementById("btnHeadlessTable").addEventListener("click", (e) => {
-      toggleDropdown("tableDropdown");
-      insertTable(true);
-    });
-
     document.getElementById("btnAlign").addEventListener("click", (e) => toggleDropdown("alignDropdown"));
     document.getElementById("btnLeftTextAlign").addEventListener("click", (e) => {
       toggleDropdown("alignDropdown");
@@ -3628,6 +3670,65 @@
     document.getElementById("btnJustifyTextAlign").addEventListener("click", (e) => {
       toggleDropdown("alignDropdown");
       alignText("justify-text");
+    });
+
+    document.getElementById("btnText").addEventListener("click", (e) => insertText());
+    document.getElementById("btnCode").addEventListener("click", (e) => insertCode());
+
+    document.getElementById("btnLinks").addEventListener("click", (e) => toggleDropdown("linksDropdown"));
+    document.getElementById("btnLinkText").addEventListener("click", (e) => {
+      toggleDropdown("linksDropdown");
+      applyURL();
+    });
+    document.getElementById("btnLinkImage").addEventListener("click", (e) => {
+      toggleDropdown("linksDropdown");
+      insertImageLink();
+    });
+    document.getElementById("btnLinkAudio").addEventListener("click", (e) => {
+      toggleDropdown("linksDropdown");
+      insertAudioLink();
+    });
+    document.getElementById("btnLinkVideo").addEventListener("click", (e) => {
+      toggleDropdown("linksDropdown");
+      insertVideoLink();
+    });
+    document.getElementById("btnLinkPdf").addEventListener("click", (e) => {
+      toggleDropdown("linksDropdown");
+      insertPdfLink();
+    });
+
+    document.getElementById("btnEmbed").addEventListener("click", (e) => toggleDropdown("embedDropdown"));
+    document.getElementById("btnEmbedWeb").addEventListener("click", (e) => {
+      toggleDropdown("embedDropdown");
+      insertEmbeddedContent();
+    });
+    document.getElementById("imageUpload").addEventListener("change", (e) => {
+      toggleDropdown("embedDropdown");
+      insertImage(e);
+    });
+    document.getElementById("audioUpload").addEventListener("change", (e) => {
+      toggleDropdown("embedDropdown");
+      insertAudio(event);
+    });
+    document.getElementById("pdfUpload").addEventListener("change", (e) => {
+      toggleDropdown("embedDropdown");
+      insertPdf(e);
+    });
+    document.getElementById("epubUpload").addEventListener("change", (e) => {
+      toggleDropdown("embedDropdown");
+      insertEpub(e);
+    });
+
+    document.getElementById("btnRecordAudio").addEventListener("click", (e) => insertAudioRecording());
+
+    document.getElementById("btnTable").addEventListener("click", (e) => toggleDropdown("tableDropdown"));
+    document.getElementById("btnSimpleTable").addEventListener("click", (e) => {
+      toggleDropdown("tableDropdown");
+      insertTable(false);
+    });
+    document.getElementById("btnHeadlessTable").addEventListener("click", (e) => {
+      toggleDropdown("tableDropdown");
+      insertTable(true);
     });
 
     document.getElementById("btnSaveMenu").addEventListener("click", (e) => toggleDropdown("saveDropdown"));
