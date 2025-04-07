@@ -1635,6 +1635,13 @@
       return divNode;
     }
 
+    function showPrompt(message) {
+
+      return new Promise((resolve, reject) => setTimeout(function() {
+        resolve(prompt(message));
+      }, 10));
+    }
+
     function insertImage(event) {
 
       const file = event.target.files[0];
@@ -1658,9 +1665,9 @@
       }
     }
 
-    function insertImageLink() {
+    async function insertImageLink() {
 
-      const url = prompt("Image URL")?.trim();
+      const url = (await showPrompt("Image URL"))?.trim();
       if (!url) return;
       const nextSibling = getTopLevelNodeOfCurrentPosition()?.nextSibling;
       const divNode = document.createElement("div");
@@ -1698,9 +1705,9 @@
       }
     }
 
-    function insertAudioLink() {
+    async function insertAudioLink() {
 
-      const url = prompt("Audio URL")?.trim();
+      const url = (await showPrompt("Audio URL"))?.trim();
       if (!url) return;
       const nextSibling = getTopLevelNodeOfCurrentPosition()?.nextSibling;
       const divNode = document.createElement("div");
@@ -1715,9 +1722,9 @@
       editor.insertBefore(divNode, nextSibling);
     }
 
-    function insertVideoLink() {
+    async function insertVideoLink() {
 
-      const url = prompt("Video URL")?.trim();
+      const url = (await showPrompt("Video URL"))?.trim();
       if (!url) return;
       const nextSibling = getTopLevelNodeOfCurrentPosition()?.nextSibling;
       const divNode = document.createElement("div");
@@ -2334,9 +2341,9 @@
       }
     }
 
-    function insertPdfLink() {
+    async function insertPdfLink() {
 
-      const url = prompt("PDF URL")?.trim();
+      const url = (await showPrompt("PDF URL"))?.trim();
       if (!url) return;
       const nextSibling = getTopLevelNodeOfCurrentPosition()?.nextSibling;
       const divNode = document.createElement("div");
@@ -2362,9 +2369,9 @@
       divNode.appendChild(createRemover());
     }
 
-    function insertTable(headless) {
+    async function insertTable(headless) {
 
-      const dims = prompt((headless ? "Headless table" : "Table") + " rows and columns")?.trim();
+      const dims = (await showPrompt((headless ? "Headless table" : "Table") + " rows and columns"))?.trim();
       if (!dims) return;
       // Split the input into the number of rows and columns
       let r1 = -1, r2 = -1, c1 = -1, c2 = -1, i = 0, l = dims.length;
@@ -2478,9 +2485,9 @@
       setCaret(code, 0);
     }
 
-    function insertEmbeddedContent() {
+    async function insertEmbeddedContent() {
 
-      const iframeHtml = prompt("Embedded Page (iframe or URL)")?.trim();
+      const iframeHtml = (await showPrompt("Embedded Page (iframe or URL)"))?.trim();
       if (!iframeHtml) return;
       const nextSibling = getTopLevelNodeOfCurrentPosition()?.nextSibling;
       const divNode = document.createElement("div");
@@ -3126,8 +3133,8 @@
       wrapRangeText(range, styleIndex);
     }
 
-    // Applies inline url 
-    function applyURL() {
+    // Applies inline url
+    async function applyURL() {
 
       const selection = window.getSelection();
 
@@ -3136,7 +3143,7 @@
       const editor = document.getElementById("editor");
 
       if (!editor.contains(range.commonAncestorContainer)) return;
-      const url = prompt("URL")?.trim();
+      const url = (await showPrompt("URL"))?.trim();
 
       if (!url) return;
       updateLinkStyles(editor);
