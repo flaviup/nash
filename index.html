@@ -17,6 +17,9 @@
       --control-hover-bg-color: #f0f0f0;
       --control-hover-text-color: #bbb;
 
+      --control-disabled-bg-color: #f8f9fa;
+      --control-disabled-text-color: #bbb;
+
       --note-bg-color: #fff;
       --note-placeholer-color: #bbb;
       --note-link-color: #616161;
@@ -78,6 +81,9 @@
         --control-text-color: #aaa;
         --control-hover-bg-color: #666;
         --control-hover-text-color: #eee;
+
+        --control-disabled-bg-color: #444;
+        --control-disabled-text-color: #666;
 
         --note-bg-color: #333;
         --note-placeholder-color: #555;
@@ -214,6 +220,15 @@
       background: var(--control-hover-bg-color);
       border-color: var(--control-hover-text-color);
       color: var(--control-hover-text-color);
+    }
+
+    #toolbar button:disabled,
+    #toolbar label:disabled,
+    #toolbar select:disabled {
+      background: var(--control-disabled-bg-color);
+      border-color: var(--control-disabled-text-color);
+      color: var(--control-disabled-text-color);
+      cursor: not-allowed;
     }
 
     /* Dropdown container */
@@ -3592,15 +3607,31 @@
     let lastValidSelectionRange = null;
 
     document.onselectionchange = () => {
+
+      const editor = document.getElementById("editor");
       const selection = document.getSelection();
 
       if (selection?.rangeCount) {
 
         const range = selection.getRangeAt(0);
 
-        if (editor.contains(range.startContainer)) {
+        if (editor.contains(range.commonAncestorContainer)) {
+
           lastValidSelectionRange = range;
         }
+      }
+
+      if (lastValidSelectionRange &&
+          (lastValidSelectionRange.startContainer !== lastValidSelectionRange.endContainer ||
+          lastValidSelectionRange.startOffset !== lastValidSelectionRange.endOffset) &&
+          editor.contains(lastValidSelectionRange.commonAncestorContainer)) {
+
+        document.getElementById("btnLinkText").removeAttribute("disabled");
+        document.getElementById("btnLinkText").setAttribute("title", "Make text link");
+      } else {
+
+        document.getElementById("btnLinkText").setAttribute("disabled", " ");
+        document.getElementById("btnLinkText").setAttribute("title", "Select a text to make link");
       }
     };
 
