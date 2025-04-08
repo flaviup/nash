@@ -3209,28 +3209,19 @@
       newBlock.id = node.id;
       newBlock.setAttribute("class", node.getAttribute("class"));
 
-      while (node.firstChild) { // adds current node's children to the new block, one by one; except if a child is a P and the new tag is a H[1-6]
-        if (
-          node.firstChild.nodeType === Node.ELEMENT_NODE &&
-          node.firstChild.matches("p") &&
-          tag.match(/^H[1-6]$/)
-        ) {
-          // then adds the child's children directly to the new block
-          // (instead of adding the child directly: P into another H[1-6])
-          let child = node.firstChild;
+      const range = selection.getRangeAt(0);
+      const startContainer = (node === range.startContainer ? newBlock : range.startContainer);
+      const startOffset = range.startOffset;
+      const endContainer = (node === range.endContainer ? newBlock : range.endContainer);
+      const endOffset = range.endOffset;
 
-          while (child.firstChild) {
-            newBlock.appendChild(child.firstChild);
-          }
-          node.removeChild(child); // removes the intermediary child P node
-        } else {
-          newBlock.appendChild(node.firstChild);
-        }
-      }
-      editor.replaceChild(newBlock, node); // replaces the node with the new block
-      const range = document.createRange(); // keeps the selection (reconstructed)
-      range.selectNodeContents(newBlock);
-      range.collapse(false);
+      editor.insertBefore(newBlock, node);
+      newBlock.append(...node.childNodes);
+      node.remove();
+
+      range.setStart(startContainer, startOffset);
+      range.setEnd(endContainer, endOffset);
+
       selection.removeAllRanges();
       selection.addRange(range);
     }
