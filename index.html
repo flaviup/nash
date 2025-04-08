@@ -3596,22 +3596,22 @@
 
             if (previousElementSibling) {
 
-              let focusChild = getFirstDeepestChild(topNode);
-              const lastBrChild = getLastDeepestChild(previousElementSibling);
-              previousElementSibling.append(...topNode.childNodes);
+              const lastChild = getLastDeepestChild(previousElementSibling);
+              let focusChild = lastChild;
 
-              if (lastBrChild?.nodeName === "BR") {
+              if (lastChild?.nodeName === "BR") {
 
-                lastBrChild.remove();
-                previousElementSibling.append(lastBrChild);
+                lastChild.remove();
+                focusChild = getLastDeepestChild(previousElementSibling);
               }
+              previousElementSibling.append(...topNode.childNodes);
               topNode.replaceChildren();
               topNode.remove();
-              focusChild = focusChild || getLastDeepestChild(previousElementSibling);
 
               if (focusChild) {
 
-                setCaret(focusChild, 0);
+                const position = focusChild === previousElementSibling ? 0 : focusChild.textContent?.length ?? 0;
+                setCaret(focusChild, position);
               } else {
 
                 selection.removeAllRanges();
