@@ -3369,17 +3369,6 @@
       }
     }*/
 
-    function getFirstDeepestChild(node) {
-
-      if (!node) return node;
-
-      while (node.firstChild) {
-        node = node.firstChild;
-      }
-
-      return node;
-    }
-
     function getLastDeepestChild(node) {
 
       if (!node) return node;
@@ -3586,7 +3575,7 @@
               return;
             }
 
-            if (topNode.previousElementSibling &&
+            if (previousElementSibling &&
                 !previousElementSibling.classList?.contains("text-block")) {
 
               e.stopImmediatePropagation();
@@ -3594,15 +3583,57 @@
               return;
             }
 
-            if (previousElementSibling) {
+            if (previousElementSibling) { // combining current text block with the previous text block
 
-              const lastChild = getLastDeepestChild(previousElementSibling);
+              let lastChild = previousElementSibling.lastChild;
+
+              while (lastChild) {
+
+                while (lastChild &&
+                       (lastChild.nodeType !== Node.ELEMENT_NODE || !lastChild.lastChild) &&
+                       !getNodeText(lastChild).length) {
+                  lastChild = lastChild.previousSibling;
+                }
+
+                if (lastChild &&
+                    lastChild.nodeName !== "BR" &&
+                    lastChild.lastChild) {
+                  lastChild = lastChild.lastChild;
+                } else {
+                  break;
+                }
+              }
+              lastChild = lastChild || previousElementSibling;
               let focusChild = lastChild;
 
-              if (lastChild?.nodeName === "BR") {
+              if (lastChild === previousElementSibling) {
+                previousElementSibling.replaceChildren();
+              } else if (lastChild.nodeName === "BR") {
 
+                focusChild = null;
+
+                while (lastChild.parentNode !== previousElementSibling) {
+
+                  let p = lastChild.previousSibling;
+
+                  while (p && !lastChild.lastChild && !getNodeText(p).length) {
+                    p = p.previousSibling;
+                  }
+
+                  if (p) {
+                    focusChild = p;
+                    break;
+                  } else {
+                    lastChild = lastChild.parentNode;
+                  }
+                }
+
+                if (!focusChild) {
+                  focusChild = lastChild.previousSibling ?? previousElementSibling;
+                }
+
+                if (lastChild.hasChildNodes) lastChild.replaceChildren();
                 lastChild.remove();
-                focusChild = getLastDeepestChild(previousElementSibling);
               }
               previousElementSibling.append(...topNode.childNodes);
               topNode.replaceChildren();
