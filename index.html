@@ -3515,7 +3515,7 @@
       if (selection.rangeCount) {
         range = selection.getRangeAt(0);
       }
-      const block = range?.startContainer;
+      let block = range?.startContainer;
 
       if (block) {
 
@@ -3553,13 +3553,42 @@
         splitBlock(range);
         return;
       }
+      let handleBackspace = false;
+      let topNode = null;
 
-      if (e.key === "Backspace" &&
-          range.startContainer === range.endContainer &&
-          range.startOffset === range.endOffset &&
-          range.startOffset === 0) {
+      if (e.key === "Backspace") {
 
-        const topNode = getTopLevelNodeOfCurrentPosition();
+        if (range.startContainer === range.endContainer &&
+            range.startOffset === range.endOffset) {
+
+          if (range.startOffset === 0) {
+            handleBackspace = true;
+          } else {
+            topNode = getTopLevelNodeOfCurrentPosition();
+
+            if (topNode) {
+
+              if (block === topNode) {
+
+                const childNodes = [...topNode.childNodes];
+                handleBackspace = true;
+
+                for (let i = 0; i < range.startOffset && i < childNodes.length; i++) {
+
+                  if (childNodes[i].nodeType !== Node.TEXT_NODE || childNodes[i].textContent.length) {
+                    handleBackspace = false;
+                    break;
+                  } 
+                }
+              }
+            }
+          }
+        }
+      }
+
+      if (handleBackspace) {
+
+        topNode = topNode || getTopLevelNodeOfCurrentPosition();
 
         if (topNode) {
 
@@ -3588,10 +3617,31 @@
               return;
             }
 
-            if (topNode !== block) {
 
-              const fdc = getFirstDeepestChild(topNode);
-              if (fdc !== block) return;
+            while (block !== topNode) {
+
+              while (block.previousSibling) {
+  
+                block = block.previousSibling;
+
+                if (block.nodeName === "BR") {
+                  return;
+                }
+
+                if (block.nodeType === Node.TEXT_NODE) {
+
+                  if (getNodeText(block).length) {
+                    return;
+                  }
+                } else if (block.nodeType === Node.ELEMENT_NODE) {
+
+                  if (getNodeText(block).length || block.querySelector("br")) {
+                    return;
+                  }
+                }
+              }
+
+              block = block.parentNode;
             }
 
             if (!previousElementSibling ||
@@ -3608,8 +3658,8 @@
             while (lastChild) {
 
               while (lastChild &&
-                      (lastChild.nodeType !== Node.ELEMENT_NODE || !lastChild.lastChild) &&
-                      !getNodeText(lastChild).length) {
+                     (lastChild.nodeType !== Node.ELEMENT_NODE || !lastChild.lastChild) &&
+                     !getNodeText(lastChild).length) {
                 lastChild = lastChild.previousSibling;
               }
 
