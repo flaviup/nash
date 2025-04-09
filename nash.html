@@ -3460,8 +3460,15 @@
 
     function handleBackspaceInEmptyTextContent(topNode, e) {
 
-      if (!topNode.textContent?.length &&
-          (!topNode.childElementCount || (topNode.childElementCount === 1 && topNode.firstChild.nodeName === "BR"))) { // if the node has empty string
+      let shouldHandle = topNode.classList?.contains("code-block") &&
+                         topNode.firstChild.nodeName === "PRE" &&
+                         (!topNode.textContent?.length || topNode.textContent === "\n");
+      shouldHandle = shouldHandle || (!topNode.textContent?.length &&
+                                      (!topNode.childElementCount || (topNode.childElementCount === 1 &&
+                                                                      topNode.firstChild.nodeName === "BR" &&
+                                                                      topNode.classList?.contains("text-block"))));
+
+      if (shouldHandle) { // if the node is empty
 
         e.stopImmediatePropagation();  // cancel the event
         e.preventDefault();
@@ -3486,6 +3493,7 @@
           } else {
             lastChild = getLastDeepestChild(sibling);
           }
+
           if (lastChild) setCaret(lastChild, lastChild.textContent?.length ?? 0); // and set the caret at the end of it
         }
 
@@ -3630,7 +3638,7 @@
               e.preventDefault();
               return;
             }
-
+            let focusChild = (block === topNode ? block.firstChild : block);
 
             while (block !== topNode) {
 
@@ -3686,33 +3694,10 @@
               }
             }
             lastChild = lastChild || previousElementSibling;
-            let focusChild = lastChild;
 
             if (lastChild === previousElementSibling) {
               previousElementSibling.replaceChildren();
             } else if (lastChild.nodeName === "BR") {
-
-              focusChild = null;
-
-              while (lastChild.parentNode !== previousElementSibling) {
-
-                let p = lastChild.previousSibling;
-
-                while (p && !lastChild.lastChild && !getNodeText(p).length) {
-                  p = p.previousSibling;
-                }
-
-                if (p) {
-                  focusChild = p;
-                  break;
-                } else {
-                  lastChild = lastChild.parentNode;
-                }
-              }
-
-              if (!focusChild) {
-                focusChild = lastChild.previousSibling ?? previousElementSibling;
-              }
 
               if (lastChild.hasChildNodes) lastChild.replaceChildren();
               lastChild.remove();
@@ -3722,11 +3707,8 @@
             topNode.remove();
 
             if (focusChild) {
-
-              const position = focusChild === previousElementSibling ? 0 : focusChild.textContent?.length ?? 0;
-              setCaret(focusChild, position);
+              setCaret(focusChild, 0);
             } else {
-
               selection.removeAllRanges();
               editor?.focus();
             }
