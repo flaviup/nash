@@ -2938,14 +2938,42 @@
       }
 
       // Creates HTML text elements and BR elements from the specified text
-      function createHtmlElementsFromText(text) {
+      function createHtmlElementsFromText(text, start, end, callback) {
 
         const elements = text.split("\n");
+
+        for (let i = 0; i < elements.length; i++) {
+          elements[i] = document.createTextNode(elements[i]);
+        }
 
         for (let i = elements.length - 1; i > 0; i--) {
           elements.splice(i, 0, document.createElement("br"));
         }
 
+        if (start > -1 || end > -1) {
+
+          let length = 0;
+          let startNode = null, endNode = null, offsetStart = 0, offsetEnd = 0;
+
+          for (let i = 0; i < elements.length; i++) {
+
+            const currElementLength = ((elements[i].nodeName === "BR") ? 1 : elements[i].textContent.length);
+
+            if (length <= start && start < length + currElementLength) {
+              startNode = elements[i];
+              offsetStart = start - length;
+            }
+
+            if (length < end && end <= length + currElementLength) {
+              endNode = elements[i];
+              offsetEnd = end - length;
+            }
+
+            length += currElementLength;
+          }
+          callback(startNode, endNode, offsetStart, offsetEnd);
+        }
+        
         return elements;
       }
 
@@ -2958,12 +2986,26 @@
       }
 
       // Creates the HTML node with the specified text and styles, having the specified parent
-      function createHtmlNode(parentNode, text, styleBitPattern) {
+      function createHtmlNode(parentNode, text, styleBitPattern, start, end) {
 
         text = text.replace(/\t/, "&nbsp;"); // "&emsp;" "&ensp;"
+        let nodeStart = null, nodeEnd = null, startOffset = 0, endOffset = 0;
+
+        function callback(startNode, endNode, offsetStart, offsetEnd) {
+
+          if (!nodeStart) {
+            nodeStart = startNode;
+            startOffset = offsetStart;
+          }
+
+          if (!nodeEnd) {
+            nodeEnd = endNode;
+            endOffset = offsetEnd;
+          }
+        }
 
         if (styleBitPattern.isZero) {
-          parentNode.append(...createHtmlElementsFromText(text));
+          parentNode.append(...createHtmlElementsFromText(text, start, end, callback));
         } else {
 
           for (let i = 0; i < styleBitPattern.length; ++i) {
@@ -2985,27 +3027,57 @@
               parentNode = child;
             }
           }
-          parentNode.append(...createHtmlElementsFromText(text));
+          parentNode.append(...createHtmlElementsFromText(text, start, end, callback));
         }
+
+        return [nodeStart, nodeEnd, startOffset, endOffset];
       }
 
       // Rebuilds the HTML tree rooted at node and with the specified styles (specified as an array of style bit patterns, one style bit pattern for each character)
-      function buildHtmlTree(node, styledPositions) {
+      function buildHtmlTree(node, styledPositions, start, end) {
 
         const text = getNodeText(node);
         const length = text.length;
         let p = 0;
         const frag = document.createDocumentFragment();
+        let nodeStart = null, nodeEnd = null, startOffset = 0, endOffset = 0;
 
         for (let i = 1; i < length; ++i) {
+
           if (!styledPositions[i].identical(styledPositions[p])) {
-            createHtmlNode(frag, text.substring(p, i), styledPositions[p]);
+
+            const s = (p <= start && start < i) ? start - p : -1;
+            const e = (p < end && end <= i) ? end - p : -1;
+            const [nodeStartTmp, nodeEndTmp, startOffsetTmp, endOffsetTmp] = createHtmlNode(frag, text.substring(p, i), styledPositions[p], s, e);
             p = i;
+
+            if (!nodeStart) {
+              nodeStart = nodeStartTmp;
+              startOffset = startOffsetTmp;
+            }
+
+            if (!nodeEnd) {
+              nodeEnd = nodeEndTmp;
+              endOffset = endOffsetTmp;
+            }
           }
         }
 
         if (p < length) {
-          createHtmlNode(frag, text.substring(p), styledPositions[p]);
+
+          const s = (p <= start && start < length) ? start - p : -1;
+          const e = (p < end && end <= length) ? end - p : -1;
+          const [nodeStartTmp, nodeEndTmp, startOffsetTmp, endOffsetTmp] = createHtmlNode(frag, text.substring(p), styledPositions[p], s, e);
+
+          if (!nodeStart) {
+            nodeStart = nodeStartTmp;
+            startOffset = startOffsetTmp;
+          }
+
+          if (!nodeEnd) {
+            nodeEnd = nodeEndTmp;
+            endOffset = endOffsetTmp;
+          }
         }
 
         if (node.nodeType === Node.ELEMENT_NODE) {
@@ -3013,6 +3085,8 @@
         } else if (node.nodeType === Node.TEXT_NODE) {
           node.replaceWith(frag);
         }
+
+        return [nodeStart, nodeEnd, startOffset, endOffset];
       }
 
       // gets the current range
@@ -3057,6 +3131,7 @@
         }                                                                    // otherwise we remove the style on all the characters in the range
         styledPositions.push(styled);
       }
+      const rangeNodes = [];
 
       if (removeStyle) { // if we want to remove the styling
 
@@ -3069,7 +3144,10 @@
           for (let j = selPositions[i].start; j < selPositions[i].end; ++j) {
             styled[j].bitAndAssign(styleBitPattern);      // we remove the style by applying the inverted bit pattern
           }                                               // to each of the characters' style pattern in the range
-          buildHtmlTree(selPositions[i].node, styled);    // we rebuild the HTML tree rooted at node
+          const start = (i == 0) ? selPositions[i].start : -1;
+          const end = (i == selPositions.length - 1) ? selPositions[i].end : -1;
+          const [nodeStart, nodeEnd, startOffset, endOffset] = buildHtmlTree(selPositions[i].node, styled, start, end); // we rebuild the HTML tree rooted at node
+          if (nodeStart || nodeEnd) rangeNodes.push([nodeStart, nodeEnd, startOffset, endOffset]);
         }
       } else {
 
@@ -3099,10 +3177,22 @@
             if (styleGroupClearBitPattern) styled[j].bitAndAssign(styleGroupClearBitPattern); // we remove other style(s) in the same group with the current style, for each selected character
             styled[j].bitOrAssign(styleBitPattern);     // we apply the style by applying the style bit pattern
           }                                             // to each of the characters' style pattern in the range
-          buildHtmlTree(selPositions[i].node, styled);  // we rebuild the HTML tree rooted at node
+          const start = (i == 0) ? selPositions[i].start : -1;
+          const end = (i == selPositions.length - 1) ? selPositions[i].end : -1;
+          const [nodeStart, nodeEnd, startOffset, endOffset] = buildHtmlTree(selPositions[i].node, styled, start, end); // we rebuild the HTML tree rooted at node
+          if (nodeStart || nodeEnd) rangeNodes.push([nodeStart, nodeEnd, startOffset, endOffset]);
         }
       }
       window.getSelection().removeAllRanges(); // we remove all selection's ranges after HTML tree rebuild
+
+      if (rangeNodes.length) {
+
+        const range = document.createRange();
+        range.setStart(rangeNodes[0][0], rangeNodes[0][2]);
+        const i = (rangeNodes.length > 1) ? 1 : 0;
+        range.setEnd(rangeNodes[i][1], rangeNodes[i][3]);
+        window.getSelection().addRange(range);
+      }
     }
 
     // Basic inline formatting: wraps the selection in the specified tag.
@@ -3369,16 +3459,6 @@
       }
       document.title = filename.innerHTML.trim() || "Nash Note";
     }
-
-    /*function printSelectionInfo() {
-      const selection = window.getSelection();
-      console.log("selection: ", selection);
-
-      if (selection?.rangeCount) {
-        const range = selection.getRangeAt(0);
-        console.log("range: ", range);
-      }
-    }*/
 
     function handleEnterKey(range, parentNodeNames) {
 
