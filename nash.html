@@ -3226,6 +3226,18 @@
       selection.addRange(range);
     }
 
+    // Helper: Gets the first deepest child of the specified node
+    function getFirstDeepestChild(node) {
+
+      if (!node) return node;
+
+      while (node.firstChild) {
+        node = node.firstChild;
+      }
+
+      return node;
+    }
+
     // Helper: Gets the last deepest child of the specified node
     function getLastDeepestChild(node) {
 
@@ -3350,7 +3362,7 @@
 
       const editor = document.getElementById("editor");
 
-      if (editor.firstChild && ["H1", "H2", "H3", "H4", "H5", "H6", "P"].includes(editor.firstChild.nodeName)) {
+      if (editor.firstChild && ["H1", "H2", "H3", "H4", "H5", "H6", "P", "SMALL"].includes(editor.firstChild.nodeName)) {
         return;
       }
       const htmlText = editor.innerHTML.trim();
@@ -3460,7 +3472,8 @@
 
     function handleBackspaceInEmptyTextContent(topNode, e) {
 
-      if (!topNode.textContent?.length) { // if the node has empty string (this includes the case with invisible <br/>: and innerText is not empty)
+      if (!topNode.textContent?.length &&
+          (!topNode.childElementCount || (topNode.childElementCount === 1 && topNode.firstChild.nodeName === "BR"))) { // if the node has empty string
 
         e.stopImmediatePropagation();  // cancel the event
         e.preventDefault();
@@ -3566,7 +3579,7 @@
 
             const previousElementSibling = topNode.previousElementSibling;
 
-            if ((topNode === block || !block.previousSibling) &&
+            if (topNode === block &&
                 (!previousElementSibling ||
                 !previousElementSibling.classList?.contains("text-block"))) {
 
@@ -3575,7 +3588,13 @@
               return;
             }
 
-            if (previousElementSibling &&
+            if (topNode !== block) {
+
+              const fdc = getFirstDeepestChild(topNode);
+              if (fdc !== block) return;
+            }
+
+            if (!previousElementSibling ||
                 !previousElementSibling.classList?.contains("text-block")) {
 
               e.stopImmediatePropagation();
@@ -3583,74 +3602,72 @@
               return;
             }
 
-            if (previousElementSibling) { // combining current text block with the previous text block
+            // combining current text block with the previous text block
+            let lastChild = previousElementSibling.lastChild;
 
-              let lastChild = previousElementSibling.lastChild;
+            while (lastChild) {
 
-              while (lastChild) {
-
-                while (lastChild &&
-                       (lastChild.nodeType !== Node.ELEMENT_NODE || !lastChild.lastChild) &&
-                       !getNodeText(lastChild).length) {
-                  lastChild = lastChild.previousSibling;
-                }
-
-                if (lastChild &&
-                    lastChild.nodeName !== "BR" &&
-                    lastChild.lastChild) {
-                  lastChild = lastChild.lastChild;
-                } else {
-                  break;
-                }
+              while (lastChild &&
+                      (lastChild.nodeType !== Node.ELEMENT_NODE || !lastChild.lastChild) &&
+                      !getNodeText(lastChild).length) {
+                lastChild = lastChild.previousSibling;
               }
-              lastChild = lastChild || previousElementSibling;
-              let focusChild = lastChild;
 
-              if (lastChild === previousElementSibling) {
-                previousElementSibling.replaceChildren();
-              } else if (lastChild.nodeName === "BR") {
-
-                focusChild = null;
-
-                while (lastChild.parentNode !== previousElementSibling) {
-
-                  let p = lastChild.previousSibling;
-
-                  while (p && !lastChild.lastChild && !getNodeText(p).length) {
-                    p = p.previousSibling;
-                  }
-
-                  if (p) {
-                    focusChild = p;
-                    break;
-                  } else {
-                    lastChild = lastChild.parentNode;
-                  }
-                }
-
-                if (!focusChild) {
-                  focusChild = lastChild.previousSibling ?? previousElementSibling;
-                }
-
-                if (lastChild.hasChildNodes) lastChild.replaceChildren();
-                lastChild.remove();
-              }
-              previousElementSibling.append(...topNode.childNodes);
-              topNode.replaceChildren();
-              topNode.remove();
-
-              if (focusChild) {
-
-                const position = focusChild === previousElementSibling ? 0 : focusChild.textContent?.length ?? 0;
-                setCaret(focusChild, position);
+              if (lastChild &&
+                  lastChild.nodeName !== "BR" &&
+                  lastChild.lastChild) {
+                lastChild = lastChild.lastChild;
               } else {
-
-                selection.removeAllRanges();
-                editor?.focus();
+                break;
               }
-              e.stopImmediatePropagation();
-              e.preventDefault();
             }
+            lastChild = lastChild || previousElementSibling;
+            let focusChild = lastChild;
+
+            if (lastChild === previousElementSibling) {
+              previousElementSibling.replaceChildren();
+            } else if (lastChild.nodeName === "BR") {
+
+              focusChild = null;
+
+              while (lastChild.parentNode !== previousElementSibling) {
+
+                let p = lastChild.previousSibling;
+
+                while (p && !lastChild.lastChild && !getNodeText(p).length) {
+                  p = p.previousSibling;
+                }
+
+                if (p) {
+                  focusChild = p;
+                  break;
+                } else {
+                  lastChild = lastChild.parentNode;
+                }
+              }
+
+              if (!focusChild) {
+                focusChild = lastChild.previousSibling ?? previousElementSibling;
+              }
+
+              if (lastChild.hasChildNodes) lastChild.replaceChildren();
+              lastChild.remove();
+            }
+            previousElementSibling.append(...topNode.childNodes);
+            topNode.replaceChildren();
+            topNode.remove();
+
+            if (focusChild) {
+
+              const position = focusChild === previousElementSibling ? 0 : focusChild.textContent?.length ?? 0;
+              setCaret(focusChild, position);
+            } else {
+
+              selection.removeAllRanges();
+              editor?.focus();
+            }
+            e.stopImmediatePropagation();
+            e.preventDefault();
           }
         }
       }
