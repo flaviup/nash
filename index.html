@@ -825,11 +825,11 @@
         <div class="text-dropdown">
           <button id="btnLinks" title="Insert links">🔗</button>
           <div id="linksDropdown" class="text-dropdown-content">
-            <button id="btnLinkText" title="Make text link">📝 Text Link</button>
+            <button id="btnLinkText" title="Make text link">🌎 Text Link</button>
             <button id="btnLinkImage" title="Insert image link">📷 Image Link</button>
             <button id="btnLinkAudio" title="Insert audio link">🔈 Audio Link</button>
             <button id="btnLinkVideo" title="Insert video link">🎞 Video Link</button>
-            <button id="btnLinkPdf" title="Insert PDF file link">📖 PDF Link</button>
+            <button id="btnLinkPdf" title="Insert PDF file link">📕 PDF Link</button>
           </div>
         </div>
 
@@ -849,7 +849,7 @@
             </div>
 
             <div class="fileUpload">
-              <label for="pdfUpload" title="Embed PDF file">📖 PDF</label>
+              <label for="pdfUpload" title="Embed PDF file">📕 PDF</label>
               <input type="file" id="pdfUpload" accept=".pdf" onclick="this.value = null">
             </div>
 
@@ -3538,6 +3538,31 @@
             e.stopImmediatePropagation();
             e.preventDefault();
             return;
+        }
+        let p = block;
+        let shouldNormalizeEditor = true;
+
+        while (p && p.id !== "editor") {
+
+          if (p.classList?.contains("text-block") ||
+              p.classList?.contains("code-block")) {
+            shouldNormalizeEditor = false;
+            break;
+          }
+          p = p.parentNode;
+        }
+
+        if (shouldNormalizeEditor) {
+
+          // don't block some control keys (like Left, Right, Up and Down); block the rest
+          const keyCode = e.keyCode || e.which;
+
+          if (keyCode < 33 || keyCode > 44) {
+
+            e.stopImmediatePropagation();
+            e.preventDefault();
+            return;
+          }
         }
       }
 
