@@ -3226,6 +3226,18 @@
       selection.addRange(range);
     }
 
+    // Helper: Gets the last deepest child of the specified node
+    function getLastDeepestChild(node) {
+
+      if (!node) return node;
+
+      while (node.lastChild) {
+        node = node.lastChild;
+      }
+
+      return node;
+    }
+
     // Splits the current block at the caret.
     function splitBlock(range) {
 
@@ -3247,35 +3259,33 @@
         setCaret(p, 0);
         return;
       }
-      const afterRange = range.cloneRange();
-      afterRange.setStart(range.endContainer, range.endOffset); // checks what follows after the caret in the current block
-      afterRange.setEndAfter(block.lastChild || block);
-      const afterContent = afterRange.cloneContents();
-
-      // caret is at end of current block:
-      // if the after range does not have some content (nested elements or non-empty text)
-      const isAtEnd = !Array.from(afterContent.childNodes).some(n => {
-        return (n.nodeType === Node.ELEMENT_NODE) ||
-               (n.nodeType === Node.TEXT_NODE && n.textContent.trim());
-      });
       const isTextBlock = block.classList?.contains("text-block");
       const newBlock = document.createElement(isTextBlock ? block.nodeName.toLowerCase() : "p");
       newBlock.setAttribute("id", `text${generateUId()}`);
       newBlock.setAttribute("class", isTextBlock ? block.getAttribute("class") : "text-block");
 
-      if (isAtEnd) { // if the caret is at the end of current block, then add an empty text-block, next to current block
+      const startContainer = range.startContainer;
+      const extractRange = range.cloneRange();
+      extractRange.setEndAfter(block.lastChild || block);
+      const extracted = extractRange.extractContents(); // selects all content from start of caret to end of current block
 
+      if (!extracted.childNodes.length) { // this should not happen: this means the caret is at the end of current block
         newBlock.innerHTML = "<br/>";
-      } else { // else append the last (from caret to end of block) children of the current block into a new text-block
+      } else {
 
-        const extractRange = range.cloneRange();
-        extractRange.setEndAfter(block.lastChild || block);
-        const extracted = extractRange.extractContents(); // selects all content from start of caret to end of current block
+        newBlock.appendChild(extracted);
+        const ldc = getLastDeepestChild(newBlock);
 
-        if (!extracted.childNodes.length || !getNodeText(extracted).length) { // this should not happen: this means the caret is at the end of current block
-          newBlock.innerHTML = "<br/>";
-        } else {
-          newBlock.appendChild(extracted);
+        if (ldc?.nodeName !== "BR") {
+
+          if (ldc.nodeType === Node.ELEMENT_NODE) {
+            ldc.appendChild(document.createElement("br"));
+          } else if (ldc.nodeType === Node.TEXT_NODE) {
+            if (ldc.parentNode.nodeName !== "BR") ldc.parentNode.appendChild(document.createElement("br"));
+            else ldc.parentNode.parentNode.appendChild(document.createElement("br"));
+          } else {
+            newBlock.appendChild(document.createElement("br"));
+          }
         }
       }
 
@@ -3284,11 +3294,21 @@
       } else {
         editor.appendChild(newBlock);
       }
-      setCaret(newBlock, 0); // move the caret into the new block
+      const ldc = getLastDeepestChild(block);
 
-      if (!block.textContent?.trim() && !block?.querySelector("img, video, iframe, embed, object")) {
-        block.innerHTML = "<br/>";
+      if (ldc.nodeName !== "BR" || ldc !== startContainer) {
+
+        if (ldc.nodeType === Node.TEXT_NODE || ldc.nodeName === "BR") {
+          if (ldc.parentNode.nodeName !== "BR") ldc.parentNode.appendChild(document.createElement("br"));
+          else ldc.parentNode.parentNode.appendChild(document.createElement("br"));
+        } else if (ldc.nodeType === Node.ELEMENT_NODE) {
+          ldc.appendChild(document.createElement("br"));
+        } else {
+          block.appendChild(document.createElement("br"));
+        }
       }
+
+      setCaret(newBlock, 0); // move the caret into the new block
     }
 
     // Normalizes stray text nodes and nested blocks.
@@ -3359,17 +3379,6 @@
         console.log("range: ", range);
       }
     }*/
-
-    function getLastDeepestChild(node) {
-
-      if (!node) return node;
-
-      while (node.lastChild) {
-        node = node.lastChild;
-      }
-
-      return node;
-    }
 
     function handleEnterKey(range, parentNodeNames) {
 

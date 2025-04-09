@@ -3209,30 +3209,33 @@
       newBlock.id = node.id;
       newBlock.setAttribute("class", node.getAttribute("class"));
 
-      while (node.firstChild) { // adds current node's children to the new block, one by one; except if a child is a P and the new tag is a H[1-6]
-        if (
-          node.firstChild.nodeType === Node.ELEMENT_NODE &&
-          node.firstChild.matches("p") &&
-          tag.match(/^H[1-6]$/)
-        ) {
-          // then adds the child's children directly to the new block
-          // (instead of adding the child directly: P into another H[1-6])
-          let child = node.firstChild;
+      const range = selection.getRangeAt(0);
+      const startContainer = (node === range.startContainer ? newBlock : range.startContainer);
+      const startOffset = range.startOffset;
+      const endContainer = (node === range.endContainer ? newBlock : range.endContainer);
+      const endOffset = range.endOffset;
 
-          while (child.firstChild) {
-            newBlock.appendChild(child.firstChild);
-          }
-          node.removeChild(child); // removes the intermediary child P node
-        } else {
-          newBlock.appendChild(node.firstChild);
-        }
-      }
-      editor.replaceChild(newBlock, node); // replaces the node with the new block
-      const range = document.createRange(); // keeps the selection (reconstructed)
-      range.selectNodeContents(newBlock);
-      range.collapse(false);
+      editor.insertBefore(newBlock, node);
+      newBlock.append(...node.childNodes);
+      node.remove();
+
+      range.setStart(startContainer, startOffset);
+      range.setEnd(endContainer, endOffset);
+
       selection.removeAllRanges();
       selection.addRange(range);
+    }
+
+    // Helper: Gets the last deepest child of the specified node
+    function getLastDeepestChild(node) {
+
+      if (!node) return node;
+
+      while (node.lastChild) {
+        node = node.lastChild;
+      }
+
+      return node;
     }
 
     // Splits the current block at the caret.
@@ -3256,35 +3259,33 @@
         setCaret(p, 0);
         return;
       }
-      const afterRange = range.cloneRange();
-      afterRange.setStart(range.endContainer, range.endOffset); // checks what follows after the caret in the current block
-      afterRange.setEndAfter(block.lastChild || block);
-      const afterContent = afterRange.cloneContents();
-
-      // caret is at end of current block:
-      // if the after range does not have some content (nested elements or non-empty text)
-      const isAtEnd = !Array.from(afterContent.childNodes).some(n => {
-        return (n.nodeType === Node.ELEMENT_NODE) ||
-               (n.nodeType === Node.TEXT_NODE && n.textContent.trim());
-      });
       const isTextBlock = block.classList?.contains("text-block");
       const newBlock = document.createElement(isTextBlock ? block.nodeName.toLowerCase() : "p");
       newBlock.setAttribute("id", `text${generateUId()}`);
       newBlock.setAttribute("class", isTextBlock ? block.getAttribute("class") : "text-block");
 
-      if (isAtEnd) { // if the caret is at the end of current block, then add an empty text-block, next to current block
+      const startContainer = range.startContainer;
+      const extractRange = range.cloneRange();
+      extractRange.setEndAfter(block.lastChild || block);
+      const extracted = extractRange.extractContents(); // selects all content from start of caret to end of current block
 
+      if (!extracted.childNodes.length) { // this should not happen: this means the caret is at the end of current block
         newBlock.innerHTML = "<br/>";
-      } else { // else append the last (from caret to end of block) children of the current block into a new text-block
+      } else {
 
-        const extractRange = range.cloneRange();
-        extractRange.setEndAfter(block.lastChild || block);
-        const extracted = extractRange.extractContents(); // selects all content from start of caret to end of current block
+        newBlock.appendChild(extracted);
+        const ldc = getLastDeepestChild(newBlock);
 
-        if (!extracted.childNodes.length || !getNodeText(extracted).length) { // this should not happen: this means the caret is at the end of current block
-          newBlock.innerHTML = "<br/>";
-        } else {
-          newBlock.appendChild(extracted);
+        if (ldc?.nodeName !== "BR") {
+
+          if (ldc.nodeType === Node.ELEMENT_NODE) {
+            ldc.appendChild(document.createElement("br"));
+          } else if (ldc.nodeType === Node.TEXT_NODE) {
+            if (ldc.parentNode.nodeName !== "BR") ldc.parentNode.appendChild(document.createElement("br"));
+            else ldc.parentNode.parentNode.appendChild(document.createElement("br"));
+          } else {
+            newBlock.appendChild(document.createElement("br"));
+          }
         }
       }
 
@@ -3293,11 +3294,21 @@
       } else {
         editor.appendChild(newBlock);
       }
-      setCaret(newBlock, 0); // move the caret into the new block
+      const ldc = getLastDeepestChild(block);
 
-      if (!block.textContent?.trim() && !block?.querySelector("img, video, iframe, embed, object")) {
-        block.innerHTML = "<br/>";
+      if (ldc.nodeName !== "BR" || ldc !== startContainer) {
+
+        if (ldc.nodeType === Node.TEXT_NODE || ldc.nodeName === "BR") {
+          if (ldc.parentNode.nodeName !== "BR") ldc.parentNode.appendChild(document.createElement("br"));
+          else ldc.parentNode.parentNode.appendChild(document.createElement("br"));
+        } else if (ldc.nodeType === Node.ELEMENT_NODE) {
+          ldc.appendChild(document.createElement("br"));
+        } else {
+          block.appendChild(document.createElement("br"));
+        }
       }
+
+      setCaret(newBlock, 0); // move the caret into the new block
     }
 
     // Normalizes stray text nodes and nested blocks.
@@ -3368,28 +3379,6 @@
         console.log("range: ", range);
       }
     }*/
-
-    function getFirstDeepestChild(node) {
-
-      if (!node) return node;
-
-      while (node.firstChild) {
-        node = node.firstChild;
-      }
-
-      return node;
-    }
-
-    function getLastDeepestChild(node) {
-
-      if (!node) return node;
-
-      while (node.lastChild) {
-        node = node.lastChild;
-      }
-
-      return node;
-    }
 
     function handleEnterKey(range, parentNodeNames) {
 
@@ -3586,7 +3575,7 @@
               return;
             }
 
-            if (topNode.previousElementSibling &&
+            if (previousElementSibling &&
                 !previousElementSibling.classList?.contains("text-block")) {
 
               e.stopImmediatePropagation();
@@ -3594,15 +3583,57 @@
               return;
             }
 
-            if (previousElementSibling) {
+            if (previousElementSibling) { // combining current text block with the previous text block
 
-              const lastChild = getLastDeepestChild(previousElementSibling);
+              let lastChild = previousElementSibling.lastChild;
+
+              while (lastChild) {
+
+                while (lastChild &&
+                       (lastChild.nodeType !== Node.ELEMENT_NODE || !lastChild.lastChild) &&
+                       !getNodeText(lastChild).length) {
+                  lastChild = lastChild.previousSibling;
+                }
+
+                if (lastChild &&
+                    lastChild.nodeName !== "BR" &&
+                    lastChild.lastChild) {
+                  lastChild = lastChild.lastChild;
+                } else {
+                  break;
+                }
+              }
+              lastChild = lastChild || previousElementSibling;
               let focusChild = lastChild;
 
-              if (lastChild?.nodeName === "BR") {
+              if (lastChild === previousElementSibling) {
+                previousElementSibling.replaceChildren();
+              } else if (lastChild.nodeName === "BR") {
 
+                focusChild = null;
+
+                while (lastChild.parentNode !== previousElementSibling) {
+
+                  let p = lastChild.previousSibling;
+
+                  while (p && !lastChild.lastChild && !getNodeText(p).length) {
+                    p = p.previousSibling;
+                  }
+
+                  if (p) {
+                    focusChild = p;
+                    break;
+                  } else {
+                    lastChild = lastChild.parentNode;
+                  }
+                }
+
+                if (!focusChild) {
+                  focusChild = lastChild.previousSibling ?? previousElementSibling;
+                }
+
+                if (lastChild.hasChildNodes) lastChild.replaceChildren();
                 lastChild.remove();
-                focusChild = getLastDeepestChild(previousElementSibling);
               }
               previousElementSibling.append(...topNode.childNodes);
               topNode.replaceChildren();
