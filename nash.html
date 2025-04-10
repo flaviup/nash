@@ -1504,14 +1504,15 @@
     const HIGHLIGHT_COLORS_N = 8;
     const FONT_SIZES_N = 12;
 
-    const STYLE_STRONG_INDEX = -3;
-    const STYLE_EM_INDEX = -2;
-    const STYLE_U_INDEX = -1;
-
     const STYLE_TEXT_COLOR_BASE_INDEX = -1;
     const STYLE_HIGHLIGHT_COLOR_BASE_INDEX = STYLE_TEXT_COLOR_BASE_INDEX + TEXT_COLORS_N;
     const STYLE_FONT_BASE_INDEX = STYLE_HIGHLIGHT_COLOR_BASE_INDEX + HIGHLIGHT_COLORS_N;
-    const STYLE_LINK_BASE_INDEX = STYLE_FONT_BASE_INDEX + FONT_SIZES_N;
+
+    const STYLE_STRONG_INDEX = STYLE_FONT_BASE_INDEX + FONT_SIZES_N + 1;
+    const STYLE_EM_INDEX = STYLE_STRONG_INDEX + 1;
+    const STYLE_U_INDEX = STYLE_EM_INDEX + 1;
+
+    const STYLE_LINK_BASE_INDEX = STYLE_U_INDEX;
 
     const STYLE_GROUPS = [[STYLE_TEXT_COLOR_BASE_INDEX + 1, STYLE_TEXT_COLOR_BASE_INDEX + TEXT_COLORS_N],
                           [STYLE_HIGHLIGHT_COLOR_BASE_INDEX + 1, STYLE_HIGHLIGHT_COLOR_BASE_INDEX + HIGHLIGHT_COLORS_N],
@@ -3255,7 +3256,7 @@
 
       if (!editor.contains(range.commonAncestorContainer)) return;
       updateLinkStyles(editor);
-      wrapRangeText(range, styleIndex < 0 ? STYLES.length + styleIndex : styleIndex);
+      wrapRangeText(range, styleIndex);
     }
 
     // Applies inline style (e.g., font-size, text color, background color) by wrapping the selection in a <span>.
