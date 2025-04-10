@@ -26,7 +26,6 @@ Features:
 
 TODO:
 - Undo and redo (most important)
-- Different font size styling in the same paragraph
 - Font selection and embedding
 - Epub link embedding
 - Epub embedding from url
@@ -37,7 +36,6 @@ TODO:
 - Html embedding (as iframe srcdoc="...")
 - Embedded page resizing
 - Video embedding (?)
-- Better text editing
 - Better icons
 - Lists (todos)
 - Data sources embedding
