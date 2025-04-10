@@ -412,56 +412,58 @@
       max-width: 100%;
       height: auto;
       display: block;
-      margin: 10px 0;
       border-radius: 12px;
     }
 
     audio {
       width: 100%;
       display: block;
-      margin: 10px 0;
     }
 
     video {
       width: 100%;
       height: auto;
       display: block;
-      margin: 10px 0;
       border-radius: 12px;
     }
 
+    .image-link {
+      margin: 10px 0;
+    }
+
+    .video-link {
+      margin: 10px 0;
+    }
+
+    .audio-link {
+      margin: 10px 0;
+    }
+
+    .embedded-local-image {
+      margin: 10px 0;
+    }
+
+    .embedded-local-audio {
+      margin: 10px 0;
+    }
+
     .embedded-content {
-      width: 100%;
-      height: auto;
-      display: block;
       margin: 10px 0;
     }
 
     .embedded-local-epub {
-      width: 100%;
-      height: auto;
-      display: block;
       margin: 20px 0;
     }
 
     .embedded-local-pdf {
-      width: 100%;
-      height: auto;
-      display: block;
       margin: 20px 0;
     }
 
-    .link-pdf {
-      width: 100%;
-      height: auto;
-      display: block;
+    .pdf-link {
       margin: 20px 0;
     }
 
     .embedded-table {
-      width: 100%;
-      height: auto;
-      display: block;
       margin: 10px 0;
     }
 
@@ -509,39 +511,6 @@
       margin: 10px 0;
     }
 
-    #recordingBar {
-      content: "";
-      display: block;
-      height: 4px;
-      border-radius: 2px;
-      background-color: red;
-      color: red;
-      margin: 10px 0;
-      /*transitions with Firefox, IE and Opera Support browser support*/
-      animation-name: flashing-recording-dot;
-      -webkit-animation-name: flashing-recording-dot;
-      -moz-animation-name: flashing-recording-dot;
-      -o-animation-name: flashing-recording-dot;
-      animation-duration: 2s;
-      -webkit-animation-duration: 2s;
-      -moz-animation-duration: 2s;
-      -o-animation-duration: 2s;
-      animation-iteration-count: infinite;
-      -webkit-animation-iteration-count: infinite;
-      -moz-animation-iteration-count: infinite;
-      -o-animation-iteration-count: infinite;
-    }
-
-    #recordingBar.hidden {
-      display: none;
-    }
-
-    .audio-recording {
-      width: 100%;
-      height: auto;
-      margin: 20px 0;
-    }
-
     .embedded-local-epub,
     .embedded-local-pdf,
     .embedded-local-image,
@@ -553,6 +522,8 @@
     .video-link,
     .pdf-link,
     .audio-recording {
+      width: 100%;
+      height: auto;
       display: block;
       position: relative;
     }
@@ -591,6 +562,37 @@
     }
 
     /* Audio Recording UI */
+
+    #recordingBar {
+      content: "";
+      display: block;
+      height: 4px;
+      border-radius: 2px;
+      background-color: red;
+      color: red;
+      margin: 10px 0;
+      /*transitions with Firefox, IE and Opera Support browser support*/
+      animation-name: flashing-recording-dot;
+      -webkit-animation-name: flashing-recording-dot;
+      -moz-animation-name: flashing-recording-dot;
+      -o-animation-name: flashing-recording-dot;
+      animation-duration: 2s;
+      -webkit-animation-duration: 2s;
+      -moz-animation-duration: 2s;
+      -o-animation-duration: 2s;
+      animation-iteration-count: infinite;
+      -webkit-animation-iteration-count: infinite;
+      -moz-animation-iteration-count: infinite;
+      -o-animation-iteration-count: infinite;
+    }
+
+    #recordingBar.hidden {
+      display: none;
+    }
+
+    .audio-recording {
+      margin: 20px 0;
+    }
 
     .recording-control-buttons-container {
       /*targeting Chrome & Safari*/
@@ -736,6 +738,27 @@
       text-align: justify;
     }
 
+    .left-align {
+      position: static;
+      right: auto;
+      left: 0;
+      overflow: auto;
+    }
+
+    .center-align {
+      position: static;
+      right: auto;
+      left: auto;
+      overflow: auto;
+    }
+
+    .right-align {
+      position: static;
+      right: 0;
+      left: auto;
+      overflow: auto;
+    }
+
     @media print {
       .no-print {
         display: none !important;
@@ -843,11 +866,11 @@
         </div>
 
         <div class="text-dropdown">
-          <button id="btnAlign" title="Align text">Align</button>
+          <button id="btnAlign" title="Alignment">Align</button>
           <div id="alignDropdown" class="text-dropdown-content">
-            <button id="btnLeftTextAlign" title="Align text to the left">Left</button>
-            <button id="btnCenterTextAlign" title="Align text to the center">Center</button>
-            <button id="btnRightTextAlign" title="Align text to the right">Right</button>
+            <button id="btnLeftTextAlign" title="Align to the left">Left</button>
+            <button id="btnCenterTextAlign" title="Align to the center">Center</button>
+            <button id="btnRightTextAlign" title="Align to the right">Right</button>
             <button id="btnJustifyTextAlign" title="Justify text">Justify</button>
           </div>
         </div>
@@ -2625,7 +2648,22 @@
       divNode.appendChild(createRemover());
     }
 
-    function alignText(alignmentClass) {
+    class AlignType {
+      static #_LEFT = 0;
+      static #_CENTER = 1;
+      static #_RIGHT = 2;
+      static #_JUSTIFY = 3;
+
+      static get LEFT() { return this.#_LEFT; }
+      static get CENTER() { return this.#_CENTER; }
+      static get RIGHT() { return this.#_RIGHT; }
+      static get JUSTIFY() { return this.#_JUSTIFY; }
+    }
+
+    const ALIGN_CLASSES = [["left-text", "left-align"], ["center-text", "center-align"], ["right-text", "right-align"], ["justify-text", "left-align"]];
+    const ALIGN_CLASSES_FLAT = ALIGN_CLASSES.flat();
+
+    function doAlign(alignType) {
 
       const selection = window.getSelection();
 
@@ -2633,6 +2671,7 @@
       const range = selection.getRangeAt(0);
       const editor = document.getElementById("editor");
       const nodes = [];
+      const ALIGNABLE_NODE_CLASSES = ["text-block", "embedded-table", "embedded-content", "embedded-local-image", "image-link", "video-link"];
 
       if (range) {
 
@@ -2640,8 +2679,8 @@
 
           const node = getTopLevelNodeOf(range.startContainer, editor);
 
-          if (node?.classList?.contains("text-block") ||
-              node?.classList?.contains("embedded-table")) nodes.push(node);
+          if (node?.classList && [...node.classList].some(c => ALIGNABLE_NODE_CLASSES.indexOf(c) > -1))
+            nodes.push(node);
         } else {
 
           let nodeStart = getTopLevelNodeOf(range.startContainer, editor);
@@ -2649,7 +2688,7 @@
 
           while (nodeStart) {
 
-            if (nodeStart.classList?.contains("text-block") || nodeStart.classList?.contains("embedded-table"))
+            if (nodeStart.classList && [...nodeStart.classList].some(c => ALIGNABLE_NODE_CLASSES.indexOf(c) > -1))
               nodes.push(nodeStart);
             
             if (nodeStart === nodeEnd) {
@@ -2663,7 +2702,7 @@
 
           while (nodeEnd) {
 
-            if (nodeEnd.classList?.contains("text-block") || nodeEnd.classList?.contains("embedded-table"))
+            if (nodeEnd.classList && [...nodeEnd.classList].some(c => ALIGNABLE_NODE_CLASSES.indexOf(c) > -1))
               nodes.push(nodeEnd);
             
             if (nodeStart === nodeEnd) break;
@@ -2677,13 +2716,15 @@
 
         if (node.classList?.contains("text-block")) {
 
-          node.classList?.remove("left-text", "center-text", "right-text", "justify-text");
+          node.classList?.remove(...ALIGN_CLASSES_FLAT);
+          const alignmentClass = ALIGN_CLASSES[alignType][0];
 
           if (node.classList) node.classList.add(alignmentClass);
           else node.setAttribute("class", alignmentClass);
-        } else {
+        } else if (node.classList?.contains("embedded-table")) {
 
           const columnIdxSet = new Set();
+          const alignmentClass = ALIGN_CLASSES[alignType][0];
           node.querySelectorAll("th, td").forEach((child) => {
 
             if (range.intersectsNode(child)) {
@@ -2703,12 +2744,20 @@
 
             node?.querySelectorAll(`tr th:nth-child(${columnIndex}), tr td:nth-child(${columnIndex})`)?.forEach((el) => {
 
-              el.classList?.remove("left-text", "center-text", "right-text", "justify-text");
+              el.classList?.remove(...ALIGN_CLASSES_FLAT);
 
               if (el.classList) el.classList.add(alignmentClass);
               else el.setAttribute("class", alignmentClass);
             });
           }
+        } else if (node.firstElementChild) {
+
+          node = node.firstElementChild;
+          node.classList?.remove(...ALIGN_CLASSES_FLAT);
+          const alignmentClass = ALIGN_CLASSES[alignType][1];
+
+          if (node.classList) node.classList.add(alignmentClass);
+          else node.setAttribute("class", alignmentClass);
         }
       });
     }
@@ -3736,11 +3785,8 @@
 
       let shouldHandle = topNode.classList?.contains("code-block") &&
                          topNode.firstChild.nodeName === "PRE" &&
-                         (!topNode.textContent?.length || topNode.textContent === "\n");
-      shouldHandle = shouldHandle || (!topNode.textContent?.length &&
-                                      (!topNode.childElementCount || (topNode.childElementCount === 1 &&
-                                                                      topNode.firstChild.nodeName === "BR" &&
-                                                                      topNode.classList?.contains("text-block"))));
+                         (!topNode.textContent?.length || topNode.textContent === "\n" || topNode.innerText === "\n");
+      shouldHandle = shouldHandle || (topNode.classList?.contains("text-block") && (!topNode.innerText?.length || topNode.innerText === "\n"));
 
       if (shouldHandle) { // if the node is empty
 
@@ -3789,7 +3835,7 @@
 
       if (block) {
 
-        const blockedNodeClasses = [
+        const BLOCKED_NODE_CLASSES = [
           "embedded-local-epub",
           "embedded-local-pdf",
           "embedded-local-image",
@@ -3804,7 +3850,7 @@
         ];
 
         if (block.parentNode &&
-            [...block.parentNode.classList].some(c => blockedNodeClasses.indexOf(c) !== -1)) {
+            [...block.parentNode.classList].some(c => BLOCKED_NODE_CLASSES.indexOf(c) > -1)) {
             e.stopImmediatePropagation();
             e.preventDefault();
             return;
@@ -4110,19 +4156,19 @@
     document.getElementById("btnAlign").addEventListener("click", (e) => toggleDropdown("alignDropdown"));
     document.getElementById("btnLeftTextAlign").addEventListener("click", (e) => {
       toggleDropdown("alignDropdown");
-      alignText("left-text");
+      doAlign(AlignType.LEFT);
     });
     document.getElementById("btnCenterTextAlign").addEventListener("click", (e) => {
       toggleDropdown("alignDropdown");
-      alignText("center-text");
+      doAlign(AlignType.CENTER);
     });
     document.getElementById("btnRightTextAlign").addEventListener("click", (e) => {
       toggleDropdown("alignDropdown");
-      alignText("right-text");
+      doAlign(AlignType.RIGHT);
     });
     document.getElementById("btnJustifyTextAlign").addEventListener("click", (e) => {
       toggleDropdown("alignDropdown");
-      alignText("justify-text");
+      doAlign(AlignType.JUSTIFY);
     });
 
     document.getElementById("btnText").addEventListener("click", (e) => insertText());
