@@ -2621,49 +2621,90 @@
 
     function alignText(alignmentClass) {
 
-      let range = null;
+      const selection = window.getSelection();
 
-      if (!range) {
+      if (!selection.rangeCount) return;
+      const range = selection.getRangeAt(0);
+      const editor = document.getElementById("editor");
+      const nodes = [];
 
-        const selection = window.getSelection();
+      if (range) {
 
-        if (selection?.rangeCount) {
-          range = selection.getRangeAt(0);
-        }
-      }
+        if (range.commonAncestorContainer.nodeType === Node.TEXT_NODE) {
 
-      if (!range) return;
+          const node = getTopLevelNodeOf(range.startContainer, editor);
 
-      let rootNode = range.startContainer;
-      let editor = document.getElementById("editor");
+          if (node?.classList?.contains("text-block") ||
+              node?.classList?.contains("embedded-table")) nodes.push(node);
+        } else {
 
-      while (rootNode && rootNode.parentNode !== editor) {
+          let nodeStart = getTopLevelNodeOf(range.startContainer, editor);
+          let nodeEnd = getTopLevelNodeOf(range.endContainer, editor);
 
-        if (["TH", "TD"].includes(rootNode.nodeName)) {
+          while (nodeStart) {
 
-          let p = 1;
-          let child = rootNode;
+            if (nodeStart.classList?.contains("text-block") || nodeStart.classList?.contains("embedded-table"))
+              nodes.push(nodeStart);
+            
+            if (nodeStart === nodeEnd) {
 
-          while (child.previousSibling) {
-            child = child.previousSibling;
-            if (child.nodeName === rootNode.nodeName) ++p;
-          };
-          let tableNode = rootNode;
+              nodeEnd = null;
+              break;
+            }
 
-          while (tableNode && tableNode.nodeName !== "TABLE") {
-            tableNode = tableNode.parentNode;
+            nodeStart = nodeStart.nextElementSibling;
           }
-          tableNode?.querySelectorAll(`tr th:nth-child(${p}), tr td:nth-child(${p})`)?.forEach((el) => {
 
-            el.classList.remove("left-text", "center-text", "right-text", "justify-text");
-            el.classList.add(alignmentClass);
-          });
-          return;
+          while (nodeEnd) {
+
+            if (nodeEnd.classList?.contains("text-block") || nodeEnd.classList?.contains("embedded-table"))
+              nodes.push(nodeEnd);
+            
+            if (nodeStart === nodeEnd) break;
+
+            nodeEnd = nodeEnd.previousElementSibling;
+          }
         }
-        rootNode = rootNode.parentNode;
       }
-      rootNode?.classList?.remove("left-text", "center-text", "right-text", "justify-text");
-      rootNode?.classList?.add(alignmentClass);
+
+      nodes.forEach((node) => {
+
+        if (node.classList?.contains("text-block")) {
+
+          node.classList?.remove("left-text", "center-text", "right-text", "justify-text");
+
+          if (node.classList) node.classList.add(alignmentClass);
+          else node.setAttribute("class", alignmentClass);
+        } else {
+
+          const columnIdxSet = new Set();
+          node.querySelectorAll("th, td").forEach((child) => {
+
+            if (range.intersectsNode(child)) {
+
+              let columnIndex = 1;
+              const nodeName = child.nodeName;
+
+              while (child.previousSibling) {
+                child = child.previousSibling;
+                if (child.nodeName === nodeName) ++columnIndex;
+              };
+              columnIdxSet.add(columnIndex);
+            }
+          });
+
+          for (let columnIndex of columnIdxSet) {
+
+            node?.querySelectorAll(`tr th:nth-child(${columnIndex}), tr td:nth-child(${columnIndex})`)?.forEach((el) => {
+
+              el.classList?.remove("left-text", "center-text", "right-text", "justify-text");
+
+              if (el.classList) el.classList.add(alignmentClass);
+              else el.setAttribute("class", alignmentClass);
+            });
+          }
+        }
+      });
     }
 
     // Toggles dropdown visibility
@@ -3379,7 +3420,7 @@
       applyStyle(STYLE_HIGHLIGHT_COLOR_BASE_INDEX + color);
     }
 
-    // Converts the current block (direct child of #editor) to the chosen tag.
+    // Converts the currently selected text blocks (direct children of #editor) to the chosen tag.
     function changeBlock(tagName) {
 
       const selection = window.getSelection();
