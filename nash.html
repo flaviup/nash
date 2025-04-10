@@ -739,24 +739,21 @@
     }
 
     .left-align {
-      position: static;
-      right: auto;
-      left: 0;
-      overflow: auto;
+      display: flex;
+      flex-direction: row;
+      justify-content: flex-start;
     }
 
     .center-align {
-      position: static;
-      right: auto;
-      left: auto;
-      overflow: auto;
+      display: flex;
+      flex-direction: row;
+      justify-content: center;
     }
 
     .right-align {
-      position: static;
-      right: 0;
-      left: auto;
-      overflow: auto;
+      display: flex;
+      flex-direction: row;
+      justify-content: flex-end;
     }
 
     @media print {
@@ -1608,7 +1605,7 @@
           el.parentNode?.removeChild(el);
         });
 
-        template.content.querySelectorAll('*[contenteditable]').forEach(el => {
+        template.content.querySelectorAll("*[contenteditable]").forEach(el => {
           el.setAttribute("contenteditable", "false");
         });
       }
@@ -2522,7 +2519,7 @@
       
       while (i < l) {
 
-        if (dims[i] >= '0' && dims[i] <= '9') {
+        if (dims[i] >= "0" && dims[i] <= "9") {
           if (r1 < 0) {
             r1 = i++;
             continue;
@@ -2671,7 +2668,7 @@
       const range = selection.getRangeAt(0);
       const editor = document.getElementById("editor");
       const nodes = [];
-      const ALIGNABLE_NODE_CLASSES = ["text-block", "embedded-table", "embedded-content", "embedded-local-image", "image-link", "video-link"];
+      const ALIGNABLE_NODE_CLASSES = ["text-block", "embedded-table", "embedded-content", "embedded-local-image", "image-link"];
 
       if (range) {
 
@@ -2752,7 +2749,6 @@
           }
         } else if (node.firstElementChild) {
 
-          node = node.firstElementChild;
           node.classList?.remove(...ALIGN_CLASSES_FLAT);
           const alignmentClass = ALIGN_CLASSES[alignType][1];
 
@@ -4038,7 +4034,7 @@
         }
       }
 
-      if ((e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'y')) {
+      if ((e.ctrlKey || e.metaKey) && (e.key === "z" || e.key === "y")) {
         e.preventDefault();
       }
     }
@@ -4056,11 +4052,12 @@
     }
 
     function unloadHandler(e) {
+
       if (document.getElementById("editor").contentEditable !== "true") {
         return;
       }
       e.preventDefault()
-      e.returnValue = '';
+      e.returnValue = "";
     }
 
     let lastValidSelectionRange = null;
