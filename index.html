@@ -343,7 +343,7 @@
     }
 
     #saveDropdown {
-      width: 250px;
+      width: 270px;
       right: 0;
       left: auto;
     }
@@ -903,8 +903,10 @@
           <button id="btnSaveMenu" title="Save or Share">💾</button>
           <div id="saveDropdown" class="text-dropdown-content">
             <button id="btnSave">Save</button>
+            <button id="btnSaveTo">Save To...</button>
             <button id="btnShare">Share</button>
             <button id="btnSaveReadOnly">Save as Read-Only</button>
+            <button id="btnSaveToReadOnly">Save To as Read-Only</button>
             <button id="btnShareReadOnly">Share as Read-Only</button>
           </div>
         </div>
@@ -1586,7 +1588,32 @@
       return template.innerHTML;
     }
 
-    async function exportToFile(save, editMode) {
+    class SaveType {
+      static #_DOWNLOAD = 0;
+      static #_FILE = 1;
+      static #_SHARE = 2;
+
+      static get DOWNLOAD() { return this.#_DOWNLOAD; }
+      static get FILE() { return this.#_FILE; }
+      static get SHARE() { return this.#_SHARE; }
+    }
+
+    function getNewFileHandle(suggestedName) {
+
+      const opts = {
+        suggestedName: suggestedName,
+        types: [
+          {
+            description: "Html file",
+            accept: { "text/html": [".html"] },
+          },
+        ],
+      };
+
+      return window.showSaveFilePicker ? window.showSaveFilePicker(opts) : null;
+    }
+
+    async function exportToFile(saveType, editMode) {
 
       let filename = document.getElementById("filename").innerText.trim();
 
@@ -1596,7 +1623,7 @@
       }
 
       if (audioRecorder.recordingState !== MediaRecordingStatus.CLOSED) {
-        alert("Stop recording before " + (save ? "saving." : "sharing."));
+        alert("Stop recording before " + (saveType === SaveType.SHARE ? "sharing." : "saving."));
         return;
       }
 
@@ -1614,22 +1641,64 @@
         setEditMode(true);
       }
 
-      if (save === false && navigator.canShare && navigator.canShare({ files: [file] })) {
-        try {
-          await navigator.share({
-            files: [file],
-            title: filename,
-            text: ""
-          });
-        } catch (error) {
-          console.error("share failed:", error);
-        }
-      } else {
-        let a = document.createElement("a");
-        a.href = URL.createObjectURL(blob);
-        a.download = filename;
-        a.click();
-        URL.revokeObjectURL(a.href);
+      switch (saveType) {
+
+        case SaveType.DOWNLOAD:
+
+          let a = document.createElement("a");
+          a.href = URL.createObjectURL(blob);
+          a.download = filename;
+          a.click();
+          URL.revokeObjectURL(a.href);
+          break;
+
+        case SaveType.FILE:
+
+          let writable = null;
+
+          try {
+
+            const promise = getNewFileHandle(filename);
+
+            if (!promise) {
+              alert("Feature not supported in this browser.");
+              return;
+            }
+
+            const fileHandle = await promise;
+            writable = await fileHandle.createWritable();
+            await writable.write(blob);
+            await writable.close();
+          } catch (error) {
+
+            console.error("save to file failed:", error);
+
+            if (writable) {
+
+              try {
+                await writable.close();
+              } catch (err) {
+                console.error("closing the file failed:", err);
+              }
+            }
+          }
+          break;
+
+        case SaveType.SHARE:
+
+          if (navigator.canShare && navigator.canShare({ files: [file] })) {
+
+            try {
+              await navigator.share({
+                files: [file],
+                title: filename,
+                text: ""
+              });
+            } catch (error) {
+              console.error("share failed:", error);
+            }
+          }
+          break;
       }
     }
 
@@ -4051,19 +4120,27 @@
     document.getElementById("btnSaveMenu").addEventListener("click", (e) => toggleDropdown("saveDropdown"));
     document.getElementById("btnSave").addEventListener("click", (e) => {
       toggleDropdown("saveDropdown");
-      exportToFile(true, true);
+      exportToFile(SaveType.DOWNLOAD, true);
+    });
+    document.getElementById("btnSaveTo").addEventListener("click", async (e) => {
+      toggleDropdown("saveDropdown");
+      exportToFile(SaveType.FILE, true);
     });
     document.getElementById("btnShare").addEventListener("click", (e) => {
       toggleDropdown("saveDropdown");
-      exportToFile(false, true);
+      exportToFile(SaveType.SHARE, true);
     });
     document.getElementById("btnSaveReadOnly").addEventListener("click", (e) => {
       toggleDropdown("saveDropdown");
-      exportToFile(true, false);
+      exportToFile(SaveType.DOWNLOAD, false);
+    });
+    document.getElementById("btnSaveToReadOnly").addEventListener("click", async (e) => {
+      toggleDropdown("saveDropdown");
+      exportToFile(SaveType.FILE, false);
     });
     document.getElementById("btnShareReadOnly").addEventListener("click", (e) => {
       toggleDropdown("saveDropdown");
-      exportToFile(false, false);
+      exportToFile(SaveType.SHARE, false);
     });
 
     editor.focus();
