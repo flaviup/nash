@@ -1467,7 +1467,6 @@
       }
     }; // END OF Media Recording
 
-    const NON_STYLABLE_NODE_NAMES = ["CODE", "IFRAME", "IMG", "AUDIO", "VIDEO", "EMBED", "OBJECT", "TABLE"];
     const STYLES = [
       { tagName: "span", style: { "color": "var(--note-text-color-1)" }, attributes: null },
       { tagName: "span", style: { "color": "var(--note-text-color-2)" }, attributes: null },
@@ -1702,9 +1701,23 @@
       }
     }
 
+    // Gets the top parent node of the child node, parent that has root container as its direct parent
+    // the root container argument is either the editor or a TR element (for a table's th or td cell)
+    // we are working on this top parent node text to style it
+    function getTopLevelNodeOf(childNode, rootContainer) {
+
+      if (childNode !== rootContainer) {
+
+        while (childNode && childNode.parentNode !== rootContainer) {
+          childNode = childNode.parentNode;
+        }
+      }
+
+      return (childNode?.parentNode === rootContainer) ? childNode : null;
+    }
+
     function getTopLevelNodeOfCurrentPosition(useSelectionRange = null) {
 
-      let topNode = null;
       let range = useSelectionRange;
 
       if (!range) {
@@ -1716,24 +1729,7 @@
         }
       }
 
-      if (range) {
-
-        let block = range.startContainer;
-        const editor = document.getElementById("editor");
-
-        if (block && block !== editor) {
-
-          while (block.parentNode && block.parentNode !== editor) {
-            block = block.parentNode;
-          }
-
-          if (block.parentNode === editor) {
-            topNode = block;
-          }
-        }
-      }
-
-      return topNode;
+      return getTopLevelNodeOf(range?.startContainer, document.getElementById("editor"));
     }
 
     function createRemover(callback = null) {
@@ -2965,18 +2961,6 @@
         return styledPositions;
       }
 
-      // Gets the top parent node of the child node, parent that has root container as its direct parent
-      // the root container argument is either the editor or a TR element (for a table's th or td cell)
-      // we are working on this top parent node text to style it
-      function getTopLevelNodeOf(childNode, rootContainer) {
-
-        while (childNode && childNode.parentNode !== rootContainer) {
-          childNode = childNode.parentNode;
-        }
-
-        return childNode;
-      }
-
       // determines which type of nodes are stylable (H1-H6, P, SMALL, or any direct child of TH or TD)
       function isSelectableNodeForStyling(node) {
         return node && (node.nodeName.match(/^H[1-6]$|^P$|^SMALL$/) || ["TH", "TD"].includes(node.parentNode?.nodeName));
@@ -3396,38 +3380,74 @@
     }
 
     // Converts the current block (direct child of #editor) to the chosen tag.
-    function changeBlock(tag) {
+    function changeBlock(tagName) {
 
       const selection = window.getSelection();
 
-      if (!selection.rangeCount || selection.rangeCount > 1) return;
-      let node = selection.anchorNode;
-      const editor = document.getElementById("editor");
-
-      while (node && node.parentNode !== editor) { // finds current node, child of editor
-        if (NON_STYLABLE_NODE_NAMES.includes(node.nodeName)) return;
-        node = node.parentNode;
-      }
-
-      if (!node || node === editor) return;
-      if (NON_STYLABLE_NODE_NAMES.includes(node.nodeName)) return;
-
-      if (node.nodeName === tag.toUpperCase()) return;
-
-      const newBlock = document.createElement(tag);
-      newBlock.id = node.id;
-      newBlock.setAttribute("class", node.getAttribute("class"));
-
+      if (!selection.rangeCount) return;
       const range = selection.getRangeAt(0);
-      const startContainer = (node === range.startContainer ? newBlock : range.startContainer);
+      const editor = document.getElementById("editor");
+      const nodes = [];
+
+      if (range) {
+
+        const tag = tagName.toUpperCase();
+
+        if (range.commonAncestorContainer.nodeType === Node.TEXT_NODE) {
+
+          const node = getTopLevelNodeOf(range.startContainer, editor);
+
+          if (node?.nodeName !== tag && node?.classList?.contains("text-block")) nodes.push(node);
+        } else {
+
+          let nodeStart = getTopLevelNodeOf(range.startContainer, editor);
+          let nodeEnd = getTopLevelNodeOf(range.endContainer, editor);
+
+          while (nodeStart) {
+
+            if (nodeStart.nodeName !== tag &&
+                nodeStart.classList?.contains("text-block"))
+              nodes.push(nodeStart);
+            
+            if (nodeStart === nodeEnd) {
+
+              nodeEnd = null;
+              break;
+            }
+
+            nodeStart = nodeStart.nextElementSibling;
+          }
+
+          while (nodeEnd) {
+
+            if (nodeEnd.nodeName !== tag &&
+                nodeEnd.classList?.contains("text-block"))
+              nodes.push(nodeEnd);
+            
+            if (nodeStart === nodeEnd) break;
+
+            nodeEnd = nodeEnd.previousElementSibling;
+          }
+        }
+      }
+      let startContainer = range.startContainer;
+      let endContainer = range.endContainer;
       const startOffset = range.startOffset;
-      const endContainer = (node === range.endContainer ? newBlock : range.endContainer);
       const endOffset = range.endOffset;
 
-      editor.insertBefore(newBlock, node);
-      newBlock.append(...node.childNodes);
-      node.remove();
+      nodes.forEach((node) => {
 
+        const newBlock = document.createElement(tagName);
+        newBlock.id = node.id;
+        newBlock.setAttribute("class", node.getAttribute("class"));
+
+        if (node === range.startContainer) startContainer = newBlock;
+        if (node === range.endContainer) endContainer = newBlock;
+
+        editor.insertBefore(newBlock, node);
+        newBlock.append(...node.childNodes);
+        node.remove();
+      });
       range.setStart(startContainer, startOffset);
       range.setEnd(endContainer, endOffset);
 
