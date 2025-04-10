@@ -546,6 +546,7 @@
     .embedded-local-pdf,
     .embedded-local-image,
     .embedded-local-audio,
+    .embedded-content,
     .embedded-table,
     .image-link,
     .audio-link,
@@ -579,6 +580,7 @@
     .embedded-local-pdf:hover .x-remover,
     .embedded-local-image:hover .x-remover,
     .embedded-local-audio:hover .x-remover,
+    .embedded-content:hover .x-remover,
     .embedded-table:hover .x-remover,
     .image-link:hover .x-remover,
     .audio-link:hover .x-remover,
@@ -2548,7 +2550,7 @@
       divNode.setAttribute("class", "embedded-content");
       divNode.setAttribute("contenteditable", "true");
       editor.insertBefore(divNode, nextSibling);
-      setCaret(divNode, 0);
+      divNode.appendChild(createRemover());
     }
 
     function alignText(alignmentClass) {
