@@ -3322,7 +3322,15 @@
       if (!node) return node;
 
       while (node.lastChild) {
+
         node = node.lastChild;
+
+        while (node.previousSibling &&
+               node.nodeType === Node.TEXT_NODE &&
+               !node.textContent.length)
+          node = node.previousSibling;
+
+        if (node.nodeName === "BR") break;
       }
 
       return node;
