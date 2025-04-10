@@ -326,6 +326,10 @@
       box-shadow: 0 0 4px rgba(0, 0, 0, 0.3);
     }
 
+    #fontSizeDropdown {
+      width: 100px;
+    }
+
     #alignDropdown {
       width: 100px;
     }
@@ -805,6 +809,27 @@
                 onmousedown="event.preventDefault();"></button>
               <button id="btnTextHighlight8" class="color-swatch" style="background: var(--note-highlight-color-8);"
                 onmousedown="event.preventDefault();"></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Font Size Dropdown -->
+        <div class="text-dropdown">
+          <button id="btnFontSizeMenu" title="Change text size"><b>T</b></button>
+          <div id="fontSizeDropdown" class="text-dropdown-content">
+            <div class="text">
+              <button id="btnFontSize1" title="25%">25%</button>
+              <button id="btnFontSize2" title="33.33%">33.33%</button>
+              <button id="btnFontSize3" title="50%">50%</button>
+              <button id="btnFontSize4" title="66.66%">66.66%</button>
+              <button id="btnFontSize5" title="75%">75%</button>
+              <button id="btnFontSize6" title="125%">125%</button>
+              <button id="btnFontSize7" title="150%">150%</button>
+              <button id="btnFontSize8" title="175%">175%</button>
+              <button id="btnFontSize9" title="200%">200%</button>
+              <button id="btnFontSize10" title="250%">250%</button>
+              <button id="btnFontSize11" title="300%">300%</button>
+              <button id="btnFontSize12" title="350%">350%</button>
             </div>
           </div>
         </div>
@@ -1456,17 +1481,39 @@
       { tagName: "span", style: { "background-color": "var(--note-highlight-color-6)" }, attributes: null },
       { tagName: "span", style: { "background-color": "var(--note-highlight-color-7)" }, attributes: null },
       { tagName: "span", style: { "background-color": "var(--note-highlight-color-8)" }, attributes: null },
+      { tagName: "span", style: { "font-size": "25%" }, attributes: null },
+      { tagName: "span", style: { "font-size": "33.33%" }, attributes: null },
+      { tagName: "span", style: { "font-size": "50%" }, attributes: null },
+      { tagName: "span", style: { "font-size": "66.66%" }, attributes: null },
+      { tagName: "span", style: { "font-size": "75%" }, attributes: null },
+      { tagName: "span", style: { "font-size": "125%" }, attributes: null },
+      { tagName: "span", style: { "font-size": "150%" }, attributes: null },
+      { tagName: "span", style: { "font-size": "175%" }, attributes: null },
+      { tagName: "span", style: { "font-size": "200%" }, attributes: null },
+      { tagName: "span", style: { "font-size": "250%" }, attributes: null },
+      { tagName: "span", style: { "font-size": "300%" }, attributes: null },
+      { tagName: "span", style: { "font-size": "350%" }, attributes: null },
       { tagName: "strong", style: null, attributes: null },
       { tagName: "em", style: null, attributes: null },
       { tagName: "u", style: null, attributes: null }
     ];
-    const STYLE_STRONG_INDEX = 16;
-    const STYLE_EM_INDEX = 17;
-    const STYLE_U_INDEX = 18;
+
+    const TEXT_COLORS_N = 8;
+    const HIGHLIGHT_COLORS_N = 8;
+    const FONT_SIZES_N = 12;
+
+    const STYLE_STRONG_INDEX = -3;
+    const STYLE_EM_INDEX = -2;
+    const STYLE_U_INDEX = -1;
+
     const STYLE_TEXT_COLOR_BASE_INDEX = -1;
-    const STYLE_HIGHLIGHT_COLOR_BASE_INDEX = STYLE_TEXT_COLOR_BASE_INDEX + 8;
-    const STYLE_LINK_BASE_INDEX = STYLE_HIGHLIGHT_COLOR_BASE_INDEX + 8;
-    const STYLE_GROUPS = [[0, 7], [8, 15]];
+    const STYLE_HIGHLIGHT_COLOR_BASE_INDEX = STYLE_TEXT_COLOR_BASE_INDEX + TEXT_COLORS_N;
+    const STYLE_FONT_BASE_INDEX = STYLE_HIGHLIGHT_COLOR_BASE_INDEX + HIGHLIGHT_COLORS_N;
+    const STYLE_LINK_BASE_INDEX = STYLE_FONT_BASE_INDEX + FONT_SIZES_N;
+
+    const STYLE_GROUPS = [[STYLE_TEXT_COLOR_BASE_INDEX + 1, STYLE_TEXT_COLOR_BASE_INDEX + TEXT_COLORS_N],
+                          [STYLE_HIGHLIGHT_COLOR_BASE_INDEX + 1, STYLE_HIGHLIGHT_COLOR_BASE_INDEX + HIGHLIGHT_COLORS_N],
+                          [STYLE_FONT_BASE_INDEX + 1, STYLE_FONT_BASE_INDEX + FONT_SIZES_N]];
 
     // Helper: gets all the distinct links in the text and indexes them as styles
     function updateLinkStyles(editor) {
@@ -3206,7 +3253,7 @@
 
       if (!editor.contains(range.commonAncestorContainer)) return;
       updateLinkStyles(editor);
-      wrapRangeText(range, styleIndex);
+      wrapRangeText(range, styleIndex < 0 ? STYLES.length + styleIndex : styleIndex);
     }
 
     // Applies inline style (e.g., font-size, text color, background color) by wrapping the selection in a <span>.
@@ -3256,10 +3303,10 @@
     }
 
     // Called by the text size dropdown.
-    function applyTextSize(size) {
+    function applyFontSize(size) {
 
       if (!size) return;
-      //applyStyle({"font-size": `${size}`});
+      applyStyle(STYLE_FONT_BASE_INDEX + size);
     }
 
     // Called when a text color swatch is clicked.
@@ -3895,8 +3942,8 @@
     document.getElementById("btnU").addEventListener("click", (e) => applyFormat(STYLE_U_INDEX));
 
     document.getElementById("btnTextColorMenu").addEventListener("click", (e) => toggleDropdown("textColorDropdown"));
-    
-    for (let i = 1; i < 9; ++i) {
+
+    for (let i = 1; i < TEXT_COLORS_N + 1; ++i) {
       document.getElementById(`btnTextColor${i}`).addEventListener("click", (e) => {
         applyTextColor(i);
         toggleDropdown("textColorDropdown");
@@ -3904,11 +3951,20 @@
     }
 
     document.getElementById("btnTextHighlightMenu").addEventListener("click", (e) => toggleDropdown("highlightDropdown"));
-    
-    for (let i = 1; i < 9; ++i) {
+
+    for (let i = 1; i < HIGHLIGHT_COLORS_N + 1; ++i) {
       document.getElementById(`btnTextHighlight${i}`).addEventListener("click", (e) => {
         applyHighlightColor(i);
         toggleDropdown("highlightDropdown");
+      });
+    }
+
+    document.getElementById("btnFontSizeMenu").addEventListener("click", (e) => toggleDropdown("fontSizeDropdown"));
+
+    for (let i = 1; i < FONT_SIZES_N + 1; ++i) {
+      document.getElementById(`btnFontSize${i}`).addEventListener("click", (e) => {
+        applyFontSize(i);
+        toggleDropdown("fontSizeDropdown");
       });
     }
 
