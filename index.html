@@ -799,6 +799,7 @@
         <button id="btnB" title="Bold text"><b>B</b></button>
         <button id="btnI" title="Italic text"><i>I</i></button>
         <button id="btnU" title="Underline text"><u>U</u></button>
+        <button id="btnStrikethrough" title="Strikethrough text">Ꞩ</button>
 
         <div class="dropdown">
           <button id="btnTextColorMenu" title="Colorize text">Color</button>
@@ -1534,7 +1535,8 @@
       { tagName: "span", style: { "font-size": "350%" }, attributes: null },
       { tagName: "strong", style: null, attributes: null },
       { tagName: "em", style: null, attributes: null },
-      { tagName: "u", style: null, attributes: null }
+      { tagName: "u", style: null, attributes: null },
+      { tagName: "s", style: null, attributes: null }
     ];
 
     const TEXT_COLORS_N = 8;
@@ -1548,8 +1550,9 @@
     const STYLE_STRONG_INDEX = STYLE_FONT_BASE_INDEX + FONT_SIZES_N + 1;
     const STYLE_EM_INDEX = STYLE_STRONG_INDEX + 1;
     const STYLE_U_INDEX = STYLE_EM_INDEX + 1;
+    const STYLE_S_INDEX = STYLE_U_INDEX + 1;
 
-    const STYLE_LINK_BASE_INDEX = STYLE_U_INDEX;
+    const STYLE_LINK_BASE_INDEX = STYLE_S_INDEX;
 
     const STYLE_GROUPS = [[STYLE_TEXT_COLOR_BASE_INDEX + 1, STYLE_TEXT_COLOR_BASE_INDEX + TEXT_COLORS_N],
                           [STYLE_HIGHLIGHT_COLOR_BASE_INDEX + 1, STYLE_HIGHLIGHT_COLOR_BASE_INDEX + HIGHLIGHT_COLORS_N],
@@ -4176,6 +4179,7 @@
     document.getElementById("btnB").addEventListener("click", (e) => applyFormat(STYLE_STRONG_INDEX));
     document.getElementById("btnI").addEventListener("click", (e) => applyFormat(STYLE_EM_INDEX));
     document.getElementById("btnU").addEventListener("click", (e) => applyFormat(STYLE_U_INDEX));
+    document.getElementById("btnStrikethrough").addEventListener("click", (e) => applyFormat(STYLE_S_INDEX));
 
     document.getElementById("btnTextColorMenu").addEventListener("click", (e) => toggleDropdown("textColorDropdown"));
 

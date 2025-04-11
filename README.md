@@ -4,7 +4,7 @@ Nash is stand alone note as HTML.
 
 Features:
 - Text editing
-- Text formatting: font size, font style (bold, italic, underlined)
+- Text formatting: font size, font style (bold, italic, underlined, strikethrough)
 - Text coloring
 - Text highlighting
 - Text links
