@@ -23,6 +23,7 @@ Features:
 - Pdf link embedding
 - Tables
 - Audio recording
+- Mathematical expressions
 
 TODO:
 - Undo and redo (most important)
@@ -42,5 +43,4 @@ TODO:
 - Drawing canvas
 - Table customization: see https://tabulator.info
 - Tags
-- MathML
 - Text effects

@@ -7,6 +7,7 @@
   <title>Nash Note</title>
   <link rel="icon" type="image/svg+xml"
     href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22100%22%20height%3D%22100%22%20viewBox%3D%220%200%20100%20100%22%3E%0A%20%20%3Crect%20width%3D%22100%22%20height%3D%22100%22%20rx%3D%2220%22%20fill%3D%22black%22%2F%3E%0A%20%20%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20font-size%3D%2260%22%20font-weight%3D%22bold%22%20text-anchor%3D%22middle%22%20fill%3D%22white%22%20font-family%3D%22Arial%2C%20sans-serif%22%20dominant-baseline%3D%22central%22%3EN.%3C%2Ftext%3E%0A%3C%2Fsvg%3E" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/mathup/dist/mathup.css" />
   <style>
     :root {
       --page-bg-color: #f8f9fa;
@@ -447,6 +448,15 @@
       margin: 10px 0;
     }
 
+    .embedded-math {
+      margin: 10px 0;
+    }
+
+    .embedded-math mrow,
+    .embedded-math math {
+      font-size: 28px;
+    }
+
     .embedded-local-epub {
       margin: 20px 0;
     }
@@ -512,6 +522,7 @@
     .embedded-local-image,
     .embedded-local-audio,
     .embedded-content,
+    .embedded-math,
     .embedded-table,
     .image-link,
     .audio-link,
@@ -548,6 +559,7 @@
     .embedded-local-image:hover .x-remover,
     .embedded-local-audio:hover .x-remover,
     .embedded-content:hover .x-remover,
+    .embedded-math:hover .x-remover,
     .embedded-table:hover .x-remover,
     .image-link:hover .x-remover,
     .audio-link:hover .x-remover,
@@ -910,6 +922,7 @@
         </div>
 
         <button id="btnRecordAudio" title="Record audio">🎤</button>
+        <button id="btnEmbedMath" title="Insert math expression">Σ</button>
 
         <div class="text-dropdown">
           <button id="btnTable" title="Add table">Table</button>
@@ -953,6 +966,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <!-- script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.5/jszip.min.js"></script -->
   <script src="https://github.com/futurepress/epub.js/releases/download/v0.3.88/epub.min.js"></script> <!-- check newer versions like 0.3.93 -->
+  <script src="https://cdn.jsdelivr.net/npm/mathup/dist/browser/mathup.iife.min.js"></script>
 
   <script type="module">
     /**
@@ -2238,6 +2252,48 @@
       audioRecordingInserter.insert();
     }
 
+    function onMathClick(e) {
+
+      let node = e.target;
+
+      while (node && !node.classList?.contains("embedded-math")) {
+        node = node.parentNode;
+      }
+
+      if (!node) return false;
+
+      const expression = prompt("Introduce math expression (see https://mathup.xyz):", node.getAttribute("data-math"));
+
+      if (!expression) return false;
+
+      node.setAttribute("data-math", expression);
+      const mathNode = node.querySelector("math");
+
+      if (mathNode) mathup(expression, { bare: true }).updateDOM(mathNode);
+
+      return true;
+    }
+
+    function insertMath() {
+
+      const expression = prompt("Introduce math expression (see https://mathup.xyz):");
+      if (!expression) return;
+
+      const nextSibling = getTopLevelNodeOfCurrentPosition()?.nextSibling;
+      const divNode = document.createElement("div");
+
+      const mathNode = mathup(expression, { bare: false, display: "inline" }).toDOM();
+      mathNode.addEventListener("click", onMathClick);
+
+      divNode.appendChild(mathNode);
+      divNode.appendChild(createRemover());
+      divNode.setAttribute("id", `math${generateUId()}`);
+      divNode.setAttribute("class", "embedded-math");
+      divNode.setAttribute("contenteditable", "false");
+      divNode.setAttribute("data-math", expression);
+      editor.insertBefore(divNode, nextSibling);
+    }
+
     function loadAllReferencedDocuments() {
 
       document.querySelectorAll(".embedded-local-epub").forEach(async el => {
@@ -2664,7 +2720,7 @@
       const range = selection.getRangeAt(0);
       const editor = document.getElementById("editor");
       const nodes = [];
-      const ALIGNABLE_NODE_CLASSES = ["text-block", "embedded-table", "embedded-content", "embedded-local-image", "image-link"];
+      const ALIGNABLE_NODE_CLASSES = ["text-block", "embedded-table", "embedded-content", "embedded-math", "embedded-local-image", "image-link"];
 
       if (range) {
 
@@ -4110,6 +4166,8 @@
 
     /* Event handlers */
 
+    document.querySelectorAll(".embedded-math math").forEach(mathNode => mathNode.addEventListener("click", onMathClick));
+
     document.getElementById("btnH1").addEventListener("click", (e) => changeBlock("h1"));
     document.getElementById("btnH2").addEventListener("click", (e) => changeBlock("h2"));
     document.getElementById("btnM").addEventListener("click", (e) => changeBlock("p"));
@@ -4212,6 +4270,8 @@
     });
 
     document.getElementById("btnRecordAudio").addEventListener("click", (e) => insertAudioRecording());
+
+    document.getElementById("btnEmbedMath").addEventListener("click", (e) => insertMath());
 
     document.getElementById("btnTable").addEventListener("click", (e) => toggleDropdown("tableDropdown"));
     document.getElementById("btnSimpleTable").addEventListener("click", (e) => {
