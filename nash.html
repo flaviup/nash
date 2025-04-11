@@ -1378,6 +1378,71 @@
 
     })); // END OF PDFObject
 
+    // Undo-Redo
+    // based on https://blog.julik.nl/2025/03/a-tiny-undo-stack
+
+    class UndoStack {
+      
+      #_past = [];
+      #_future = [];
+
+      constructor() {}
+
+      get undoAvailable() {
+        return this.#_past.length > 0;
+      }
+
+      get redoAvailable() {
+        return this.#_future.length > 0;
+      }
+
+      clear() {
+
+        this.#_past.length = 0;
+        this.#_future.length = 0;
+      }
+
+      push(doFn, undoFn, ...withArgumentsToClone) {
+
+        const clonedArgs = structuredClone(withArgumentsToClone);
+        const action = {
+          doWithData() {
+            doFn(...clonedArgs);
+          },
+          undoWithData() {
+            undoFn(...clonedArgs);
+          },
+        };
+        action.doWithData();
+
+        // Adding a new action wipes the redoable steps
+        this.#_past.push(action);
+        this.#_future.length = 0;
+      }
+
+      undo() {
+
+        let action = this.#_past.pop();
+
+        if (action) {
+          action.undoWithData();
+          this.#_future.unshift(action);
+        }
+      }
+
+      redo() {
+
+        let action = this.#_future.shift();
+
+        if (action) {
+          action.doWithData();
+          this.#_past.push(action);
+        }
+      }
+    }
+
+    const UNDO_STACK = new UndoStack();
+
     // Media Recording
 
     class MediaRecordingStatus {
