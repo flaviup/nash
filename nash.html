@@ -934,8 +934,8 @@
         </div>
 
         <div id="splitbar">|</div>
-        <button id="btnUndo" disabled title="Undo">Undo</button>
-        <button id="btnRedo" disabled title="Redo">Redo</button>
+        <button id="btnUndo" disabled title="Undo">↩</button>
+        <button id="btnRedo" disabled title="Redo">↪</button>
 
         <div id="splitbar" style="margin-left: auto;">|</div>
         <!-- Block conversion -->
@@ -1403,10 +1403,23 @@
 
       clear() {
 
-        this.#_past.length = 0;
-        this.#_future.length = 0;
+        if (this.#_past.length > 0 || this.#_future.length > 0) {
 
-        if (this.onChange) this.onChange();
+          this.#_past.length = 0;
+          this.#_future.length = 0;
+
+          if (this.onChange) this.onChange();
+        }
+      }
+
+      clearRedo() {
+
+        if (this.#_future.length > 0) {
+
+          this.#_future.length = 0;
+
+          if (this.onChange) this.onChange();
+        }
       }
 
       push(doFn, undoFn, ...withArguments) {
@@ -1429,28 +1442,56 @@
         if (this.onChange) this.onChange();
       }
 
+      replaceLast(doFn, undoFn, ...withArguments) {
+
+        this.#_past.pop();
+        const args = withArguments; // structuredClone(withArguments);
+        const action = {
+          doWithData() {
+            doFn(...args);
+          },
+          undoWithData() {
+            undoFn(...args);
+          },
+        };
+
+        // Adding a new action wipes the redoable steps
+        if (this.#_past.length > 0) this.#_past[this.#_past.length - 1] = action;
+        else this.#_past.push(action);
+        this.#_future.length = 0;
+      }
+
       undo() {
 
-        let action = this.#_past.pop();
+        const action = this.#_past.pop();
 
         if (action) {
+
           action.undoWithData();
           this.#_future.unshift(action);
+          if (this.onChange) this.onChange();
         }
+      }
 
-        if (this.onChange) this.onChange();
+      removeLast() {
+
+        const action = this.#_past.pop();
+
+        if (action && this.onChange) {
+          this.onChange();
+        }
       }
 
       redo() {
 
-        let action = this.#_future.shift();
+        const action = this.#_future.shift();
 
         if (action) {
+
           action.doWithData();
           this.#_past.push(action);
+          if (this.onChange) this.onChange();
         }
-
-        if (this.onChange) this.onChange();
       }
     }
 
@@ -1594,6 +1635,14 @@
       }
     }; // END OF Media Recording
 
+    const editor = document.getElementById("editor");
+    const filename = document.getElementById("filename");
+
+    const editorInsertBefore = editor.insertBefore.bind(editor);
+    function editorRemoveChild (child, _) { if (editor.contains(child)) editor.removeChild(child); }
+
+    editor.UNDO_STACK = UNDO_STACK;
+
     const STYLES = [
       { tagName: "span", style: { "color": "var(--note-text-color-1)" }, attributes: null },
       { tagName: "span", style: { "color": "var(--note-text-color-2)" }, attributes: null },
@@ -1672,16 +1721,16 @@
     }
 
     function setEditMode(editMode) {
-      let editor = document.getElementById("editor");
-      let toolbar = document.getElementById("toolbar");
-      let filename = document.getElementById("filename");
+
+      const toolbar = document.getElementById("toolbar");
 
       if (editMode) {
+
         editor.contentEditable = "true";
         filename.contentEditable = "plaintext-only";
         toolbar.style.display = "flex";
-      }
-      else {
+      } else {
+
         editor.contentEditable = "false";
         filename.contentEditable = "false";
         toolbar.style.display = "none";
@@ -1871,7 +1920,7 @@
           callback();
         }, false);
       } else {
-        divNode.setAttribute("onclick", "event.target?.parentNode?.parentNode?.removeChild(event.target?.parentNode)");
+        divNode.setAttribute("onclick", "const editor = document.getElementById('editor'); const parentNode = event.target?.parentNode?.parentNode; const childNode = event.target?.parentNode; const childSibling = event.target?.parentNode?.nextElementSibling; if (parentNode) editor.UNDO_STACK.push((parentNode, childNode, _) => parentNode.removeChild(childNode), (parentNode, childNode, childSibling) => parentNode.insertBefore(childNode, childSibling), parentNode, childNode, childSibling)");
       }
       divNode.setAttribute("class", "x-remover non-selectable");
       divNode.setAttribute("contenteditable", "false");
@@ -1895,6 +1944,7 @@
         let reader = new FileReader();
         const nextSibling = getTopLevelNodeOfCurrentPosition(lastValidSelectionRange)?.nextSibling;
         reader.onload = function (e) {
+
           const divNode = document.createElement("div");
           const img = document.createElement("img");
           img.src = e.target.result;
@@ -1903,7 +1953,7 @@
           divNode.setAttribute("id", `img${generateUId()}`);
           divNode.setAttribute("class", "embedded-local-image");
           divNode.setAttribute("contenteditable", "false");
-          UNDO_STACK.push(editorInsertBefore, (divNode, _) => editorRemoveChild(divNode), divNode, nextSibling);
+          UNDO_STACK.push(editorInsertBefore, editorRemoveChild, divNode, nextSibling);
         };
         reader.readAsDataURL(file);
       }
@@ -1913,6 +1963,7 @@
 
       const url = (await showPrompt("Image URL"))?.trim();
       if (!url) return;
+
       const nextSibling = getTopLevelNodeOfCurrentPosition()?.nextSibling;
       const divNode = document.createElement("div");
       const img = document.createElement("img");
@@ -1922,7 +1973,7 @@
       divNode.setAttribute("id", `img${generateUId()}`);
       divNode.setAttribute("class", "image-link");
       divNode.setAttribute("contenteditable", "false");
-      UNDO_STACK.push(editorInsertBefore, (divNode, _) => editorRemoveChild(divNode), divNode, nextSibling);
+      UNDO_STACK.push(editorInsertBefore, editorRemoveChild, divNode, nextSibling);
     }
 
     function insertAudio(event) {
@@ -1934,6 +1985,7 @@
         let reader = new FileReader();
         const nextSibling = getTopLevelNodeOfCurrentPosition(lastValidSelectionRange)?.nextSibling;
         reader.onload = function (e) {
+
           const divNode = document.createElement("div");
           const audio = document.createElement("audio");
           audio.src = e.target.result;
@@ -1943,7 +1995,7 @@
           divNode.setAttribute("id", `audio${generateUId()}`);
           divNode.setAttribute("class", "embedded-local-audio");
           divNode.setAttribute("contenteditable", "false");
-          editor.insertBefore(divNode, nextSibling);
+          UNDO_STACK.push(editorInsertBefore, editorRemoveChild, divNode, nextSibling);
         };
         reader.readAsDataURL(file);
       }
@@ -1953,6 +2005,7 @@
 
       const url = (await showPrompt("Audio URL"))?.trim();
       if (!url) return;
+
       const nextSibling = getTopLevelNodeOfCurrentPosition()?.nextSibling;
       const divNode = document.createElement("div");
       const audio = document.createElement("audio");
@@ -1963,13 +2016,14 @@
       divNode.setAttribute("id", `audio${generateUId()}`);
       divNode.setAttribute("class", "audio-link");
       divNode.setAttribute("contenteditable", "false");
-      editor.insertBefore(divNode, nextSibling);
+      UNDO_STACK.push(editorInsertBefore, editorRemoveChild, divNode, nextSibling);
     }
 
     async function insertVideoLink() {
 
       const url = (await showPrompt("Video URL"))?.trim();
       if (!url) return;
+
       const nextSibling = getTopLevelNodeOfCurrentPosition()?.nextSibling;
       const divNode = document.createElement("div");
       const video = document.createElement("video");
@@ -1980,7 +2034,7 @@
       divNode.setAttribute("id", `video${generateUId()}`);
       divNode.setAttribute("class", "video-link");
       divNode.setAttribute("contenteditable", "false");
-      editor.insertBefore(divNode, nextSibling);
+      UNDO_STACK.push(editorInsertBefore, editorRemoveChild, divNode, nextSibling);
     }
 
     const audioRecordingInserter = {
@@ -2008,6 +2062,7 @@
 
       /** Resets all the audioRecordingInserter's data members*/
       reset: function () {
+
         audioRecordingInserter.strArId = null;
         audioRecordingInserter.audioRecordingNode = null;
         audioRecordingInserter.nextSibling = null;
@@ -2080,8 +2135,17 @@
         // start recording using the audio recording API
         audioRecorder.start()
           .then(() => { //on success
+
             audioRecordingInserter.audioRecordStartTime = new Date(); // store the recording start time to display the elapsed time according to it
-            editor.insertBefore(audioRecordingInserter.audioRecordingNode, audioRecordingInserter.nextSibling);
+            const audioRecordingNode = audioRecordingInserter.audioRecordingNode;
+            const nextSibling = audioRecordingInserter.nextSibling;
+            UNDO_STACK.push(editorInsertBefore, function (_, _2) {
+
+              if (confirm("Do you want to cancel audio recording? The cancellation cannot be undone" + (UNDO_STACK.redoAvailable ? " and the redo stack will be cleared" : "") + ".")) {
+                audioRecordingInserter.cancelAudioRecording();
+                UNDO_STACK.clearRedo();
+              }
+            }, audioRecordingNode, nextSibling);
             audioRecordingInserter.elapsedTimeTag = document.querySelectorAll(`#${audioRecordingInserter.strArId} .elapsed-time`)[0];
             const stopRecordingButton = document.querySelectorAll(`#${audioRecordingInserter.strArId} .stop-recording-button`)[0];
             const cancelRecordingButton = document.querySelectorAll(`#${audioRecordingInserter.strArId} .cancel-recording-button`)[0];
@@ -2163,7 +2227,11 @@
         audioRecorder.cancel();
         audioRecordingInserter.handleRecordingEnd();
 
-        if (editor.contains(audioRecordingInserter.audioRecordingNode)) editor.removeChild(audioRecordingInserter.audioRecordingNode);
+        if (editor.contains(audioRecordingInserter.audioRecordingNode)) {
+
+          UNDO_STACK.removeLast();
+          editor.removeChild(audioRecordingInserter.audioRecordingNode);
+        }
         audioRecordingInserter.reset(); // audioRecordingInserter's job is finished here
       },
 
@@ -2178,8 +2246,11 @@
         // once content has been read
         reader.onload = (e) => {
 
-          audioRecordingInserter.audioRecordingNode.innerHTML = `<audio controls src="${e.target.result}"></audio>`;
-          audioRecordingInserter.audioRecordingNode.appendChild(createRemover());
+          const audioRecordingNode = audioRecordingInserter.audioRecordingNode;
+          const nextSibling = audioRecordingInserter.nextSibling;
+          audioRecordingNode.innerHTML = `<audio controls src="${e.target.result}"></audio>`;
+          audioRecordingNode.appendChild(createRemover());
+          UNDO_STACK.replaceLast(editorInsertBefore, editorRemoveChild, audioRecordingNode, nextSibling);
           document.querySelectorAll(`#${audioRecordingInserter.strArId} audio`)[0].load();
           audioRecordingInserter.reset(); // audioRecordingInserter's job is finished here
         };
@@ -2355,21 +2426,31 @@
 
       if (!node) return false;
 
-      const expression = prompt("Introduce math expression (see https://mathup.xyz):", node.getAttribute("data-math"));
+      const currentExpression = node.getAttribute("data-math");
+      const newExpression = prompt("Introduce math expression (see https://mathup.xyz):", currentExpression)?.trim();
 
-      if (!expression) return false;
+      if (!newExpression || currentExpression === newExpression) return false;
 
-      node.setAttribute("data-math", expression);
-      const mathNode = node.querySelector("math");
+      UNDO_STACK.push((node, newExpression, _) => {
 
-      if (mathNode) mathup(expression, { bare: true }).updateDOM(mathNode);
+        node.setAttribute("data-math", newExpression);
+        const mathNode = node.querySelector("math");
+
+        if (mathNode) mathup(newExpression, { bare: true }).updateDOM(mathNode);
+      }, (node, _, oldExpression) => {
+
+        node.setAttribute("data-math", oldExpression);
+        const mathNode = node.querySelector("math");
+
+        if (mathNode) mathup(oldExpression, { bare: true }).updateDOM(mathNode);
+      }, node, newExpression, currentExpression);
 
       return true;
     }
 
     function insertMath() {
 
-      const expression = prompt("Introduce math expression (see https://mathup.xyz):");
+      const expression = prompt("Introduce math expression (see https://mathup.xyz):")?.trim();
       if (!expression) return;
 
       const nextSibling = getTopLevelNodeOfCurrentPosition()?.nextSibling;
@@ -2384,7 +2465,7 @@
       divNode.setAttribute("class", "embedded-math");
       divNode.setAttribute("contenteditable", "false");
       divNode.setAttribute("data-math", expression);
-      editor.insertBefore(divNode, nextSibling);
+      UNDO_STACK.push(editorInsertBefore, editorRemoveChild, divNode, nextSibling);
     }
 
     function loadAllReferencedDocuments() {
@@ -2427,7 +2508,7 @@
         divNode.setAttribute("class", "embedded-local-epub epub-loading");
         divNode.setAttribute("contenteditable", "false");
         divNode.setAttribute("data-epub", epubData);
-        if (!element) editor.insertBefore(divNode, nextSibling);
+        if (!element) UNDO_STACK.push(editorInsertBefore, editorRemoveChild, divNode, nextSibling);
 
         setTimeout(async () => {
 
@@ -2436,6 +2517,8 @@
             book = ePub(await (await window.fetch(epubData)).blob());
           } catch (error) { // we allow ePub loading only if epub library is available and the data could be loaded
             console.log(error);
+
+            if (!element) UNDO_STACK.removeLast();
             if (editor.contains(divNode)) editor.removeChild(divNode);
             return;
           }
@@ -2608,7 +2691,7 @@
         divNode.setAttribute("contenteditable", "false");
         //divNode.setAttribute("data-pdf", pdfData);
 
-        if (!element) editor.insertBefore(divNode, nextSibling);
+        if (!element) UNDO_STACK.push(editorInsertBefore, editorRemoveChild, divNode, nextSibling);
 
         const pdfContainer = PDFObject.embed(pdfData, divNode, {
           height: "800px",
@@ -2637,7 +2720,7 @@
       divNode.setAttribute("class", "pdf-link pdf-loading");
       divNode.setAttribute("contenteditable", "false");
 
-      editor.insertBefore(divNode, nextSibling);
+      UNDO_STACK.push(editorInsertBefore, editorRemoveChild, divNode, nextSibling);
 
       const pdfContainer = PDFObject.embed(url, divNode, {
         height: "800px",
@@ -2739,7 +2822,7 @@
       divNode.setAttribute("contenteditable", "false");
       divNode.innerHTML = ['<table contenteditable="false">', thead, tbody, "</table>"].join("\n");
 
-      editor.insertBefore(divNode, nextSibling);
+      UNDO_STACK.push(editorInsertBefore, editorRemoveChild, divNode, nextSibling);
       divNode.appendChild(createRemover());
     }
 
@@ -2750,7 +2833,7 @@
       p.setAttribute("id", `text${generateUId()}`);
       p.setAttribute("class", "text-block");
       p.appendChild(document.createElement("br"));
-      editor.insertBefore(p, topNode?.nextSibling);
+      UNDO_STACK.push(editorInsertBefore, editorRemoveChild, p, topNode?.nextSibling);
       setCaret(p, 0);
     }
 
@@ -2767,7 +2850,7 @@
       divNode.setAttribute("id", `code${generateUId()}`);
       divNode.setAttribute("class", "code-block");
       divNode.setAttribute("contenteditable", "true");
-      editor.insertBefore(divNode, nextSibling);
+      UNDO_STACK.push(editorInsertBefore, editorRemoveChild, divNode, nextSibling);
       setCaret(code, 0);
     }
 
@@ -2786,7 +2869,7 @@
       divNode.setAttribute("id", `embed${generateUId()}`);
       divNode.setAttribute("class", "embedded-content");
       divNode.setAttribute("contenteditable", "false");
-      editor.insertBefore(divNode, nextSibling);
+      UNDO_STACK.push(editorInsertBefore, editorRemoveChild, divNode, nextSibling);
       divNode.appendChild(createRemover());
     }
 
@@ -2811,7 +2894,6 @@
 
       if (!selection.rangeCount) return;
       const range = selection.getRangeAt(0);
-      const editor = document.getElementById("editor");
       const nodes = [];
       const ALIGNABLE_NODE_CLASSES = ["text-block", "embedded-table", "embedded-content", "embedded-math", "embedded-local-image", "image-link"];
 
@@ -2931,6 +3013,7 @@
 
     // Helper: Places the caret at a given element and offset.
     function setCaret(el, pos) {
+
       const selection = window.getSelection();
       const range = document.createRange();
       range.setStart(el, pos);
@@ -3542,7 +3625,6 @@
 
       if (!selection.rangeCount || selection.isCollapsed) return;
       const range = selection.getRangeAt(0);
-      const editor = document.getElementById("editor");
 
       if (!editor.contains(range.commonAncestorContainer)) return;
       updateLinkStyles(editor);
@@ -3556,7 +3638,6 @@
 
       if (!selection.rangeCount || selection.isCollapsed) return;
       const range = selection.getRangeAt(0);
-      const editor = document.getElementById("editor");
 
       if (!editor.contains(range.commonAncestorContainer)) return;
       updateLinkStyles(editor);
@@ -3570,7 +3651,6 @@
 
       if (!selection.rangeCount || selection.isCollapsed) return;
       const range = selection.getRangeAt(0);
-      const editor = document.getElementById("editor");
 
       if (!editor.contains(range.commonAncestorContainer)) return;
       const url = (await showPrompt("URL"))?.trim();
@@ -3623,7 +3703,6 @@
 
       if (!selection.rangeCount) return;
       const range = selection.getRangeAt(0);
-      const editor = document.getElementById("editor");
       const nodes = [];
 
       if (range) {
@@ -3681,7 +3760,7 @@
         if (node === range.startContainer) startContainer = newBlock;
         if (node === range.endContainer) endContainer = newBlock;
 
-        editor.insertBefore(newBlock, node);
+        editorInsertBefore(newBlock, node);
         newBlock.append(...node.childNodes);
         node.remove();
       });
@@ -3716,7 +3795,6 @@
     function splitBlock(range) {
 
       if (!range) return;
-      const editor = document.getElementById("editor");
       let block = range.startContainer;
 
       while (block && block.parentNode !== editor) {
@@ -3762,12 +3840,7 @@
           }
         }
       }
-
-      if (block.nextSibling) {
-        editor.insertBefore(newBlock, block.nextSibling);
-      } else {
-        editor.appendChild(newBlock);
-      }
+      editorInsertBefore(newBlock, block.nextSibling);
       const ldc = getLastDeepestChild(block);
 
       if (ldc.nodeName !== "BR" || ldc !== startContainer) {
@@ -3788,7 +3861,6 @@
     // Normalizes stray text nodes and nested blocks.
     function normalizeEditor() {
 
-      const editor = document.getElementById("editor");
       Array.from(editor.childNodes).forEach(node => {
 
         if (node.nodeType === Node.TEXT_NODE && node.textContent.trim()) {
@@ -3822,8 +3894,6 @@
     // Normalize stray text nodes and nested blocks.
     function cleanEditor() {
 
-      const editor = document.getElementById("editor");
-
       if (editor.firstChild && ["H1", "H2", "H3", "H4", "H5", "H6", "P", "SMALL"].includes(editor.firstChild.nodeName)) {
         return;
       }
@@ -3836,11 +3906,10 @@
 
     function updateTitle() {
 
-      let filename = document.getElementById("filename");
-
       if (filename.innerHTML === "<br>" || filename.innerHTML === "<br/>") {
         filename.innerHTML = "";
       }
+
       document.title = filename.innerHTML.trim() || "Nash Note";
     }
 
@@ -4209,7 +4278,6 @@
 
     document.onselectionchange = () => {
 
-      const editor = document.getElementById("editor");
       const selection = document.getSelection();
 
       if (selection?.rangeCount) {
@@ -4235,12 +4303,6 @@
         document.getElementById("btnLinkText").setAttribute("title", "Select a text to make link");
       }
     };
-
-    const editor = document.getElementById("editor");
-    const filename = document.getElementById("filename");
-
-    const editorInsertBefore = editor.insertBefore.bind(editor);
-    const editorRemoveChild = editor.removeChild.bind(editor);
 
     editor.addEventListener("keydown", keydownHandler);
     editor.addEventListener("click", clickHandler);
