@@ -1920,7 +1920,7 @@
           callback();
         }, false);
       } else {
-        divNode.setAttribute("onclick", "const editor = document.getElementById('editor'); const parentNode = event.target?.parentNode?.parentNode; const childNode = event.target?.parentNode; const childSibling = event.target?.parentNode?.nextElementSibling; if (parentNode) editor.UNDO_STACK.push((parentNode, childNode, _) => parentNode.removeChild(childNode), (parentNode, childNode, childSibling) => parentNode.insertBefore(childNode, childSibling), parentNode, childNode, childSibling)");
+        divNode.setAttribute("onclick", "handleXRemoveEvent(event)");
       }
       divNode.setAttribute("class", "x-remover non-selectable");
       divNode.setAttribute("contenteditable", "false");
@@ -4472,6 +4472,22 @@
     });
 
     editor.focus();
+  </script>
+
+  <script>
+    const editor = document.getElementById("editor");
+
+    function handleXRemoveEvent(event) {
+
+      const parentNode = event.target?.parentNode?.parentNode;
+      const childNode = event.target?.parentNode;
+      const childSibling = childNode?.nextElementSibling;
+      
+      if (parentNode)
+        editor.UNDO_STACK.push((parentNode, childNode, _) => parentNode.removeChild(childNode),
+                               (parentNode, childNode, childSibling) => parentNode.insertBefore(childNode, childSibling),
+                               parentNode, childNode, childSibling)
+    }
   </script>
 
 </body>
