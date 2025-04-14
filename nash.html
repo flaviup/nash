@@ -1382,14 +1382,27 @@
 
     })); // END OF PDFObject
 
+    // Pub-Sub / Observer Pattern
+    const t = new EventTarget();
+    const sub = (e, c) => (t.addEventListener(e, c), () => t.removeEventListener(e, c));
+    const pub = (n, d) => t.dispatchEvent(new CustomEvent(n, { detail: d }));
+
     // Undo-Redo
     // based on https://blog.julik.nl/2025/03/a-tiny-undo-stack
 
     class UndoStack {
-      
+
+      static #_UNDO_STACK_CHANGE_EVENT_NAME = "UNDO_STACK_CHANGE";
+
+      static #_UNDO_STACK_CHANGE_EVENT_CLEAR = 0;
+      static #_UNDO_STACK_CHANGE_EVENT_CLEAR_REDO = 1;
+      static #_UNDO_STACK_CHANGE_EVENT_PUSH = 2;
+      static #_UNDO_STACK_CHANGE_EVENT_UNDO = 3;
+      static #_UNDO_STACK_CHANGE_EVENT_REDO = 4;
+      static #_UNDO_STACK_CHANGE_EVENT_REMOVE_LAST = 5;
+
       #_past = [];
       #_future = [];
-      onChange = null;
 
       constructor() {}
 
@@ -1409,15 +1422,19 @@
         return this.#_future.length > 0;
       }
 
+      onChange(callback) {
+        return sub(UndoStack.#_UNDO_STACK_CHANGE_EVENT_NAME, callback);
+      }
+
       clear() {
 
         if (this.#_past.length > 0 || this.#_future.length > 0) {
 
           this.#_past.length = 0;
           this.#_future.length = 0;
-          console.log("Undo/redo stacks cleared.");
 
-          if (this.onChange) this.onChange();
+          console.log("Undo/redo stacks cleared.");
+          pub(UndoStack.#_UNDO_STACK_CHANGE_EVENT_NAME, UndoStack.#_UNDO_STACK_CHANGE_EVENT_CLEAR);
         }
       }
 
@@ -1427,8 +1444,7 @@
 
           this.#_future.length = 0;
           console.log("Redo stack cleared.");
-
-          if (this.onChange) this.onChange();
+          pub(UndoStack.#_UNDO_STACK_CHANGE_EVENT_NAME, UndoStack.#_UNDO_STACK_CHANGE_EVENT_CLEAR_REDO);
         }
       }
 
@@ -1449,31 +1465,25 @@
         this.#_past.push(action);
         this.#_future.length = 0;
 
-        if (this.onChange) this.onChange();
+        pub(UndoStack.#_UNDO_STACK_CHANGE_EVENT_NAME, UndoStack.#_UNDO_STACK_CHANGE_EVENT_PUSH);
 
         return this.#_past.length - 1;
       }
 
       replace(index, doFn, undoFn, ...withArguments) {
 
-        if (index < 0) return;
+        if (index > -1 && index < this.#_past.length) {
 
-        const args = withArguments; // structuredClone(withArguments);
-        const action = {
-          doWithData() {
-            doFn(...args);
-          },
-          undoWithData() {
-            undoFn(...args);
-          },
-        };
-
-        // Adding a new action wipes the redoable steps
-        if (this.#_past.length > index) {
+          const args = withArguments; // structuredClone(withArguments);
+          const action = {
+            doWithData() {
+              doFn(...args);
+            },
+            undoWithData() {
+              undoFn(...args);
+            },
+          };
           this.#_past[index] = action;
-        } else {
-          this.#_past.push(action);
-          this.#_future.length = 0;
         }
       }
 
@@ -1485,7 +1495,7 @@
 
           action.undoWithData();
           this.#_future.unshift(action);
-          if (this.onChange) this.onChange();
+          pub(UndoStack.#_UNDO_STACK_CHANGE_EVENT_NAME, UndoStack.#_UNDO_STACK_CHANGE_EVENT_UNDO);
         }
       }
 
@@ -1495,7 +1505,7 @@
 
           const action = this.#_past.pop();
 
-          if (action && this.onChange) this.onChange();
+          if (action) pub(UndoStack.#_UNDO_STACK_CHANGE_EVENT_NAME, UndoStack.#_UNDO_STACK_CHANGE_EVENT_REMOVE_LAST);
 
           this.clearRedo();
         } else if (index > -1 && index < this.#_past.length - 1) {
@@ -1511,13 +1521,13 @@
 
           action.doWithData();
           this.#_past.push(action);
-          if (this.onChange) this.onChange();
+          pub(UndoStack.#_UNDO_STACK_CHANGE_EVENT_NAME, UndoStack.#_UNDO_STACK_CHANGE_EVENT_REDO);
         }
       }
     }
 
     const UNDO_STACK = new UndoStack();
-    UNDO_STACK.onChange = function () {
+    UNDO_STACK.onChange(function (event) {
 
       if (UNDO_STACK.undoAvailable)
         document.getElementById("btnUndo").removeAttribute("disabled");
@@ -1528,7 +1538,7 @@
         document.getElementById("btnRedo").removeAttribute("disabled");
       else
         document.getElementById("btnRedo").setAttribute("disabled", "");
-    };
+    });
 
     // Media Recording
 
@@ -2594,9 +2604,16 @@
           const readonly = divNode.getAttribute("data-readonly") ?? false;
 
           if (!readonly) {
+
+            UNDO_STACK.onChange(function (event) {
+
+            });
             divNode.appendChild(createRemover(function () {
-              book.destroy();
-              if (editor.contains(divNode)) editor.removeChild(divNode);
+
+              //book.destroy();
+
+              editor.UNDO_STACK.push(editorRemoveChild, editorInsertBefore,
+                                     divNode, nextSibling);
             }));
           }
           const rendition = book.renderTo(strEpubId, { flow: "scrolled",
@@ -4529,7 +4546,7 @@
 
         const childNode = event.target?.parentNode;
         const childSibling = childNode?.nextElementSibling;
-        editor.UNDO_STACK.push(removeChild,insertBefore,
+        editor.UNDO_STACK.push(removeChild, insertBefore,
                                parentNode, childNode, childSibling);
       }
     }
