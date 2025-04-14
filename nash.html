@@ -141,6 +141,10 @@
       color: var(--page-text-color);
       margin: 0;
       padding: 40px;
+      /*targeting Chrome & Safari*/
+      display: -webkit-flex;
+      /*targeting IE10*/
+      display: -ms-flex;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -184,6 +188,10 @@
       gap: 8px;
       background-color: var(--control-bg-color);
       border-radius: 12px;
+      /*targeting Chrome & Safari*/
+      display: -webkit-flex;
+      /*targeting IE10*/
+      display: -ms-flex;
       display: flex;
       flex-wrap: wrap;
       justify-content: flex-start;
@@ -614,8 +622,23 @@
       height: auto;
       margin: 0;
       border-radius: 12px;
-      background-color: white;
-      background: var(--audio-recording-controls-bg-color);
+      background-color: var(--audio-recording-controls-bg-color);
+      color: var(--audio-recording-controls-text-color);
+    }
+
+    .recording-cancelled-container {
+      /*targeting Chrome & Safari*/
+      display: -webkit-flex;
+      /*targeting IE10*/
+      display: -ms-flex;
+      display: flex;
+      align-items: start;
+      width: 100%;
+      height: auto;
+      margin: 0;
+      padding: 10px 0px;
+      border-radius: 12px;
+      background-color: var(--audio-recording-controls-bg-color);
       color: var(--audio-recording-controls-text-color);
     }
 
@@ -746,18 +769,30 @@
     }
 
     .left-align {
+      /*targeting Chrome & Safari*/
+      display: -webkit-flex;
+      /*targeting IE10*/
+      display: -ms-flex;
       display: flex;
       flex-direction: row;
       justify-content: flex-start;
     }
 
     .center-align {
+      /*targeting Chrome & Safari*/
+      display: -webkit-flex;
+      /*targeting IE10*/
+      display: -ms-flex;
       display: flex;
       flex-direction: row;
       justify-content: center;
     }
 
     .right-align {
+      /*targeting Chrome & Safari*/
+      display: -webkit-flex;
+      /*targeting IE10*/
+      display: -ms-flex;
       display: flex;
       flex-direction: row;
       justify-content: flex-end;
@@ -2285,7 +2320,7 @@
 
         const audioRecordingNode = audioRecordingInserter.audioRecordingNode;
         const nextSibling = audioRecordingInserter.nextSibling;
-        audioRecordingNode.innerHTML = "Cancelled audio recording.";
+        audioRecordingNode.innerHTML = '<div class="recording-cancelled-container" contenteditable="false"><span style="margin: 0 10px">Cancelled audio recording</span></div>';
         audioRecordingNode.appendChild(createRemover());
         UNDO_STACK.replace(audioRecordingInserter.undoStackIndex, editorInsertBefore, editorRemoveChild, audioRecordingNode, nextSibling);
         audioRecordingInserter.reset(); // audioRecordingInserter's job is finished here
