@@ -1519,18 +1519,11 @@
         }
       }
 
-      removeLastOrClearStacks(index) {
-
-        if (index > -1 && index === this.#_past.length - 1) {
+      removeLast() {
 
           const action = this.#_past.pop();
 
           if (action) pub(UndoStack.#_UNDO_STACK_CHANGE_EVENT_NAME, UndoStack.#_UNDO_STACK_CHANGE_EVENT_REMOVE_LAST);
-
-          this.clearRedo();
-        } else if (index > -1 && index < this.#_past.length - 1) {
-          this.clear();
-        }
       }
 
       redo() {
@@ -1763,12 +1756,25 @@
       for(let link of links) STYLES.push({tagName: "a", style: null, attributes: { "href": link }});
     }
 
+    // Helper: generates a unique id
     function generateUId() {
       function s4() {
         return Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
       }
       return s4() + s4() + s4() + s4() +
              s4() + s4() + s4() + s4();
+    }
+
+    // Blocks page interaction
+    function blockPageInteraction() {
+
+      const divNode = document.createElement("div");
+      divNode.setAttribute("id", `blockingPage${generateUId()}`);
+      document.body.appendChild(divNode);
+
+      return function() {
+        divNode.remove();
+      }
     }
 
     function setEditMode(editMode) {
@@ -2277,22 +2283,17 @@
         audioRecorder.cancel();
         audioRecordingInserter.handleRecordingEnd();
 
-        if (editor.contains(audioRecordingInserter.audioRecordingNode)) {
-          editor.removeChild(audioRecordingInserter.audioRecordingNode);
-        }
-        UNDO_STACK.removeLastOrClearStacks(audioRecordingInserter.undoStackIndex);
+        const audioRecordingNode = audioRecordingInserter.audioRecordingNode;
+        const nextSibling = audioRecordingInserter.nextSibling;
+        audioRecordingNode.innerHTML = "Cancelled audio recording.";
+        audioRecordingNode.appendChild(createRemover());
+        UNDO_STACK.replace(audioRecordingInserter.undoStackIndex, editorInsertBefore, editorRemoveChild, audioRecordingNode, nextSibling);
         audioRecordingInserter.reset(); // audioRecordingInserter's job is finished here
       },
 
       onClickCancelAudioRecording: function () {
 
-        const stacks = [];
-        let strStack = (UNDO_STACK.undoCount > audioRecordingInserter.undoStackIndex + 1 && UNDO_STACK.redoAvailable) ? "stacks" : "stack";
-        if (UNDO_STACK.undoCount > audioRecordingInserter.undoStackIndex + 1) stacks.push("undo");
-        if (UNDO_STACK.redoAvailable) stacks.push("redo");
-        const strStacks = stacks.join("/");
-
-        if (confirm("Do you want to cancel audio recording? The cancellation cannot be undone" + (strStacks.length > 0 ? ` and the ${strStacks} ${strStack} will be cleared` : "") + ".")) {
+        if (confirm("Do you want to cancel audio recording? The cancellation cannot be undone.")) {
           audioRecordingInserter.cancelAudioRecording();
         }
       },
@@ -2313,8 +2314,7 @@
           audioRecordingNode.innerHTML = `<audio controls src="${e.target.result}"></audio>`;
           audioRecordingNode.appendChild(createRemover());
 
-          if (audioRecordingInserter.undoStackIndex > -1)
-            UNDO_STACK.replace(audioRecordingInserter.undoStackIndex, editorInsertBefore, editorRemoveChild, audioRecordingNode, nextSibling);
+          UNDO_STACK.replace(audioRecordingInserter.undoStackIndex, editorInsertBefore, editorRemoveChild, audioRecordingNode, nextSibling);
 
           document.querySelectorAll(`#${audioRecordingInserter.strArId} audio`)[0].load();
           audioRecordingInserter.reset(); // audioRecordingInserter's job is finished here
@@ -2573,7 +2573,6 @@
         divNode.setAttribute("class", "embedded-local-epub epub-loading");
         divNode.setAttribute("contenteditable", "false");
         divNode.setAttribute("data-epub", epubData);
-        let undoStackIndex = -1;
         const destroyBook = () => {
           if (!editor.contains(divNode) && book) {
             book.destroy();
@@ -2583,20 +2582,25 @@
         }
         const removeEpubNode = (childNode, nextSibling) => { editorRemoveChild(childNode, nextSibling); };
         removeEpubNode.cleanup = destroyBook;
-        if (!element) undoStackIndex = UNDO_STACK.push(editorInsertBefore, removeEpubNode, divNode, nextSibling);
+        if (!element) UNDO_STACK.push(editorInsertBefore, removeEpubNode, divNode, nextSibling);
 
         setTimeout(async () => {
+
+          const unblockPageInteraction = blockPageInteraction();
 
           try {
             //book = ePub(epubData, { openAs: "base64" }); // BUG: not working
             book = ePub(await (await window.fetch(epubData)).blob());
           } catch (error) { // we allow ePub loading only if epub library is available and the data could be loaded
-            console.log(error);
 
-            if (!element) UNDO_STACK.removeLastOrClearStacks(undoStackIndex);
+            console.log(error);
+            unblockPageInteraction();
+
+            if (!element) UNDO_STACK.removeLast();
             if (editor.contains(divNode)) editor.removeChild(divNode);
             return;
           }
+          unblockPageInteraction();
           const strTocId = `toc${epubId}`;
 
           const navButtons = document.createElement("div");
