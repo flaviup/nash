@@ -2138,7 +2138,7 @@
 
             audioRecordingInserter.audioRecordStartTime = new Date(); // store the recording start time to display the elapsed time according to it
             const audioRecordingNode = audioRecordingInserter.audioRecordingNode;
-            const nextSibling = audioRecordingInserter.nextSibling;
+            const nextSibling = audioRecordingInserter.nextElementSibling;
             UNDO_STACK.push(editorInsertBefore, function (_, _2) {
 
               if (confirm("Do you want to cancel audio recording? The cancellation cannot be undone" + (UNDO_STACK.redoAvailable ? " and the redo stack will be cleared" : "") + ".")) {
@@ -2247,7 +2247,7 @@
         reader.onload = (e) => {
 
           const audioRecordingNode = audioRecordingInserter.audioRecordingNode;
-          const nextSibling = audioRecordingInserter.nextSibling;
+          const nextSibling = audioRecordingInserter.nextElementSibling;
           audioRecordingNode.innerHTML = `<audio controls src="${e.target.result}"></audio>`;
           audioRecordingNode.appendChild(createRemover());
           UNDO_STACK.replaceLast(editorInsertBefore, editorRemoveChild, audioRecordingNode, nextSibling);
