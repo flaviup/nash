@@ -1383,6 +1383,7 @@
     })); // END OF PDFObject
 
     // Pub-Sub / Observer Pattern
+    // based on https://github.com/hassanshaikley/pico-pubsub
     const t = new EventTarget();
     const sub = (e, c) => (t.addEventListener(e, c), () => t.removeEventListener(e, c));
     const pub = (n, d) => t.dispatchEvent(new CustomEvent(n, { detail: d }));
@@ -1426,10 +1427,19 @@
         return sub(UndoStack.#_UNDO_STACK_CHANGE_EVENT_NAME, callback);
       }
 
+      static #_cleanup(actions) {
+
+        for (let a of actions) {
+          a?.cleanup();
+        }
+      }
+
       clear() {
 
         if (this.#_past.length > 0 || this.#_future.length > 0) {
 
+          UndoStack.#_cleanup(this.#_past);
+          UndoStack.#_cleanup(this.#_future);
           this.#_past.length = 0;
           this.#_future.length = 0;
 
@@ -1442,6 +1452,7 @@
 
         if (this.#_future.length > 0) {
 
+          UndoStack.#_cleanup(this.#_future);
           this.#_future.length = 0;
           console.log("Redo stack cleared.");
           pub(UndoStack.#_UNDO_STACK_CHANGE_EVENT_NAME, UndoStack.#_UNDO_STACK_CHANGE_EVENT_CLEAR_REDO);
@@ -1458,11 +1469,16 @@
           undoWithData() {
             undoFn(...args);
           },
+          cleanup () {
+            if (doFn.cleanup) doFn.cleanup();
+            if (undoFn.cleanup) undoFn.cleanup();
+          }
         };
         action.doWithData();
 
         // Adding a new action wipes the redoable steps
         this.#_past.push(action);
+        UndoStack.#_cleanup(this.#_future);
         this.#_future.length = 0;
 
         pub(UndoStack.#_UNDO_STACK_CHANGE_EVENT_NAME, UndoStack.#_UNDO_STACK_CHANGE_EVENT_PUSH);
@@ -1482,6 +1498,10 @@
             undoWithData() {
               undoFn(...args);
             },
+            cleanup () {
+              if (doFn.cleanup) doFn.cleanup();
+              if (undoFn.cleanup) undoFn.cleanup();
+            }
           };
           this.#_past[index] = action;
         }
@@ -2554,7 +2574,16 @@
         divNode.setAttribute("contenteditable", "false");
         divNode.setAttribute("data-epub", epubData);
         let undoStackIndex = -1;
-        if (!element) undoStackIndex = UNDO_STACK.push(editorInsertBefore, editorRemoveChild, divNode, nextSibling);
+        const destroyBook = () => {
+          if (!editor.contains(divNode) && book) {
+            book.destroy();
+            book = null;
+            console.log("Epub book destroyed.");
+          }
+        }
+        const removeEpubNode = (childNode, nextSibling) => { editorRemoveChild(childNode, nextSibling); };
+        removeEpubNode.cleanup = destroyBook;
+        if (!element) undoStackIndex = UNDO_STACK.push(editorInsertBefore, removeEpubNode, divNode, nextSibling);
 
         setTimeout(async () => {
 
@@ -2605,14 +2634,9 @@
 
           if (!readonly) {
 
-            UNDO_STACK.onChange(function (event) {
-
-            });
             divNode.appendChild(createRemover(function () {
 
-              //book.destroy();
-
-              editor.UNDO_STACK.push(editorRemoveChild, editorInsertBefore,
+              editor.UNDO_STACK.push(removeEpubNode, editorInsertBefore,
                                      divNode, nextSibling);
             }));
           }
