@@ -1415,6 +1415,7 @@
 
           this.#_past.length = 0;
           this.#_future.length = 0;
+          console.log("Undo/redo stacks cleared.");
 
           if (this.onChange) this.onChange();
         }
@@ -1425,6 +1426,7 @@
         if (this.#_future.length > 0) {
 
           this.#_future.length = 0;
+          console.log("Redo stack cleared.");
 
           if (this.onChange) this.onChange();
         }
