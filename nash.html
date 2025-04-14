@@ -1492,7 +1492,10 @@
         if (index > -1 && index === this.#_past.length - 1) {
 
           const action = this.#_past.pop();
+
           if (action && this.onChange) this.onChange();
+
+          this.clearRedo();
         } else if (index > -1 && index < this.#_past.length - 1) {
           this.clear();
         }
