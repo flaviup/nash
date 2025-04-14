@@ -1393,6 +1393,14 @@
 
       constructor() {}
 
+      get undoCount() {
+        return this.#_past.length;
+      }
+
+      get redoCount() {
+        return this.#_future.length;
+      }
+
       get undoAvailable() {
         return this.#_past.length > 0;
       }
@@ -1440,11 +1448,14 @@
         this.#_future.length = 0;
 
         if (this.onChange) this.onChange();
+
+        return this.#_past.length - 1;
       }
 
-      replaceLast(doFn, undoFn, ...withArguments) {
+      replace(index, doFn, undoFn, ...withArguments) {
 
-        this.#_past.pop();
+        if (index < 0) return;
+
         const args = withArguments; // structuredClone(withArguments);
         const action = {
           doWithData() {
@@ -1456,9 +1467,12 @@
         };
 
         // Adding a new action wipes the redoable steps
-        if (this.#_past.length > 0) this.#_past[this.#_past.length - 1] = action;
-        else this.#_past.push(action);
-        this.#_future.length = 0;
+        if (this.#_past.length > index) {
+          this.#_past[index] = action;
+        } else {
+          this.#_past.push(action);
+          this.#_future.length = 0;
+        }
       }
 
       undo() {
@@ -1473,12 +1487,14 @@
         }
       }
 
-      removeLast() {
+      removeLastOrClearStacks(index) {
 
-        const action = this.#_past.pop();
+        if (index > -1 && index === this.#_past.length - 1) {
 
-        if (action && this.onChange) {
-          this.onChange();
+          const action = this.#_past.pop();
+          if (action && this.onChange) this.onChange();
+        } else if (index > -1 && index < this.#_past.length - 1) {
+          this.clear();
         }
       }
 
@@ -2060,6 +2076,8 @@
       /** Stores the reference of the setInterval function that controls the timer in audio recording*/
       elapsedTimeTimer: null,
 
+      undoStackIndex: -1,
+
       /** Resets all the audioRecordingInserter's data members*/
       reset: function () {
 
@@ -2069,10 +2087,11 @@
         audioRecordingInserter.elapsedTimeTag = null;
         audioRecordingInserter.audioRecordStartTime = null;
         audioRecordingInserter.elapsedTimeTimer = null;
+        audioRecordingInserter.undoStackIndex = -1;
       },
 
       /** Tries to start recording and insert the audio recording ui in the page*/
-      insert: function () {
+      insert: function (useSelectionRange) {
 
         if (!audioRecorder.isMediaRecordingSupported()) {
           console.log("Media recording is not supported in this browser.");
@@ -2086,7 +2105,7 @@
         }
         audioRecordingInserter.reset();
 
-        audioRecordingInserter.nextSibling = getTopLevelNodeOfCurrentPosition()?.nextElementSibling;
+        audioRecordingInserter.nextSibling = getTopLevelNodeOfCurrentPosition(useSelectionRange)?.nextElementSibling;
         audioRecordingInserter.strArId = `ar${generateUId()}`;
         audioRecordingInserter.audioRecordingNode = document.createElement("div");
         audioRecordingInserter.audioRecordingNode.setAttribute("id", audioRecordingInserter.strArId);
@@ -2138,19 +2157,15 @@
 
             audioRecordingInserter.audioRecordStartTime = new Date(); // store the recording start time to display the elapsed time according to it
             const audioRecordingNode = audioRecordingInserter.audioRecordingNode;
-            const nextSibling = audioRecordingInserter.nextElementSibling;
-            UNDO_STACK.push(editorInsertBefore, function (_, _2) {
-
-              if (confirm("Do you want to cancel audio recording? The cancellation cannot be undone" + (UNDO_STACK.redoAvailable ? " and the redo stack will be cleared" : "") + ".")) {
-                audioRecordingInserter.cancelAudioRecording();
-                UNDO_STACK.clearRedo();
-              }
+            const nextSibling = audioRecordingInserter.nextSibling;
+            audioRecordingInserter.undoStackIndex = UNDO_STACK.push(editorInsertBefore, function (_, _2) {
+              audioRecordingInserter.onClickCancelAudioRecording();
             }, audioRecordingNode, nextSibling);
             audioRecordingInserter.elapsedTimeTag = document.querySelectorAll(`#${audioRecordingInserter.strArId} .elapsed-time`)[0];
             const stopRecordingButton = document.querySelectorAll(`#${audioRecordingInserter.strArId} .stop-recording-button`)[0];
             const cancelRecordingButton = document.querySelectorAll(`#${audioRecordingInserter.strArId} .cancel-recording-button`)[0];
             stopRecordingButton.onclick = audioRecordingInserter.stopAudioRecording;
-            cancelRecordingButton.onclick = audioRecordingInserter.cancelAudioRecording;
+            cancelRecordingButton.onclick = audioRecordingInserter.onClickCancelAudioRecording;
             audioRecordingInserter.handleElapsedRecordingTime();
           })
           .catch(error => { // on error
@@ -2228,11 +2243,23 @@
         audioRecordingInserter.handleRecordingEnd();
 
         if (editor.contains(audioRecordingInserter.audioRecordingNode)) {
-
-          UNDO_STACK.removeLast();
           editor.removeChild(audioRecordingInserter.audioRecordingNode);
         }
+        UNDO_STACK.removeLastOrClearStacks(audioRecordingInserter.undoStackIndex);
         audioRecordingInserter.reset(); // audioRecordingInserter's job is finished here
+      },
+
+      onClickCancelAudioRecording: function () {
+
+        const stacks = [];
+        let strStack = (UNDO_STACK.undoCount > audioRecordingInserter.undoStackIndex + 1 && UNDO_STACK.redoAvailable) ? "stacks" : "stack";
+        if (UNDO_STACK.undoCount > audioRecordingInserter.undoStackIndex + 1) stacks.push("undo");
+        if (UNDO_STACK.redoAvailable) stacks.push("redo");
+        const strStacks = stacks.join("/");
+
+        if (confirm("Do you want to cancel audio recording? The cancellation cannot be undone" + (strStacks.length > 0 ? ` and the ${strStacks} ${strStack} will be cleared` : "") + ".")) {
+          audioRecordingInserter.cancelAudioRecording();
+        }
       },
 
       /** Shows the audio play interface for playing the recorded audio using the audio element in the HTML document
@@ -2247,10 +2274,13 @@
         reader.onload = (e) => {
 
           const audioRecordingNode = audioRecordingInserter.audioRecordingNode;
-          const nextSibling = audioRecordingInserter.nextElementSibling;
+          const nextSibling = audioRecordingInserter.nextSibling;
           audioRecordingNode.innerHTML = `<audio controls src="${e.target.result}"></audio>`;
           audioRecordingNode.appendChild(createRemover());
-          UNDO_STACK.replaceLast(editorInsertBefore, editorRemoveChild, audioRecordingNode, nextSibling);
+
+          if (audioRecordingInserter.undoStackIndex > -1)
+            UNDO_STACK.replace(audioRecordingInserter.undoStackIndex, editorInsertBefore, editorRemoveChild, audioRecordingNode, nextSibling);
+
           document.querySelectorAll(`#${audioRecordingInserter.strArId} audio`)[0].load();
           audioRecordingInserter.reset(); // audioRecordingInserter's job is finished here
         };
@@ -2413,7 +2443,7 @@
     };
 
     function insertAudioRecording() {
-      audioRecordingInserter.insert();
+      audioRecordingInserter.insert(lastValidSelectionRange);
     }
 
     function onMathClick(e) {
@@ -2508,7 +2538,8 @@
         divNode.setAttribute("class", "embedded-local-epub epub-loading");
         divNode.setAttribute("contenteditable", "false");
         divNode.setAttribute("data-epub", epubData);
-        if (!element) UNDO_STACK.push(editorInsertBefore, editorRemoveChild, divNode, nextSibling);
+        let undoStackIndex = -1;
+        if (!element) undoStackIndex = UNDO_STACK.push(editorInsertBefore, editorRemoveChild, divNode, nextSibling);
 
         setTimeout(async () => {
 
@@ -2518,7 +2549,7 @@
           } catch (error) { // we allow ePub loading only if epub library is available and the data could be loaded
             console.log(error);
 
-            if (!element) UNDO_STACK.removeLast();
+            if (!element) UNDO_STACK.removeLastOrClearStacks(undoStackIndex);
             if (editor.contains(divNode)) editor.removeChild(divNode);
             return;
           }
