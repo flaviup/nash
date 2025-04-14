@@ -1942,7 +1942,7 @@
       if (file) {
 
         let reader = new FileReader();
-        const nextSibling = getTopLevelNodeOfCurrentPosition(lastValidSelectionRange)?.nextSibling;
+        const nextSibling = getTopLevelNodeOfCurrentPosition(lastValidSelectionRange)?.nextElementSibling;
         reader.onload = function (e) {
 
           const divNode = document.createElement("div");
@@ -1964,7 +1964,7 @@
       const url = (await showPrompt("Image URL"))?.trim();
       if (!url) return;
 
-      const nextSibling = getTopLevelNodeOfCurrentPosition()?.nextSibling;
+      const nextSibling = getTopLevelNodeOfCurrentPosition()?.nextElementSibling;
       const divNode = document.createElement("div");
       const img = document.createElement("img");
       img.src = `${url}`;
@@ -1983,7 +1983,7 @@
       if (file) {
 
         let reader = new FileReader();
-        const nextSibling = getTopLevelNodeOfCurrentPosition(lastValidSelectionRange)?.nextSibling;
+        const nextSibling = getTopLevelNodeOfCurrentPosition(lastValidSelectionRange)?.nextElementSibling;
         reader.onload = function (e) {
 
           const divNode = document.createElement("div");
@@ -2006,7 +2006,7 @@
       const url = (await showPrompt("Audio URL"))?.trim();
       if (!url) return;
 
-      const nextSibling = getTopLevelNodeOfCurrentPosition()?.nextSibling;
+      const nextSibling = getTopLevelNodeOfCurrentPosition()?.nextElementSibling;
       const divNode = document.createElement("div");
       const audio = document.createElement("audio");
       audio.src = `${url}`;
@@ -2024,7 +2024,7 @@
       const url = (await showPrompt("Video URL"))?.trim();
       if (!url) return;
 
-      const nextSibling = getTopLevelNodeOfCurrentPosition()?.nextSibling;
+      const nextSibling = getTopLevelNodeOfCurrentPosition()?.nextElementSibling;
       const divNode = document.createElement("div");
       const video = document.createElement("video");
       video.src = `${url}`;
@@ -2086,7 +2086,7 @@
         }
         audioRecordingInserter.reset();
 
-        audioRecordingInserter.nextSibling = getTopLevelNodeOfCurrentPosition()?.nextSibling;
+        audioRecordingInserter.nextSibling = getTopLevelNodeOfCurrentPosition()?.nextElementSibling;
         audioRecordingInserter.strArId = `ar${generateUId()}`;
         audioRecordingInserter.audioRecordingNode = document.createElement("div");
         audioRecordingInserter.audioRecordingNode.setAttribute("id", audioRecordingInserter.strArId);
@@ -2453,7 +2453,7 @@
       const expression = prompt("Introduce math expression (see https://mathup.xyz):")?.trim();
       if (!expression) return;
 
-      const nextSibling = getTopLevelNodeOfCurrentPosition()?.nextSibling;
+      const nextSibling = getTopLevelNodeOfCurrentPosition()?.nextElementSibling;
       const divNode = document.createElement("div");
 
       const mathNode = mathup(expression, { bare: false, display: "inline" }).toDOM();
@@ -2488,7 +2488,7 @@
       if (file) {
 
         let reader = new FileReader();
-        const nextSibling = getTopLevelNodeOfCurrentPosition(lastValidSelectionRange)?.nextSibling;
+        const nextSibling = getTopLevelNodeOfCurrentPosition(lastValidSelectionRange)?.nextElementSibling;
         reader.onload = async function (e) {
           loadEpub(e.target?.result, nextSibling);
         }
@@ -2668,7 +2668,7 @@
       if (file) {
 
         let reader = new FileReader();
-        const nextSibling = getTopLevelNodeOfCurrentPosition(lastValidSelectionRange)?.nextSibling;
+        const nextSibling = getTopLevelNodeOfCurrentPosition(lastValidSelectionRange)?.nextElementSibling;
         reader.onload = async function (e) {
           await loadPdf(e.target?.result, nextSibling);
         }
@@ -2714,7 +2714,7 @@
 
       const url = (await showPrompt("PDF URL"))?.trim();
       if (!url) return;
-      const nextSibling = getTopLevelNodeOfCurrentPosition()?.nextSibling;
+      const nextSibling = getTopLevelNodeOfCurrentPosition()?.nextElementSibling;
       const divNode = document.createElement("div");
       divNode.setAttribute("id", `pdf${generateUId()}`);
       divNode.setAttribute("class", "pdf-link pdf-loading");
@@ -2815,7 +2815,7 @@
       }
       tbody = "<tbody>" + tbody + "\n</tbody>";
 
-      const nextSibling = getTopLevelNodeOfCurrentPosition()?.nextSibling;
+      const nextSibling = getTopLevelNodeOfCurrentPosition()?.nextElementSibling;
       const divNode = document.createElement("div");
       divNode.setAttribute("id", `table${generateUId()}`);
       divNode.setAttribute("class", "embedded-table");
@@ -2833,13 +2833,13 @@
       p.setAttribute("id", `text${generateUId()}`);
       p.setAttribute("class", "text-block");
       p.appendChild(document.createElement("br"));
-      UNDO_STACK.push(editorInsertBefore, editorRemoveChild, p, topNode?.nextSibling);
+      UNDO_STACK.push(editorInsertBefore, editorRemoveChild, p, topNode?.nextElementSibling);
       setCaret(p, 0);
     }
 
     function insertCode() {
 
-      const nextSibling = getTopLevelNodeOfCurrentPosition()?.nextSibling;
+      const nextSibling = getTopLevelNodeOfCurrentPosition()?.nextElementSibling;
       const divNode = document.createElement("div");
       const pre = document.createElement("pre");
       const code = document.createElement("code");
@@ -2858,7 +2858,7 @@
 
       const iframeHtml = (await showPrompt("Embedded Page (iframe or URL)"))?.trim();
       if (!iframeHtml) return;
-      const nextSibling = getTopLevelNodeOfCurrentPosition()?.nextSibling;
+      const nextSibling = getTopLevelNodeOfCurrentPosition()?.nextElementSibling;
       const divNode = document.createElement("div");
 
       if (iframeHtml.length < "<IFRAME".length || !iframeHtml.toUpperCase().startsWith("<IFRAME")) {
@@ -4477,16 +4477,25 @@
   <script>
     const editor = document.getElementById("editor");
 
+    function removeChild(parentNode, childNode, _) {
+      parentNode.removeChild(childNode);
+    }
+
+    function insertBefore(parentNode, childNode, childSibling) {
+      parentNode.insertBefore(childNode, childSibling);
+    }
+
     function handleXRemoveEvent(event) {
 
       const parentNode = event.target?.parentNode?.parentNode;
-      const childNode = event.target?.parentNode;
-      const childSibling = childNode?.nextElementSibling;
-      
-      if (parentNode)
-        editor.UNDO_STACK.push((parentNode, childNode, _) => parentNode.removeChild(childNode),
-                               (parentNode, childNode, childSibling) => parentNode.insertBefore(childNode, childSibling),
-                               parentNode, childNode, childSibling)
+
+      if (parentNode) {
+
+        const childNode = event.target?.parentNode;
+        const childSibling = childNode?.nextElementSibling;
+        editor.UNDO_STACK.push(removeChild,insertBefore,
+                               parentNode, childNode, childSibling);
+      }
     }
   </script>
 
