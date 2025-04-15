@@ -1728,7 +1728,14 @@
 
     function editorRemoveChild(childNode, _) {
 
-      if (childNode && editor.contains(childNode)) editor.removeChild(childNode);
+      if (childNode) {
+
+        if (editor.contains(childNode)) {
+          editor.removeChild(childNode);
+        } else if (childNode = editor.querySelector(`#${childNode.id}`)) {
+          editor.removeChild(childNode);
+        }
+      }
     }
 
     editor.UNDO_STACK = UNDO_STACK;
@@ -4656,7 +4663,14 @@
 
     function editorRemoveChild(childNode, _) {
 
-      if (childNode && editor.contains(childNode)) editor.removeChild(childNode);
+      if (childNode) {
+
+        if (editor.contains(childNode)) {
+          editor.removeChild(childNode);
+        } else if (childNode = editor.querySelector(`#${childNode.id}`)) {
+          editor.removeChild(childNode);
+        }
+      }
     }
 
     function editorInsertBefore(childNode, siblingNodeId) {
