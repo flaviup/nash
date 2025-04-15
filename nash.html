@@ -3031,7 +3031,7 @@
 
       if (!selection.rangeCount) return;
       const range = selection.getRangeAt(0);
-      const nodes = [];
+      const nodeIds = [];
       const ALIGNABLE_NODE_CLASSES = ["text-block", "embedded-table", "embedded-content", "embedded-math", "embedded-local-image", "image-link"];
 
       if (range) {
@@ -3041,7 +3041,7 @@
           const node = getTopLevelNodeOf(range.startContainer, editor);
 
           if (node?.classList && [...node.classList].some(c => ALIGNABLE_NODE_CLASSES.indexOf(c) > -1))
-            nodes.push(node);
+            nodeIds.push(node.id);
         } else {
 
           let nodeStart = getTopLevelNodeOf(range.startContainer, editor);
@@ -3050,7 +3050,7 @@
           while (nodeStart) {
 
             if (nodeStart.classList && [...nodeStart.classList].some(c => ALIGNABLE_NODE_CLASSES.indexOf(c) > -1))
-              nodes.push(nodeStart);
+              nodeIds.push(nodeStart.id);
             
             if (nodeStart === nodeEnd) {
 
@@ -3064,7 +3064,7 @@
           while (nodeEnd) {
 
             if (nodeEnd.classList && [...nodeEnd.classList].some(c => ALIGNABLE_NODE_CLASSES.indexOf(c) > -1))
-              nodes.push(nodeEnd);
+              nodeIds.push(nodeEnd.id);
             
             if (nodeStart === nodeEnd) break;
 
@@ -3073,7 +3073,11 @@
         }
       }
 
-      nodes.forEach((node) => {
+      nodeIds.forEach((nodeId) => {
+
+        const node = document.getElementById(nodeId);
+
+        if (!node) return;
 
         if (node.classList?.contains("text-block")) {
 
@@ -3833,6 +3837,50 @@
       applyStyle(STYLE_HIGHLIGHT_COLOR_BASE_INDEX + color);
     }
 
+    // Changes the nodes specified by their ids into the specified tag name.
+    // Used by the undo stack.
+    function transformNodes(nodeIds, _, tagName) {
+
+      nodeIds.forEach((nodeId) => {
+
+        const node = document.getElementById(nodeId);
+
+        if (node) {
+
+          const newBlock = document.createElement(tagName);
+          newBlock.id = nodeId;
+          newBlock.setAttribute("class", node.getAttribute("class"));
+
+          editorInsertBefore(newBlock, nodeId);
+          newBlock.append(...node.childNodes);
+          node.remove();
+        }
+      });
+    }
+
+    // Changes the nodes specified by their ids back into the specified tag names.
+    // Used by the undo stack.
+    function undoTransformNodes(nodeIds, nodeTagNames, _) {
+
+      for (let i = 0; i < nodeIds.length; ++i) {
+
+        const nodeId = nodeIds[i];
+        const tagName = nodeTagNames[i];
+        const node = document.getElementById(nodeId);
+
+        if (node && node.nodeName.toLowerCase() !== tagName) {
+
+          const newBlock = document.createElement(tagName);
+          newBlock.id = nodeId;
+          newBlock.setAttribute("class", node.getAttribute("class"));
+
+          editorInsertBefore(newBlock, nodeId);
+          newBlock.append(...node.childNodes);
+          node.remove();
+        }
+      }
+    }
+
     // Converts the currently selected text blocks (direct children of #editor) to the chosen tag.
     function changeBlock(tagName) {
 
@@ -3840,7 +3888,7 @@
 
       if (!selection.rangeCount) return;
       const range = selection.getRangeAt(0);
-      const nodes = [];
+      const nodeIds = [];
 
       if (range) {
 
@@ -3850,7 +3898,7 @@
 
           const node = getTopLevelNodeOf(range.startContainer, editor);
 
-          if (node?.nodeName !== tag && node?.classList?.contains("text-block")) nodes.push(node);
+          if (node?.nodeName !== tag && node?.classList?.contains("text-block")) nodeIds.push(node.id);
         } else {
 
           let nodeStart = getTopLevelNodeOf(range.startContainer, editor);
@@ -3860,7 +3908,7 @@
 
             if (nodeStart.nodeName !== tag &&
                 nodeStart.classList?.contains("text-block"))
-              nodes.push(nodeStart);
+              nodeIds.push(nodeStart.id);
             
             if (nodeStart === nodeEnd) {
 
@@ -3875,37 +3923,29 @@
 
             if (nodeEnd.nodeName !== tag &&
                 nodeEnd.classList?.contains("text-block"))
-              nodes.push(nodeEnd);
+              nodeIds.push(nodeEnd.id);
             
             if (nodeStart === nodeEnd) break;
 
             nodeEnd = nodeEnd.previousElementSibling;
           }
         }
+        const startContainer = range.startContainer;
+        const endContainer = range.endContainer;
+        const startContainerId = startContainer.id;
+        const endContainerId = endContainer.id;
+        const startOffset = range.startOffset;
+        const endOffset = range.endOffset;
+        const nodeTagNames = nodeIds.map((nodeId) => document.getElementById(nodeId).nodeName.toLowerCase()) ?? [];
+
+        UNDO_STACK.push(transformNodes, undoTransformNodes, nodeIds, nodeTagNames, tagName);
+
+        range.setStart(startContainerId ? document.getElementById(startContainerId) : startContainer, startOffset);
+        range.setEnd(endContainerId ? document.getElementById(endContainerId) : endContainer, endOffset);
+
+        selection.removeAllRanges();
+        selection.addRange(range);
       }
-      let startContainer = range.startContainer;
-      let endContainer = range.endContainer;
-      const startOffset = range.startOffset;
-      const endOffset = range.endOffset;
-
-      nodes.forEach((node) => {
-
-        const newBlock = document.createElement(tagName);
-        newBlock.id = node.id;
-        newBlock.setAttribute("class", node.getAttribute("class"));
-
-        if (node === range.startContainer) startContainer = newBlock;
-        if (node === range.endContainer) endContainer = newBlock;
-
-        editorInsertBefore(newBlock, node);
-        newBlock.append(...node.childNodes);
-        node.remove();
-      });
-      range.setStart(startContainer, startOffset);
-      range.setEnd(endContainer, endOffset);
-
-      selection.removeAllRanges();
-      selection.addRange(range);
     }
 
     // Helper: Gets the last deepest child of the specified node
@@ -3977,7 +4017,7 @@
           }
         }
       }
-      editorInsertBefore(newBlock, block.nextSibling);
+      editorInsertBefore(newBlock, block.nextSibling?.id);
       const ldc = getLastDeepestChild(block);
 
       if (ldc.nodeName !== "BR" || ldc !== startContainer) {
