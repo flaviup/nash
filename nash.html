@@ -752,6 +752,22 @@
       display: block;
     }
 
+    .xlarge-text {
+      font-size: 32px;
+    }
+
+    .large-text {
+      font-size: 24px;
+    }
+
+    .medium-text {
+      font-size: 16px;
+    }
+
+    .small-text {
+      font-size: 14px;
+    }
+
     .left-text {
       text-align: left;
     }
@@ -1726,16 +1742,9 @@
       }
     }
 
-    function editorRemoveChild(childNode, _) {
+    function editorRemoveChild(childNode, siblingNodeId) {
 
-      if (childNode) {
-
-        if (editor.contains(childNode)) {
-          editor.removeChild(childNode);
-        } else if (childNode = editor.querySelector(`#${childNode.id}`)) {
-          editor.removeChild(childNode);
-        }
-      }
+      if (childNode && editor.contains(childNode)) editor.removeChild(childNode);
     }
 
     editor.UNDO_STACK = UNDO_STACK;
@@ -3431,7 +3440,7 @@
 
       // determines which type of nodes are stylable (H1-H6, P, SMALL, or any direct child of TH or TD)
       function isSelectableNodeForStyling(node) {
-        return node && (node.nodeName.match(/^H[1-6]$|^P$|^SMALL$/) || ["TH", "TD"].includes(node.parentNode?.nodeName));
+        return node && (node.nodeName === "P" || ["TH", "TD"].includes(node.parentNode?.nodeName));
       }
 
       // Gets the list of text positions of all the nodes within the root container and within the specified range
@@ -3844,52 +3853,54 @@
       applyStyle(STYLE_HIGHLIGHT_COLOR_BASE_INDEX + color);
     }
 
-    // Changes the nodes specified by their ids into the specified tag name.
+    // Changes the nodes specified by their ids into the specified text level.
     // Used by the undo stack.
-    function transformNodes(nodeIds, _, tagName) {
-
-      nodeIds.forEach((nodeId) => {
-
-        const node = document.getElementById(nodeId);
-
-        if (node) {
-
-          const newBlock = document.createElement(tagName);
-          newBlock.id = nodeId;
-          newBlock.setAttribute("class", node.getAttribute("class"));
-
-          editorInsertBefore(newBlock, nodeId);
-          newBlock.append(...node.childNodes);
-          node.remove();
-        }
-      });
-    }
-
-    // Changes the nodes specified by their ids back into the specified tag names.
-    // Used by the undo stack.
-    function undoTransformNodes(nodeIds, nodeTagNames, _) {
+    function changeTextLevels(nodeIds, nodeTextLevelClasses, textLevelClass) {
 
       for (let i = 0; i < nodeIds.length; ++i) {
 
         const nodeId = nodeIds[i];
-        const tagName = nodeTagNames[i];
         const node = document.getElementById(nodeId);
 
-        if (node && node.nodeName.toLowerCase() !== tagName) {
+        if (node) {
 
-          const newBlock = document.createElement(tagName);
-          newBlock.id = nodeId;
-          newBlock.setAttribute("class", node.getAttribute("class"));
+          const nodeTextLevelClass = nodeTextLevelClasses[i];
 
-          editorInsertBefore(newBlock, nodeId);
-          newBlock.append(...node.childNodes);
-          node.remove();
+          if (node.classList?.contains(nodeTextLevelClass)) node.classList.remove(nodeTextLevelClass);
+
+          if (textLevelClass !== "medium-text") {
+            node.classList?.add(textLevelClass);
+          }
         }
       }
     }
 
-    // Converts the currently selected text blocks (direct children of #editor) to the chosen tag.
-    function changeBlock(tagName) {
+    // Changes the nodes specified by their ids back into the specified text levels.
+    // Used by the undo stack.
+    function undoChangeTextLevels(nodeIds, nodeTextLevelClasses, textLevelClass) {
+
+      for (let i = 0; i < nodeIds.length; ++i) {
+
+        const nodeId = nodeIds[i];
+        const node = document.getElementById(nodeId);
+
+        if (node) {
+
+          if (node.classList?.contains(textLevelClass)) node.classList.remove(textLevelClass);
+
+          const nodeTextLevelClass = nodeTextLevelClasses[i];
+
+          if (nodeTextLevelClass !== "medium-text") {
+            node.classList?.add(nodeTextLevelClass);
+          }
+        }
+      }
+    }
+
+    const TEXT_LEVEL_CLASSES = ["xlarge-text", "large-text", "medium-text", "small-text"];
+
+    // Converts the currently selected text blocks (direct children of #editor) to the chosen text level.
+    function changeBlock(textLevelClass) {
 
       const selection = window.getSelection();
 
@@ -3897,15 +3908,30 @@
       const range = selection.getRangeAt(0);
       const nodeIds = [];
 
-      if (range) {
+      function isSelectableNode(node) {
 
-        const tag = tagName.toUpperCase();
+        const textLevelClasses = ["xlarge-text", "large-text", "small-text"];
+        return node?.classList?.contains("text-block") &&
+              (textLevelClass === "medium-text" ? [...node.classList].some(c => textLevelClasses.indexOf(c) > -1) :
+                                                  !node.classList.contains(textLevelClass));
+      }
+
+      function getCurrentTextLevel(node) {
+
+        for (let textLevelClass of TEXT_LEVEL_CLASSES) {
+          if (node.classList.contains(textLevelClass)) return textLevelClass;
+        }
+
+        return "medium-text";
+      }
+
+      if (range) {
 
         if (range.commonAncestorContainer.nodeType === Node.TEXT_NODE) {
 
           const node = getTopLevelNodeOf(range.startContainer, editor);
 
-          if (node?.nodeName !== tag && node?.classList?.contains("text-block")) nodeIds.push(node.id);
+          if (isSelectableNode(node)) nodeIds.push(node.id);
         } else {
 
           let nodeStart = getTopLevelNodeOf(range.startContainer, editor);
@@ -3913,8 +3939,7 @@
 
           while (nodeStart) {
 
-            if (nodeStart.nodeName !== tag &&
-                nodeStart.classList?.contains("text-block"))
+            if (isSelectableNode(nodeStart))
               nodeIds.push(nodeStart.id);
             
             if (nodeStart === nodeEnd) {
@@ -3928,8 +3953,7 @@
 
           while (nodeEnd) {
 
-            if (nodeEnd.nodeName !== tag &&
-                nodeEnd.classList?.contains("text-block"))
+            if (isSelectableNode(nodeEnd))
               nodeIds.push(nodeEnd.id);
             
             if (nodeStart === nodeEnd) break;
@@ -3943,9 +3967,9 @@
         const endContainerId = endContainer.id;
         const startOffset = range.startOffset;
         const endOffset = range.endOffset;
-        const nodeTagNames = nodeIds.map((nodeId) => document.getElementById(nodeId).nodeName.toLowerCase()) ?? [];
+        const nodeTextLevelClasses = nodeIds.map((nodeId) => getCurrentTextLevel(document.getElementById(nodeId))) ?? [];
 
-        UNDO_STACK.push(transformNodes, undoTransformNodes, nodeIds, nodeTagNames, tagName);
+        if (nodeIds.length > 0) UNDO_STACK.push(changeTextLevels, undoChangeTextLevels, nodeIds, nodeTextLevelClasses, textLevelClass);
 
         range.setStart(startContainerId ? document.getElementById(startContainerId) : startContainer, startOffset);
         range.setEnd(endContainerId ? document.getElementById(endContainerId) : endContainer, endOffset);
@@ -4510,10 +4534,10 @@
 
     document.querySelectorAll(".embedded-math math").forEach(mathNode => mathNode.addEventListener("click", onMathClick));
 
-    document.getElementById("btnH1").addEventListener("click", (e) => changeBlock("h1"));
-    document.getElementById("btnH2").addEventListener("click", (e) => changeBlock("h2"));
-    document.getElementById("btnM").addEventListener("click", (e) => changeBlock("p"));
-    document.getElementById("btnS").addEventListener("click", (e) => changeBlock("small"));
+    document.getElementById("btnH1").addEventListener("click", (e) => changeBlock("xlarge-text"));
+    document.getElementById("btnH2").addEventListener("click", (e) => changeBlock("large-text"));
+    document.getElementById("btnM").addEventListener("click", (e) => changeBlock("medium-text"));
+    document.getElementById("btnS").addEventListener("click", (e) => changeBlock("small-text"));
 
     document.getElementById("btnB").addEventListener("click", (e) => applyFormat(STYLE_STRONG_INDEX));
     document.getElementById("btnI").addEventListener("click", (e) => applyFormat(STYLE_EM_INDEX));
@@ -4661,16 +4685,9 @@
   <script>
     const editor = document.getElementById("editor");
 
-    function editorRemoveChild(childNode, _) {
+    function editorRemoveChild(childNode, siblingNodeId) {
 
-      if (childNode) {
-
-        if (editor.contains(childNode)) {
-          editor.removeChild(childNode);
-        } else if (childNode = editor.querySelector(`#${childNode.id}`)) {
-          editor.removeChild(childNode);
-        }
-      }
+      if (childNode && editor.contains(childNode)) editor.removeChild(childNode);
     }
 
     function editorInsertBefore(childNode, siblingNodeId) {
