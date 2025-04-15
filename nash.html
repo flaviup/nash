@@ -992,7 +992,7 @@
 
     <div id="editorContainer" class="thin-line">
       <div id="editor" contenteditable="true">
-        <p class="text-block"><br/></p>
+        <p id="text28096aea6fa9cc5d10934d24509e2c83" class="text-block"><br/></p>
       </div>
     </div>
 
@@ -1717,8 +1717,19 @@
     const editor = document.getElementById("editor");
     const filename = document.getElementById("filename");
 
-    const editorInsertBefore = editor.insertBefore.bind(editor);
-    function editorRemoveChild (child, _) { if (editor.contains(child)) editor.removeChild(child); }
+    function editorInsertBefore(childNode, siblingNodeId) {
+
+      if (childNode && !editor.contains(childNode)) {
+
+        const siblingNode = siblingNodeId ? document.getElementById(siblingNodeId) : null;
+        if (!siblingNode || editor.contains(siblingNode)) editor.insertBefore(childNode, siblingNode);
+      }
+    }
+
+    function editorRemoveChild(childNode, _) {
+
+      if (childNode && editor.contains(childNode)) editor.removeChild(childNode);
+    }
 
     editor.UNDO_STACK = UNDO_STACK;
 
@@ -1793,9 +1804,11 @@
 
     // Helper: generates a unique id
     function generateUId() {
+
       function s4() {
         return Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
       }
+
       return s4() + s4() + s4() + s4() +
              s4() + s4() + s4() + s4();
     }
@@ -2045,7 +2058,7 @@
           divNode.setAttribute("id", `img${generateUId()}`);
           divNode.setAttribute("class", "embedded-local-image");
           divNode.setAttribute("contenteditable", "false");
-          UNDO_STACK.push(editorInsertBefore, editorRemoveChild, divNode, nextSibling);
+          UNDO_STACK.push(editorInsertBefore, editorRemoveChild, divNode, nextSibling?.id);
         };
         reader.readAsDataURL(file);
       }
@@ -2065,7 +2078,7 @@
       divNode.setAttribute("id", `img${generateUId()}`);
       divNode.setAttribute("class", "image-link");
       divNode.setAttribute("contenteditable", "false");
-      UNDO_STACK.push(editorInsertBefore, editorRemoveChild, divNode, nextSibling);
+      UNDO_STACK.push(editorInsertBefore, editorRemoveChild, divNode, nextSibling?.id);
     }
 
     function insertAudio(event) {
@@ -2087,7 +2100,7 @@
           divNode.setAttribute("id", `audio${generateUId()}`);
           divNode.setAttribute("class", "embedded-local-audio");
           divNode.setAttribute("contenteditable", "false");
-          UNDO_STACK.push(editorInsertBefore, editorRemoveChild, divNode, nextSibling);
+          UNDO_STACK.push(editorInsertBefore, editorRemoveChild, divNode, nextSibling?.id);
         };
         reader.readAsDataURL(file);
       }
@@ -2108,7 +2121,7 @@
       divNode.setAttribute("id", `audio${generateUId()}`);
       divNode.setAttribute("class", "audio-link");
       divNode.setAttribute("contenteditable", "false");
-      UNDO_STACK.push(editorInsertBefore, editorRemoveChild, divNode, nextSibling);
+      UNDO_STACK.push(editorInsertBefore, editorRemoveChild, divNode, nextSibling?.id);
     }
 
     async function insertVideoLink() {
@@ -2126,7 +2139,7 @@
       divNode.setAttribute("id", `video${generateUId()}`);
       divNode.setAttribute("class", "video-link");
       divNode.setAttribute("contenteditable", "false");
-      UNDO_STACK.push(editorInsertBefore, editorRemoveChild, divNode, nextSibling);
+      UNDO_STACK.push(editorInsertBefore, editorRemoveChild, divNode, nextSibling?.id);
     }
 
     const audioRecordingInserter = {
@@ -2236,7 +2249,7 @@
             const nextSibling = audioRecordingInserter.nextSibling;
             audioRecordingInserter.undoStackIndex = UNDO_STACK.push(editorInsertBefore, function (_, _2) {
               audioRecordingInserter.onClickCancelAudioRecording();
-            }, audioRecordingNode, nextSibling);
+            }, audioRecordingNode, nextSibling?.id);
             audioRecordingInserter.elapsedTimeTag = document.querySelectorAll(`#${audioRecordingInserter.strArId} .elapsed-time`)[0];
             const stopRecordingButton = document.querySelectorAll(`#${audioRecordingInserter.strArId} .stop-recording-button`)[0];
             const cancelRecordingButton = document.querySelectorAll(`#${audioRecordingInserter.strArId} .cancel-recording-button`)[0];
@@ -2322,7 +2335,7 @@
         const nextSibling = audioRecordingInserter.nextSibling;
         audioRecordingNode.innerHTML = '<div class="recording-cancelled-container" contenteditable="false"><span style="margin: 0 10px">Cancelled audio recording</span></div>';
         audioRecordingNode.appendChild(createRemover());
-        UNDO_STACK.replace(audioRecordingInserter.undoStackIndex, editorInsertBefore, editorRemoveChild, audioRecordingNode, nextSibling);
+        UNDO_STACK.replace(audioRecordingInserter.undoStackIndex, editorInsertBefore, editorRemoveChild, audioRecordingNode, nextSibling?.id);
         audioRecordingInserter.reset(); // audioRecordingInserter's job is finished here
       },
 
@@ -2349,7 +2362,7 @@
           audioRecordingNode.innerHTML = `<audio controls src="${e.target.result}"></audio>`;
           audioRecordingNode.appendChild(createRemover());
 
-          UNDO_STACK.replace(audioRecordingInserter.undoStackIndex, editorInsertBefore, editorRemoveChild, audioRecordingNode, nextSibling);
+          UNDO_STACK.replace(audioRecordingInserter.undoStackIndex, editorInsertBefore, editorRemoveChild, audioRecordingNode, nextSibling?.id);
 
           document.querySelectorAll(`#${audioRecordingInserter.strArId} audio`)[0].load();
           audioRecordingInserter.reset(); // audioRecordingInserter's job is finished here
@@ -2524,26 +2537,34 @@
         node = node.parentNode;
       }
 
-      if (!node) return false;
+      if (!node?.id) return false;
 
       const currentExpression = node.getAttribute("data-math");
       const newExpression = prompt("Introduce math expression (see https://mathup.xyz):", currentExpression)?.trim();
 
       if (!newExpression || currentExpression === newExpression) return false;
 
-      UNDO_STACK.push((node, newExpression, _) => {
+      UNDO_STACK.push((nodeId, newExpression, _) => {
+
+        const node = document.getElementById(nodeId);
+
+        if (!node) return;
 
         node.setAttribute("data-math", newExpression);
         const mathNode = node.querySelector("math");
 
         if (mathNode) mathup(newExpression, { bare: true }).updateDOM(mathNode);
-      }, (node, _, oldExpression) => {
+      }, (nodeId, _, oldExpression) => {
+
+        const node = document.getElementById(nodeId);
+
+        if (!node) return;
 
         node.setAttribute("data-math", oldExpression);
         const mathNode = node.querySelector("math");
 
         if (mathNode) mathup(oldExpression, { bare: true }).updateDOM(mathNode);
-      }, node, newExpression, currentExpression);
+      }, node.id, newExpression, currentExpression);
 
       return true;
     }
@@ -2565,7 +2586,7 @@
       divNode.setAttribute("class", "embedded-math");
       divNode.setAttribute("contenteditable", "false");
       divNode.setAttribute("data-math", expression);
-      UNDO_STACK.push(editorInsertBefore, editorRemoveChild, divNode, nextSibling);
+      UNDO_STACK.push(editorInsertBefore, editorRemoveChild, divNode, nextSibling?.id);
     }
 
     function loadAllReferencedDocuments() {
@@ -2615,9 +2636,9 @@
             console.log("Epub book destroyed.");
           }
         }
-        const removeEpubNode = (childNode, nextSibling) => { editorRemoveChild(childNode, nextSibling); };
+        const removeEpubNode = (childNode, nextSiblingId) => { editorRemoveChild(childNode, nextSiblingId); };
         removeEpubNode.cleanup = destroyBook;
-        if (!element) UNDO_STACK.push(editorInsertBefore, removeEpubNode, divNode, nextSibling);
+        if (!element) UNDO_STACK.push(editorInsertBefore, removeEpubNode, divNode, nextSibling?.id);
 
         setTimeout(async () => {
 
@@ -2676,7 +2697,7 @@
             divNode.appendChild(createRemover(function () {
 
               editor.UNDO_STACK.push(removeEpubNode, editorInsertBefore,
-                                     divNode, nextSibling);
+                                     divNode, nextSibling?.id);
             }));
           }
           const rendition = book.renderTo(strEpubId, { flow: "scrolled",
@@ -2807,7 +2828,7 @@
         divNode.setAttribute("contenteditable", "false");
         //divNode.setAttribute("data-pdf", pdfData);
 
-        if (!element) UNDO_STACK.push(editorInsertBefore, editorRemoveChild, divNode, nextSibling);
+        if (!element) UNDO_STACK.push(editorInsertBefore, editorRemoveChild, divNode, nextSibling?.id);
 
         const pdfContainer = PDFObject.embed(pdfData, divNode, {
           height: "800px",
@@ -2836,7 +2857,7 @@
       divNode.setAttribute("class", "pdf-link pdf-loading");
       divNode.setAttribute("contenteditable", "false");
 
-      UNDO_STACK.push(editorInsertBefore, editorRemoveChild, divNode, nextSibling);
+      UNDO_STACK.push(editorInsertBefore, editorRemoveChild, divNode, nextSibling?.id);
 
       const pdfContainer = PDFObject.embed(url, divNode, {
         height: "800px",
@@ -2938,7 +2959,7 @@
       divNode.setAttribute("contenteditable", "false");
       divNode.innerHTML = ['<table contenteditable="false">', thead, tbody, "</table>"].join("\n");
 
-      UNDO_STACK.push(editorInsertBefore, editorRemoveChild, divNode, nextSibling);
+      UNDO_STACK.push(editorInsertBefore, editorRemoveChild, divNode, nextSibling?.id);
       divNode.appendChild(createRemover());
     }
 
@@ -2949,7 +2970,7 @@
       p.setAttribute("id", `text${generateUId()}`);
       p.setAttribute("class", "text-block");
       p.appendChild(document.createElement("br"));
-      UNDO_STACK.push(editorInsertBefore, editorRemoveChild, p, topNode?.nextElementSibling);
+      UNDO_STACK.push(editorInsertBefore, editorRemoveChild, p, topNode?.nextElementSibling?.id);
       setCaret(p, 0);
     }
 
@@ -2966,7 +2987,7 @@
       divNode.setAttribute("id", `code${generateUId()}`);
       divNode.setAttribute("class", "code-block");
       divNode.setAttribute("contenteditable", "true");
-      UNDO_STACK.push(editorInsertBefore, editorRemoveChild, divNode, nextSibling);
+      UNDO_STACK.push(editorInsertBefore, editorRemoveChild, divNode, nextSibling?.id);
       setCaret(code, 0);
     }
 
@@ -2985,7 +3006,7 @@
       divNode.setAttribute("id", `embed${generateUId()}`);
       divNode.setAttribute("class", "embedded-content");
       divNode.setAttribute("contenteditable", "false");
-      UNDO_STACK.push(editorInsertBefore, editorRemoveChild, divNode, nextSibling);
+      UNDO_STACK.push(editorInsertBefore, editorRemoveChild, divNode, nextSibling?.id);
       divNode.appendChild(createRemover());
     }
 
@@ -4593,24 +4614,30 @@
   <script>
     const editor = document.getElementById("editor");
 
-    function removeChild(parentNode, childNode, _) {
-      parentNode.removeChild(childNode);
+    function editorRemoveChild(childNode, _) {
+
+      if (childNode && editor.contains(childNode)) editor.removeChild(childNode);
     }
 
-    function insertBefore(parentNode, childNode, childSibling) {
-      parentNode.insertBefore(childNode, childSibling);
+    function editorInsertBefore(childNode, siblingNodeId) {
+
+      if (childNode && !editor.contains(childNode)) {
+
+        const siblingNode = siblingNodeId ? document.getElementById(siblingNodeId) : null;
+        if (!siblingNode || editor.contains(siblingNode)) editor.insertBefore(childNode, siblingNode);
+      }
     }
 
     function handleXRemoveEvent(event) {
 
       const parentNode = event.target?.parentNode?.parentNode;
 
-      if (parentNode) {
+      if (parentNode === editor) {
 
         const childNode = event.target?.parentNode;
         const childSibling = childNode?.nextElementSibling;
-        editor.UNDO_STACK.push(removeChild, insertBefore,
-                               parentNode, childNode, childSibling);
+        editor.UNDO_STACK.push(editorRemoveChild, editorInsertBefore,
+                               childNode, childSibling?.id);
       }
     }
   </script>
