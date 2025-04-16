@@ -1733,18 +1733,55 @@
     const editor = document.getElementById("editor");
     const filename = document.getElementById("filename");
 
+    // Helper: Places the caret at a given element and offset.
+    function setCaret(el, pos) {
+
+      const selection = window.getSelection();
+      const range = document.createRange();
+      range.setStart(el, pos);
+      range.collapse(true);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
+
     function editorInsertBefore(childNode, siblingNodeId) {
 
       if (childNode && !editor.contains(childNode)) {
 
         const siblingNode = siblingNodeId ? document.getElementById(siblingNodeId) : null;
-        if (!siblingNode || editor.contains(siblingNode)) editor.insertBefore(childNode, siblingNode);
+
+        if (!siblingNode || editor.contains(siblingNode)) {
+
+          editor.insertBefore(childNode, siblingNode);
+
+          if (childNode.classList?.contains("text-block")) {
+            setCaret(childNode, 0);
+          }
+        }
       }
     }
 
     function editorRemoveChild(childNode, siblingNodeId) {
 
-      if (childNode && editor.contains(childNode)) editor.removeChild(childNode);
+      if (childNode && editor.contains(childNode)) {
+
+        if (childNode.classList?.contains("text-block")) {
+
+          let p = childNode.previousElementSibling;
+
+          while (p && !p.classList?.contains("text-block")) {
+            p = p.previousElementSibling;
+          }
+          editor.removeChild(childNode);
+
+          if (p) setCaret(p, 0);
+          else editor.focus();
+        } else {
+
+          editor.removeChild(childNode);
+          editor.focus();
+        }
+      }
     }
 
     editor.UNDO_STACK = UNDO_STACK;
@@ -3257,17 +3294,6 @@
       }
     });
 
-    // Helper: Places the caret at a given element and offset.
-    function setCaret(el, pos) {
-
-      const selection = window.getSelection();
-      const range = document.createRange();
-      range.setStart(el, pos);
-      range.collapse(true);
-      selection.removeAllRanges();
-      selection.addRange(range);
-    }
-
     class BitArray {
 
       #_bitCount = 0;
@@ -3409,6 +3435,52 @@
       return "";
     }
 
+    // For each node in the node tree returns the start and end positions in the text of the root node (specified as the argument)
+    function getNodePositions(node) {
+
+      const positions = new Map();
+      let text = getNodeText(node);
+      positions.set(node, {
+        start: 0,
+        end: text.length
+      });
+      const elements = [];
+      node = node.hasChildNodes ? node.firstChild : null;
+
+      while (node) {
+
+        if (node.nodeType === Node.ELEMENT_NODE) {
+          elements.push(...node.childNodes);
+        }
+
+        if (node.nodeType === Node.ELEMENT_NODE ||
+            node.nodeType === Node.TEXT_NODE) {
+
+          let prevSibling = node.previousSibling;
+
+          while (prevSibling && !positions.has(prevSibling))
+            prevSibling = prevSibling.previousSibling;
+
+          text = getNodeText(node);
+          const start = prevSibling ? positions.get(prevSibling).end : positions.get(node.parentNode).start;
+          const end = start + text.length;
+
+          positions.set(node, {
+            start: start,
+            end: end
+          });
+
+          while (node.nextSibling &&
+                  node.nextSibling.nodeType !== Node.TEXT_NODE &&
+                  node.nextSibling.nodeType !== Node.ELEMENT_NODE)
+            node = node.nextSibling;
+        }
+        node = node.nextSibling ?? (elements.length > 0 ? elements.shift() : null);
+      }
+
+      return positions;
+    }
+
     // The core function that does the styling
     // using binary indexed trees
     function wrapRangeText(range, styleIndex) {
@@ -3444,52 +3516,6 @@
         }
 
         return false;
-      }
-
-      // For each node in the node tree returns the start and end positions in the text of the root node (specified as the argument)
-      function getNodePositions(node) {
-
-        const positions = new Map();
-        let text = getNodeText(node);
-        positions.set(node, {
-          start: 0,
-          end: text.length
-        });
-        const elements = [];
-        node = node.hasChildNodes ? node.firstChild : null;
-
-        while (node) {
-
-          if (node.nodeType === Node.ELEMENT_NODE) {
-            elements.push(...node.childNodes);
-          }
-
-          if (node.nodeType === Node.ELEMENT_NODE ||
-              node.nodeType === Node.TEXT_NODE) {
-
-            let prevSibling = node.previousSibling;
-
-            while (prevSibling && !positions.has(prevSibling))
-              prevSibling = prevSibling.previousSibling;
-
-            text = getNodeText(node);
-            const start = prevSibling ? positions.get(prevSibling).end : positions.get(node.parentNode).start;
-            const end = start + text.length;
-
-            positions.set(node, {
-              start: start,
-              end: end
-            });
-
-            while (node.nextSibling &&
-                   node.nextSibling.nodeType !== Node.TEXT_NODE &&
-                   node.nextSibling.nodeType !== Node.ELEMENT_NODE)
-              node = node.nextSibling;
-          }
-          node = node.nextSibling ?? (elements.length > 0 ? elements.shift() : null);
-        }
-
-        return positions;
       }
 
       // For each character in the root node text (having maxTextLength) gets the styles applied to it as a bit pattern
@@ -4120,10 +4146,54 @@
       return node;
     }
 
+    // Helper: Gets the range's absolute limits within the node's text
+    function getRangeLimits(node, range) {
+
+      const positions = getNodePositions(node);
+
+      return {
+        start: positions.get(range.startContainer).start + range.startOffset,
+        end: positions.get(range.endContainer).start + range.endOffset
+      };
+    }
+
+    function setRange(node, rangeLimits) {
+
+      const positions = getNodePositions(node);
+
+    }
+
+    function doSplitBlock(newBlock, blockId, afterBlockContents, _, _2) {
+
+      const block = document.getElementById(blockId);
+
+      if (!block) return;
+
+      if (block.innerHTML !== afterBlockContents) {
+        block.innerHTML = afterBlockContents;
+      }
+
+      editorInsertBefore(newBlock, block.nextElementSibling?.id);
+    }
+
+    function undoSplitBlock(newBlock, blockId, afterBlockContents, savedBlockContents, savedRangeLimits) {
+
+      const block = document.getElementById(blockId);
+
+      if (!block) return;
+
+      editorRemoveChild(newBlock, null);
+
+      if (block.innerHTML !== savedBlockContents) {
+        block.innerHTML = savedBlockContents;
+      }
+      setRange(block, savedRangeLimits);
+    }
+
     // Splits the current block at the caret.
     function splitBlock(range) {
 
-      if (!range) return;
+      if (!range || !window.getSelection().isCollapsed) return;
       let block = range.startContainer;
 
       while (block && block.parentNode !== editor) {
@@ -4136,10 +4206,12 @@
         p.setAttribute("id", `text${generateUId()}`);
         p.setAttribute("class", "text-block");
         p.innerHTML = "<br/>";
-        editor.appendChild(p);
-        setCaret(p, 0);
+        UNDO_STACK.push(editorInsertBefore, editorRemoveChild, p, null);
         return;
       }
+      const savedBlockContents = block.innerHTML;
+      const savedRangeLimits = getRangeLimits(block, range);
+
       const isTextBlock = block.classList?.contains("text-block");
       const newBlock = document.createElement(isTextBlock ? block.nodeName.toLowerCase() : "p");
       newBlock.setAttribute("id", `text${generateUId()}`);
@@ -4169,7 +4241,6 @@
           }
         }
       }
-      editorInsertBefore(newBlock, block.nextSibling?.id);
       const ldc = getLastDeepestChild(block);
 
       if (ldc.nodeName !== "BR" || ldc !== startContainer) {
@@ -4183,8 +4254,9 @@
           block.appendChild(document.createElement("br"));
         }
       }
+      const afterBlockContents = block.innerHTML;
 
-      setCaret(newBlock, 0); // move the caret into the new block
+      UNDO_STACK.push(doSplitBlock, undoSplitBlock, newBlock, block.id, afterBlockContents, savedBlockContents, savedRangeLimits);
     }
 
     // Normalizes stray text nodes and nested blocks.
@@ -4806,9 +4878,15 @@
   <script>
     const editor = document.getElementById("editor");
 
-    function editorRemoveChild(childNode, siblingNodeId) {
+    // Helper: Places the caret at a given element and offset.
+    function setCaret(el, pos) {
 
-      if (childNode && editor.contains(childNode)) editor.removeChild(childNode);
+      const selection = window.getSelection();
+      const range = document.createRange();
+      range.setStart(el, pos);
+      range.collapse(true);
+      selection.removeAllRanges();
+      selection.addRange(range);
     }
 
     function editorInsertBefore(childNode, siblingNodeId) {
@@ -4816,7 +4894,38 @@
       if (childNode && !editor.contains(childNode)) {
 
         const siblingNode = siblingNodeId ? document.getElementById(siblingNodeId) : null;
-        if (!siblingNode || editor.contains(siblingNode)) editor.insertBefore(childNode, siblingNode);
+
+        if (!siblingNode || editor.contains(siblingNode)) {
+
+          editor.insertBefore(childNode, siblingNode);
+
+          if (childNode.classList?.contains("text-block")) {
+            setCaret(childNode, 0);
+          }
+        }
+      }
+    }
+
+    function editorRemoveChild(childNode, siblingNodeId) {
+
+      if (childNode && editor.contains(childNode)) {
+
+        if (childNode.classList?.contains("text-block")) {
+
+          let p = childNode.previousElementSibling;
+
+          while (p && !p.classList?.contains("text-block")) {
+            p = p.previousElementSibling;
+          }
+          editor.removeChild(childNode);
+
+          if (p) setCaret(p, 0);
+          else editor.focus();
+        } else {
+
+          editor.removeChild(childNode);
+          editor.focus();
+        }
       }
     }
 
