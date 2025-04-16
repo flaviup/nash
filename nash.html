@@ -3800,67 +3800,99 @@
         }                                                                    // otherwise we remove the style on all the characters in the range
         styledPositions.push(styled);
       }
-      const rangeNodes = [];
 
-      if (removeStyle) { // if we want to remove the styling
+      function cloneStyledPositions(styledPositions) {
 
-        styleBitPattern.invertAssign(); // we invert the current style bit pattern
+        const clonedStyledPositions = new Array(styledPositions.length);
 
-        for (let i = 0; i < selPositions.length; ++i) { // for each root container's direct selected child text
+        for (let i = 0; i < styledPositions.length; i++) {
 
-          const styled = styledPositions[i];
+          clonedStyledPositions[i] = new Array(styledPositions[i].length);
 
-          for (let j = selPositions[i].start; j < selPositions[i].end; ++j) {
-            styled[j].bitAndAssign(styleBitPattern);      // we remove the style by applying the inverted bit pattern
-          }                                               // to each of the characters' style pattern in the range
-          const start = (i == 0) ? selPositions[i].start : -1;
-          const end = (i == selPositions.length - 1) ? selPositions[i].end : -1;
-          const [nodeStart, nodeEnd, startOffset, endOffset] = buildHtmlTree(selPositions[i].node, styled, start, end); // we rebuild the HTML tree rooted at node
-          if (nodeStart || nodeEnd) rangeNodes.push([nodeStart, nodeEnd, startOffset, endOffset]);
+          for (let j = 0; j < styledPositions[i].length; j++)
+            clonedStyledPositions[i][j] = styledPositions[i][j].clone();
         }
-      } else {
 
-        let styleGroupClearBitPattern = null; // if the current style is part of a style group, we create a clear styles bit pattern
-                                              // to remove the other styles in the group applied to the selected text
-                                              // (for example the text color styles, we don't want to apply multiple text colors over the same text)
-        for (let styleGroup of STYLE_GROUPS) {
+        return clonedStyledPositions;
+      }
 
-          if (styleIndex >= styleGroup[0] && styleIndex <= styleGroup[1]) {
+      function applyStylePattern(selPositions, styledPositions, styleBitPattern, removeStyle) {
 
-            styleGroupClearBitPattern = new BitArray(STYLES.length);
+        const rangeNodes = [];
+        styledPositions = cloneStyledPositions(styledPositions);
 
-            for (let i = styleGroup[0]; i <= styleGroup[1]; i++) {
-              styleGroupClearBitPattern.set(i);
+        if (removeStyle) { // if we want to remove the styling
+
+          styleBitPattern = styleBitPattern.invert(); // we invert the current style bit pattern
+
+          for (let i = 0; i < selPositions.length; ++i) { // for each root container's direct selected child text
+
+            const styled = styledPositions[i];
+
+            for (let j = selPositions[i].start; j < selPositions[i].end; ++j) {
+              styled[j].bitAndAssign(styleBitPattern);      // we remove the style by applying the inverted bit pattern
+            }                                               // to each of the characters' style pattern in the range
+            const start = (i == 0) ? selPositions[i].start : -1;
+            const end = (i == selPositions.length - 1) ? selPositions[i].end : -1;
+            const [nodeStart, nodeEnd, startOffset, endOffset] = buildHtmlTree(selPositions[i].node, styled, start, end); // we rebuild the HTML tree rooted at node
+            if (nodeStart || nodeEnd) rangeNodes.push([nodeStart, nodeEnd, startOffset, endOffset]);
+          }
+        } else {
+
+          let styleGroupClearBitPattern = null; // if the current style is part of a style group, we create a clear styles bit pattern
+                                                // to remove the other styles in the group applied to the selected text
+                                                // (for example the text color styles, we don't want to apply multiple text colors over the same text)
+          for (let styleGroup of STYLE_GROUPS) {
+
+            if (styleIndex >= styleGroup[0] && styleIndex <= styleGroup[1]) {
+
+              styleGroupClearBitPattern = new BitArray(STYLES.length);
+
+              for (let i = styleGroup[0]; i <= styleGroup[1]; i++) {
+                styleGroupClearBitPattern.set(i);
+              }
+              styleGroupClearBitPattern.invertAssign();  // we invert the bit pattern for all the styles in the group
+              styleGroupClearBitPattern.set(styleIndex); // we let the current style bit pattern on
+              break;
             }
-            styleGroupClearBitPattern.invertAssign();  // we invert the bit pattern for all the styles in the group
-            styleGroupClearBitPattern.set(styleIndex); // we let the current style bit pattern on
-            break;
+          }
+
+          for (let i = 0; i < selPositions.length; ++i) { // for each root container's direct selected child text
+
+            const styled = styledPositions[i];
+
+            for (let j = selPositions[i].start; j < selPositions[i].end; ++j) {
+              if (styleGroupClearBitPattern) styled[j].bitAndAssign(styleGroupClearBitPattern); // we remove other style(s) in the same group with the current style, for each selected character
+              styled[j].bitOrAssign(styleBitPattern);     // we apply the style by applying the style bit pattern
+            }                                             // to each of the characters' style pattern in the range
+            const start = (i == 0) ? selPositions[i].start : -1;
+            const end = (i == selPositions.length - 1) ? selPositions[i].end : -1;
+            const [nodeStart, nodeEnd, startOffset, endOffset] = buildHtmlTree(selPositions[i].node, styled, start, end); // we rebuild the HTML tree rooted at node
+            if (nodeStart || nodeEnd) rangeNodes.push([nodeStart, nodeEnd, startOffset, endOffset]);
           }
         }
+        window.getSelection().removeAllRanges(); // we remove all selection's ranges after HTML tree rebuild
 
-        for (let i = 0; i < selPositions.length; ++i) { // for each root container's direct selected child text
+        if (rangeNodes.length) {
 
-          const styled = styledPositions[i];
-
-          for (let j = selPositions[i].start; j < selPositions[i].end; ++j) {
-            if (styleGroupClearBitPattern) styled[j].bitAndAssign(styleGroupClearBitPattern); // we remove other style(s) in the same group with the current style, for each selected character
-            styled[j].bitOrAssign(styleBitPattern);     // we apply the style by applying the style bit pattern
-          }                                             // to each of the characters' style pattern in the range
-          const start = (i == 0) ? selPositions[i].start : -1;
-          const end = (i == selPositions.length - 1) ? selPositions[i].end : -1;
-          const [nodeStart, nodeEnd, startOffset, endOffset] = buildHtmlTree(selPositions[i].node, styled, start, end); // we rebuild the HTML tree rooted at node
-          if (nodeStart || nodeEnd) rangeNodes.push([nodeStart, nodeEnd, startOffset, endOffset]);
+          const range = document.createRange();
+          range.setStart(rangeNodes[0][0], rangeNodes[0][2]);
+          const i = (rangeNodes.length > 1) ? 1 : 0;
+          range.setEnd(rangeNodes[i][1], rangeNodes[i][3]);
+          window.getSelection().addRange(range);
         }
       }
-      window.getSelection().removeAllRanges(); // we remove all selection's ranges after HTML tree rebuild
 
-      if (rangeNodes.length) {
+      function doApply(selPositions, styledPositions, styleBitPattern, removeStyle) {
+        applyStylePattern(selPositions, styledPositions, styleBitPattern, removeStyle);
+      }
 
-        const range = document.createRange();
-        range.setStart(rangeNodes[0][0], rangeNodes[0][2]);
-        const i = (rangeNodes.length > 1) ? 1 : 0;
-        range.setEnd(rangeNodes[i][1], rangeNodes[i][3]);
-        window.getSelection().addRange(range);
+      function undoApply(selPositions, styledPositions, styleBitPattern, removeStyle) {
+        applyStylePattern(selPositions, styledPositions, styleBitPattern, !removeStyle);
+      }
+
+      if (selPositions.length > 0) {
+        UNDO_STACK.push(doApply, undoApply, selPositions, styledPositions, styleBitPattern, removeStyle);
       }
     }
 
