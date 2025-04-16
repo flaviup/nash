@@ -765,7 +765,7 @@
     }
 
     .small-text {
-      font-size: 14px;
+      font-size: 12px;
     }
 
     .left-text {
@@ -3050,59 +3050,69 @@
       const nodeIds = [];
       const ALIGNABLE_NODE_CLASSES = ["text-block", "embedded-table", "embedded-content", "embedded-math", "embedded-local-image", "image-link"];
 
-      if (range) {
+      function getNodeAlignmentClasses(node) {
 
-        if (range.commonAncestorContainer.nodeType === Node.TEXT_NODE) {
+        const alignmentClasses = [];
 
-          const node = getTopLevelNodeOf(range.startContainer, editor);
-
-          if (node?.classList && [...node.classList].some(c => ALIGNABLE_NODE_CLASSES.indexOf(c) > -1))
-            nodeIds.push(node.id);
-        } else {
-
-          let nodeStart = getTopLevelNodeOf(range.startContainer, editor);
-          let nodeEnd = getTopLevelNodeOf(range.endContainer, editor);
-
-          while (nodeStart) {
-
-            if (nodeStart.classList && [...nodeStart.classList].some(c => ALIGNABLE_NODE_CLASSES.indexOf(c) > -1))
-              nodeIds.push(nodeStart.id);
-            
-            if (nodeStart === nodeEnd) {
-
-              nodeEnd = null;
-              break;
-            }
-
-            nodeStart = nodeStart.nextElementSibling;
+        for (let alignmentClass of ALIGN_CLASSES_FLAT) {
+          if (node.classList?.contains(alignmentClass)) {
+            alignmentClasses.push(alignmentClass);
           }
+        }
 
-          while (nodeEnd) {
+        return alignmentClasses;
+      }
 
-            if (nodeEnd.classList && [...nodeEnd.classList].some(c => ALIGNABLE_NODE_CLASSES.indexOf(c) > -1))
-              nodeIds.push(nodeEnd.id);
-            
-            if (nodeStart === nodeEnd) break;
+      function applyNodeAlignmentClasses(node, alignClasses) {
 
-            nodeEnd = nodeEnd.previousElementSibling;
-          }
+        node.classList?.remove(...ALIGN_CLASSES_FLAT);
+
+        for (let alignmentClass of alignClasses) {
+          if (node.classList) node.classList.add(alignmentClass);
+          else node.setAttribute("class", alignmentClass);
         }
       }
 
-      nodeIds.forEach((nodeId) => {
+      function applyAlignment(node, alignmentClass) {
 
-        const node = document.getElementById(nodeId);
+        node.classList?.remove(...ALIGN_CLASSES_FLAT);
 
-        if (!node) return;
+        if (node.classList) node.classList.add(alignmentClass);
+        else node.setAttribute("class", alignmentClass);
+      }
 
-        if (node.classList?.contains("text-block")) {
+      function getNodesAlignments(nodeIds) {
 
-          node.classList?.remove(...ALIGN_CLASSES_FLAT);
-          const alignmentClass = ALIGN_CLASSES[alignType][0];
+        nodeIds.forEach((nd) => {
 
-          if (node.classList) node.classList.add(alignmentClass);
-          else node.setAttribute("class", alignmentClass);
-        } else if (node.classList?.contains("embedded-table")) {
+          const node = document.getElementById(nd.id);
+
+          if (!node) return;
+
+          if (node.classList?.contains("text-block")) {
+            nd.alignments = getNodeAlignmentClasses(node);
+          } else if (node.classList?.contains("embedded-table")) {
+
+            nd.alignments = new Map();
+
+            for (let columnIndex of nd.idx) {
+
+              const alignments = [];
+
+              node.querySelectorAll(`tr th:nth-child(${columnIndex}), tr td:nth-child(${columnIndex})`)?.forEach((el) => {
+                alignments.push(getNodeAlignmentClasses(el));
+              });
+              nd.alignments.set(columnIndex, alignments);
+            }
+          } else if (node.firstElementChild) {
+            nd.alignments = getNodeAlignmentClasses(node);
+          }
+        });
+      }
+
+      function getSelectedTableColumnIndices(node, range) {
+
+        if (node.classList?.contains("embedded-table")) {
 
           const columnIdxSet = new Set();
           const alignmentClass = ALIGN_CLASSES[alignType][0];
@@ -3121,25 +3131,104 @@
             }
           });
 
-          for (let columnIndex of columnIdxSet) {
-
-            node?.querySelectorAll(`tr th:nth-child(${columnIndex}), tr td:nth-child(${columnIndex})`)?.forEach((el) => {
-
-              el.classList?.remove(...ALIGN_CLASSES_FLAT);
-
-              if (el.classList) el.classList.add(alignmentClass);
-              else el.setAttribute("class", alignmentClass);
-            });
-          }
-        } else if (node.firstElementChild) {
-
-          node.classList?.remove(...ALIGN_CLASSES_FLAT);
-          const alignmentClass = ALIGN_CLASSES[alignType][1];
-
-          if (node.classList) node.classList.add(alignmentClass);
-          else node.setAttribute("class", alignmentClass);
+          return [...columnIdxSet];
         }
-      });
+
+        return [];
+      }
+
+      function alignNodes(nodeIds, alignType) {
+
+        nodeIds.forEach((nd) => {
+
+          const node = document.getElementById(nd.id);
+
+          if (!node) return;
+
+          if (node.classList?.contains("text-block")) {
+            applyAlignment(node, ALIGN_CLASSES[alignType][0]);
+          } else if (node.classList?.contains("embedded-table")) {
+
+            for (let columnIndex of nd.idx) {
+
+              node.querySelectorAll(`tr th:nth-child(${columnIndex}), tr td:nth-child(${columnIndex})`)?.forEach((el) => {
+                applyAlignment(el, ALIGN_CLASSES[alignType][0]);
+              });
+            }
+          } else if (node.firstElementChild) {
+            applyAlignment(node, ALIGN_CLASSES[alignType][1]);
+          }
+        });
+      }
+
+      function undoAlignNodes(nodeIds, _) {
+
+        nodeIds.forEach((nd) => {
+
+          const node = document.getElementById(nd.id);
+
+          if (!node) return;
+
+          if (node.classList?.contains("text-block")) {
+            applyNodeAlignmentClasses(node, nd.alignments);
+          } else if (node.classList?.contains("embedded-table")) {
+
+            for (let columnIndex of nd.idx) {
+
+              const alignments = nd.alignments.get(columnIndex);
+              let i = 0;
+
+              node.querySelectorAll(`tr th:nth-child(${columnIndex}), tr td:nth-child(${columnIndex})`)?.forEach((el) => {
+                applyNodeAlignmentClasses(el, alignments[i++]);
+              });
+            }
+          } else if (node.firstElementChild) {
+            applyNodeAlignmentClasses(node, nd.alignments);
+          }
+        });
+      }
+
+      if (range) {
+
+        if (range.commonAncestorContainer.nodeType === Node.TEXT_NODE) {
+
+          const node = getTopLevelNodeOf(range.startContainer, editor);
+
+          if (node?.classList && [...node.classList].some(c => ALIGNABLE_NODE_CLASSES.indexOf(c) > -1))
+            nodeIds.push({id: node.id, idx: getSelectedTableColumnIndices(node, range)});
+        } else {
+
+          let nodeStart = getTopLevelNodeOf(range.startContainer, editor);
+          let nodeEnd = getTopLevelNodeOf(range.endContainer, editor);
+
+          while (nodeStart) {
+
+            if (nodeStart.classList && [...nodeStart.classList].some(c => ALIGNABLE_NODE_CLASSES.indexOf(c) > -1))
+              nodeIds.push({id: nodeStart.id, idx: getSelectedTableColumnIndices(nodeStart, range)});
+            
+            if (nodeStart === nodeEnd) {
+
+              nodeEnd = null;
+              break;
+            }
+
+            nodeStart = nodeStart.nextElementSibling;
+          }
+
+          while (nodeEnd) {
+
+            if (nodeEnd.classList && [...nodeEnd.classList].some(c => ALIGNABLE_NODE_CLASSES.indexOf(c) > -1))
+              nodeIds.push({id: nodeEnd.id, idx: getSelectedTableColumnIndices(nodeEnd, range)});
+            
+            if (nodeStart === nodeEnd) break;
+
+            nodeEnd = nodeEnd.previousElementSibling;
+          }
+        }
+        getNodesAlignments(nodeIds);
+
+        if (nodeIds.length > 0) UNDO_STACK.push(alignNodes, undoAlignNodes, nodeIds, alignType);
+      }
     }
 
     // Toggles dropdown visibility
