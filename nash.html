@@ -4506,6 +4506,28 @@
       return false;
     }
 
+    function joinAdjacentTextBlocks(textBlockNode, _, _2, textBlockPreviousNodeId) {
+
+      const previousElementSibling = textBlockPreviousNodeId ? document.getElementById(textBlockPreviousNodeId) : null;
+
+      if (!previousElementSibling) return;
+
+      const innerHtml = textBlockNode.innerHTML;
+      previousElementSibling.append(...textBlockNode.childNodes);
+      textBlockNode.remove();
+      textBlockNode.innerHTML = innerHtml;
+    }
+
+    function undoJoinAdjacentTextBlocks(textBlockNode, nextSiblingId, textBlockPreviousSavedContents, textBlockPreviousNodeId) {
+
+      const previousElementSibling = textBlockPreviousNodeId ? document.getElementById(textBlockPreviousNodeId) : null;
+
+      if (!previousElementSibling) return;
+
+      previousElementSibling.innerHTML = textBlockPreviousSavedContents;
+      editorInsertBefore(textBlockNode, nextSiblingId ? document.getElementById(nextSiblingId) : null);
+    }
+
     function keydownHandler(e) {
 
       let range = null;
@@ -4705,16 +4727,14 @@
               if (lastChild.hasChildNodes) lastChild.replaceChildren();
               lastChild.remove();
             }
-            previousElementSibling.append(...topNode.childNodes);
-            topNode.replaceChildren();
-            topNode.remove();
+            UNDO_STACK.push(joinAdjacentTextBlocks, undoJoinAdjacentTextBlocks, topNode, topNode.nextElementSibling?.id, previousElementSibling.innerHTML, previousElementSibling.id);
 
-            if (focusChild) {
+            /*if (focusChild) {
               setCaret(focusChild, 0);
             } else {
               selection.removeAllRanges();
-              editor?.focus();
-            }
+              editor.focus();
+            }*/
             e.stopImmediatePropagation();
             e.preventDefault();
           }
