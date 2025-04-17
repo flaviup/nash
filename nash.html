@@ -4150,17 +4150,69 @@
     function getRangeLimits(node, range) {
 
       const positions = getNodePositions(node);
+      const start = positions.get(range.startContainer).start + range.startOffset;
+      const end = positions.get(range.endContainer).start + range.endOffset;
 
       return {
-        start: positions.get(range.startContainer).start + range.startOffset,
-        end: positions.get(range.endContainer).start + range.endOffset
+        start: start,
+        end: end
       };
     }
 
     function setRange(node, rangeLimits) {
 
       const positions = getNodePositions(node);
+      let startContainer = null;
+      let startOffset = -1;
+      let endContainer = null;
+      let endOffset = -1;
 
+      const nodes = [{node: node, visit: 0}];
+      let length = 0;
+
+      while (nodes.length > 0) {
+
+        const nodeInfo = nodes.pop();
+
+        if (nodeInfo.visit < 1 && nodeInfo.node.hasChildNodes) {
+          nodeInfo.visit++;
+          nodes.push(nodeInfo);
+          nodes.push(...[...nodeInfo.node.childNodes].map((node) => { return { node: node, visit: 0 }; }));
+        } else {
+
+          if (positions.has(nodeInfo.node)) {
+  
+            const pos = positions.get(nodeInfo.node);
+            
+            if (!startContainer &&
+                pos.start <= rangeLimits.start &&
+                rangeLimits.start <= pos.end) {
+
+              startContainer = nodeInfo.node;
+              startOffset = rangeLimits.start - pos.start;
+            }
+
+            if (!endContainer &&
+                pos.start <= rangeLimits.end &&
+                rangeLimits.end <= pos.end) {
+
+                endContainer = nodeInfo.node;
+                endOffset = rangeLimits.end - pos.start;
+            }
+
+            if (startContainer && endContainer) break;
+          }
+        }
+      }
+
+      if (startContainer || endContainer) {
+
+        const range = document.createRange();
+        if (startContainer) range.setStart(startContainer, startOffset);
+        if (endContainer) range.setStart(endContainer, endOffset);
+        window.getSelection().removeAllRanges();
+        window.getSelection().addRange(range);
+      }
     }
 
     function doSplitBlock(newBlock, blockId, afterBlockContents, _, _2) {
