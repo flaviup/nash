@@ -4506,6 +4506,30 @@
       return false;
     }
 
+    function removeLastBr(node) {
+
+      let lastChild = node.lastChild;
+
+      while (lastChild) { // search for a last BR child, if any
+
+        while (lastChild &&
+               (lastChild.nodeType !== Node.ELEMENT_NODE || !lastChild.lastChild) && // skip last empty text or element nodes
+               !getNodeText(lastChild).length) {
+          lastChild = lastChild.previousSibling;
+        }
+
+        if (lastChild &&
+            lastChild.nodeName !== "BR" && // if last child found is not BR and has a last child subnode (and also non-empty text contents)
+            lastChild.lastChild) {
+          lastChild = lastChild.lastChild; // then search for a last BR subchild in this last child subnode
+        } else {
+          break;
+        }
+      }
+
+      if (lastChild?.nodeName === "BR") lastChild.remove();
+    }
+
     function joinAdjacentTextBlocks(textBlockNode, _, _2, textBlockPreviousNodeId) {
 
       const previousElementSibling = textBlockPreviousNodeId ? document.getElementById(textBlockPreviousNodeId) : null;
@@ -4513,9 +4537,13 @@
       if (!previousElementSibling) return;
 
       const innerHtml = textBlockNode.innerHTML;
+      removeLastBr(previousElementSibling);
+      const focusChild = textBlockNode.firstChild;
       previousElementSibling.append(...textBlockNode.childNodes);
       textBlockNode.remove();
       textBlockNode.innerHTML = innerHtml;
+      
+      if (focusChild) setCaret(focusChild, 0);
     }
 
     function undoJoinAdjacentTextBlocks(textBlockNode, nextSiblingId, textBlockPreviousSavedContents, textBlockPreviousNodeId) {
@@ -4663,7 +4691,6 @@
               e.preventDefault();
               return;
             }
-            let focusChild = (block === topNode ? block.firstChild : block);
 
             while (block !== topNode) {
 
@@ -4700,41 +4727,8 @@
             }
 
             // combining current text block with the previous text block
-            let lastChild = previousElementSibling.lastChild;
-
-            while (lastChild) {
-
-              while (lastChild &&
-                     (lastChild.nodeType !== Node.ELEMENT_NODE || !lastChild.lastChild) &&
-                     !getNodeText(lastChild).length) {
-                lastChild = lastChild.previousSibling;
-              }
-
-              if (lastChild &&
-                  lastChild.nodeName !== "BR" &&
-                  lastChild.lastChild) {
-                lastChild = lastChild.lastChild;
-              } else {
-                break;
-              }
-            }
-            lastChild = lastChild || previousElementSibling;
-
-            if (lastChild === previousElementSibling) {
-              previousElementSibling.replaceChildren();
-            } else if (lastChild.nodeName === "BR") {
-
-              if (lastChild.hasChildNodes) lastChild.replaceChildren();
-              lastChild.remove();
-            }
             UNDO_STACK.push(joinAdjacentTextBlocks, undoJoinAdjacentTextBlocks, topNode, topNode.nextElementSibling?.id, previousElementSibling.innerHTML, previousElementSibling.id);
 
-            /*if (focusChild) {
-              setCaret(focusChild, 0);
-            } else {
-              selection.removeAllRanges();
-              editor.focus();
-            }*/
             e.stopImmediatePropagation();
             e.preventDefault();
           }
