@@ -4376,13 +4376,13 @@
       document.title = filename.innerHTML.trim() || "Nash Note";
     }
 
-    function handleEnterKey(range, parentNodeNames) {
+    function handleEnterKey(range, validParentNodeCallback) {
 
       let block = range?.startContainer;
 
       while (block && block !== editor) {
 
-        if (block.nodeType === Node.ELEMENT_NODE && parentNodeNames.includes(block.nodeName)) {
+        if (block.nodeType === Node.ELEMENT_NODE && validParentNodeCallback(block)) {
 
           const textNode = range.startContainer;
 
@@ -4391,7 +4391,7 @@
             const brNode = document.createElement("br");
             textNode.parentNode.insertBefore(brNode, textNode.nextSibling);
             setCaret(brNode, 0);
-          } else if (parentNodeNames.includes(textNode.nodeName) || textNode.nodeType === Node.ELEMENT_NODE) {
+          } else if (validParentNodeCallback(textNode) || textNode.nodeType === Node.ELEMENT_NODE) {
 
             if (textNode.childNodes.length > range.startOffset) {
               textNode.insertBefore(document.createElement("br"), textNode.childNodes[range.startOffset]);
@@ -4426,7 +4426,7 @@
 
               if (!nextSibling) {
 
-                if (parentNodeNames.includes(parentNode.nodeName)) {
+                if (validParentNodeCallback(parentNode)) {
 
                   const brNode2 = document.createElement("br");
                   parentNode.insertBefore(brNode2, nextSibling);
@@ -4616,9 +4616,19 @@
         }
       }
 
+      if (e.key === "Enter" && e.shiftKey) {
+
+        if (block && handleEnterKey(range, (parentNode) => parentNode.classList?.contains("text-block"))) {
+
+          e.stopImmediatePropagation();
+          e.preventDefault();
+          return;
+        }
+      }
+
       if (e.key === "Enter" && !e.shiftKey) {
 
-        if (block && handleEnterKey(range, ["CODE", "TD", "TH"])) {
+        if (block && handleEnterKey(range, (parentNode) => ["CODE", "TD", "TH"].includes(parentNode.nodeName))) {
 
           e.stopImmediatePropagation();
           e.preventDefault();
