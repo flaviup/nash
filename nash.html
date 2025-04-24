@@ -4560,7 +4560,7 @@
       if (!previousElementSibling) return;
 
       previousElementSibling.innerHTML = textBlockPreviousSavedContents;
-      editorInsertBefore(textBlockNode, nextSiblingId ? document.getElementById(nextSiblingId) : null);
+      editorInsertBefore(textBlockNode, nextSiblingId);
     }
 
     function isCaretAtStart(node, range) {
