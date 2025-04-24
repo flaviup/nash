@@ -1742,6 +1742,8 @@
       range.collapse(true);
       selection.removeAllRanges();
       selection.addRange(range);
+
+      return range;
     }
 
     function editorInsertBefore(childNode, siblingNodeId) {
@@ -4477,6 +4479,12 @@
       }
     }
 
+    function cancelEvent(e) {
+
+      e.stopImmediatePropagation();
+      e.preventDefault();
+    }
+
     function handleBackspaceInEmptyTextContent(topNode, e) {
 
       let shouldHandle = topNode.classList?.contains("code-block") &&
@@ -4486,8 +4494,7 @@
 
       if (shouldHandle) { // if the node is empty
 
-        e.stopImmediatePropagation();  // cancel the event
-        e.preventDefault();
+        cancelEvent(e);  // cancel the event
         let sibling = topNode.previousElementSibling; // find a previous text or code sibling node to move the focus to (the cursor caret)
 
         while (sibling &&
@@ -4556,6 +4563,96 @@
       editorInsertBefore(textBlockNode, nextSiblingId ? document.getElementById(nextSiblingId) : null);
     }
 
+    function isCaretAtStart(node, range) {
+
+      if (range.startContainer === range.endContainer &&
+          range.startOffset === range.endOffset) {
+
+        if (range.startOffset === 0) {
+          return true;
+        } else if (range.startContainer === node) {
+
+          const childNodes = [...node.childNodes];
+
+          for (let i = 0; i < range.startOffset && i < childNodes.length; i++) {
+
+            if (childNodes[i].nodeType !== Node.TEXT_NODE || childNodes[i].textContent.length > 0) {
+              return false;
+            }
+          }
+
+          return true;
+        }
+      }
+
+      return false;
+    }
+
+    function isCaretAtEnd(node, range) {
+
+      if (range.startContainer === range.endContainer &&
+          range.startOffset === range.endOffset) {
+
+        if (range.endContainer === node) {
+
+          const childNodes = [...node.childNodes];
+
+          if (childNodes.length > 0 && range.endOffset > -1) {
+
+            let brCount = 0;
+
+            for (let i = range.endOffset; i < childNodes.length; i++) {
+
+              const child = childNodes[i];
+
+              if (child.nodeName === "BR") {
+
+                ++brCount;
+
+                if (brCount > 1) return false;
+              } else if (getNodeText(child).length > 0) {
+                return false;
+              }
+            }
+          }
+        } else {
+
+          if (range.endContainer.nodeType === Node.TEXT_NODE) {
+
+            const textLength = getNodeText(range.endContainer).length;
+
+            if (textLength > 0 && range.endOffset < textLength) {
+              return false;
+            }
+          }
+          let p = range.endContainer;
+
+          while (p !== node) {
+
+            let brCount = (p.nodeName === "BR") ? 1 : 0;
+
+            while (p.nextSibling) {
+
+              if (p.nextSibling.nodeName === "BR") {
+
+                ++brCount;
+
+                if (brCount > 1) return false;
+              } else if (getNodeText(p.nextSibling).length > 0) {
+                return false;
+              }
+              p = p.nextSibling;
+            }
+            p = p.parentNode;
+          }
+        }
+      } else {
+        return false;
+      }
+
+      return true;
+    }
+
     function keydownHandler(e) {
 
       let range = null;
@@ -4584,8 +4681,7 @@
 
         if (block.parentNode &&
             [...block.parentNode.classList].some(c => BLOCKED_NODE_CLASSES.indexOf(c) > -1)) {
-            e.stopImmediatePropagation();
-            e.preventDefault();
+            cancelEvent(e);
             return;
         }
         let p = block;
@@ -4609,139 +4705,152 @@
 
           if (keyCode < 33 || keyCode > 44) {
 
-            e.stopImmediatePropagation();
-            e.preventDefault();
+            cancelEvent(e);
             return;
           }
         }
+      } else {
+
+        cancelEvent(e);
+        return;
       }
 
       if (e.key === "Enter" && e.shiftKey) {
 
-        if (block && handleEnterKey(range, (parentNode) => parentNode.classList?.contains("text-block"))) {
+        if (handleEnterKey(range, (parentNode) => parentNode.classList?.contains("text-block"))) {
 
-          e.stopImmediatePropagation();
-          e.preventDefault();
+          cancelEvent(e);
           return;
         }
       }
 
       if (e.key === "Enter" && !e.shiftKey) {
 
-        if (block && handleEnterKey(range, (parentNode) => ["CODE", "TD", "TH"].includes(parentNode.nodeName))) {
+        if (handleEnterKey(range, (parentNode) => ["CODE", "TD", "TH"].includes(parentNode.nodeName))) {
 
-          e.stopImmediatePropagation();
-          e.preventDefault();
+          cancelEvent(e);
           return;
         }
         e.preventDefault();
         splitBlock(range);
         return;
       }
+      let topNode = getTopLevelNodeOfCurrentPosition(range);
+
+      if (!topNode) {
+
+        cancelEvent(e);
+        return;
+      }
       let handleBackspace = false;
-      let topNode = null;
 
-      if (e.key === "Backspace") {
+      if ((e.key === "Delete" || e.key === "Del" || (e.key.toUpperCase() === "D" && e.ctrlKey)) && isCaretAtEnd(topNode, range)) {
 
-        if (range.startContainer === range.endContainer &&
-            range.startOffset === range.endOffset) {
+        const nextSibling = topNode.nextElementSibling;
 
-          if (range.startOffset === 0) {
-            handleBackspace = true;
-          } else {
-            topNode = getTopLevelNodeOfCurrentPosition();
+        if (nextSibling) {
 
-            if (topNode) {
+          const topNodeIsText = topNode.classList?.contains("text-block");
+          const topNodeIsCode = !topNodeIsText && topNode.classList?.contains("code-block");
 
-              if (block === topNode) {
+          if (topNodeIsText || topNodeIsCode) {
 
-                const childNodes = [...topNode.childNodes];
-                handleBackspace = true;
+            const nextSiblingIsText = nextSibling.classList?.contains("text-block");
+            const nextSiblingIsCode = !nextSiblingIsText && nextSibling.classList?.contains("code-block");
 
-                for (let i = 0; i < range.startOffset && i < childNodes.length; i++) {
+            if (nextSiblingIsText || nextSiblingIsCode) {
 
-                  if (childNodes[i].nodeType !== Node.TEXT_NODE || childNodes[i].textContent.length) {
-                    handleBackspace = false;
-                    break;
-                  } 
-                }
+              handleBackspace = topNodeIsText && nextSiblingIsText;
+
+              if (!handleBackspace) {
+
+                const nextText = getNodeText(nextSibling);
+                handleBackspace = nextText === "\n" || nextText.length === 0;
               }
+
+              if (handleBackspace) {
+
+                topNode = nextSibling;
+                range = setCaret(nextSiblingIsCode ? nextSibling.querySelector("code") : nextSibling, 0);
+                block = range.startContainer;
+              } else {
+
+                cancelEvent(e);
+                return;
+              }
+            } else {
+
+              cancelEvent(e);
+              return;
             }
           }
         }
+      } else {
+        handleBackspace = (e.key === "Backspace" && isCaretAtStart(topNode, range));
       }
 
       if (handleBackspace) {
 
-        topNode = topNode || getTopLevelNodeOfCurrentPosition();
+        // blocks moving of the current line in the code block into the previous sibling p node
+        if (topNode.classList?.contains("code-block") && !(block?.previousSibling)) {
 
-        if (topNode) {
+          if (handleBackspaceInEmptyTextContent(topNode, e)) return;
 
-          // blocks moving of the current line in the code block into the previous sibling p node
-          if (topNode.classList?.contains("code-block") && !(block?.previousSibling)) {
+          cancelEvent(e);
+          return;
+        }
 
-            if (handleBackspaceInEmptyTextContent(topNode, e)) return;
+        if (topNode.classList?.contains("text-block")) {
 
-            e.stopImmediatePropagation();
-            e.preventDefault();
+          if (handleBackspaceInEmptyTextContent(topNode, e)) return;
+
+          const previousElementSibling = topNode.previousElementSibling;
+
+          if (topNode === block &&
+              (!previousElementSibling ||
+              !previousElementSibling.classList?.contains("text-block"))) {
+
+            cancelEvent(e);
             return;
           }
 
-          if (topNode.classList?.contains("text-block")) {
+          while (block !== topNode) {
 
-            if (handleBackspaceInEmptyTextContent(topNode, e)) return;
+            while (block.previousSibling) {
 
-            const previousElementSibling = topNode.previousElementSibling;
+              block = block.previousSibling;
 
-            if (topNode === block &&
-                (!previousElementSibling ||
-                !previousElementSibling.classList?.contains("text-block"))) {
-
-              e.stopImmediatePropagation();
-              e.preventDefault();
-              return;
-            }
-
-            while (block !== topNode) {
-
-              while (block.previousSibling) {
-  
-                block = block.previousSibling;
-
-                if (block.nodeName === "BR") {
-                  return;
-                }
-
-                if (block.nodeType === Node.TEXT_NODE) {
-
-                  if (getNodeText(block).length) {
-                    return;
-                  }
-                } else if (block.nodeType === Node.ELEMENT_NODE) {
-
-                  if (getNodeText(block).length || block.querySelector("br")) {
-                    return;
-                  }
-                }
+              if (block.nodeName === "BR") {
+                return;
               }
 
-              block = block.parentNode;
+              if (block.nodeType === Node.TEXT_NODE) {
+
+                if (getNodeText(block).length) {
+                  return;
+                }
+              } else if (block.nodeType === Node.ELEMENT_NODE) {
+
+                if (getNodeText(block).length || block.querySelector("br")) {
+                  return;
+                }
+              }
             }
 
-            if (!previousElementSibling ||
-                !previousElementSibling.classList?.contains("text-block")) {
-
-              e.stopImmediatePropagation();
-              e.preventDefault();
-              return;
-            }
-
-            // combining current text block with the previous text block
-            UNDO_STACK.push(joinAdjacentTextBlocks, undoJoinAdjacentTextBlocks, topNode, topNode.nextElementSibling?.id, previousElementSibling.innerHTML, previousElementSibling.id);
-
-            e.stopImmediatePropagation();
-            e.preventDefault();
+            block = block.parentNode;
           }
+
+          if (!previousElementSibling ||
+              !previousElementSibling.classList?.contains("text-block")) {
+
+            cancelEvent(e);
+            return;
+          }
+
+          // combining current text block with the previous text block
+          UNDO_STACK.push(joinAdjacentTextBlocks, undoJoinAdjacentTextBlocks, topNode, topNode.nextElementSibling?.id, previousElementSibling.innerHTML, previousElementSibling.id);
+
+          cancelEvent(e);
         }
       }
 
