@@ -4861,11 +4861,11 @@
       if (selection.rangeCount) {
         range = selection.getRangeAt(0);
       }
-      const charText = (e.charCode > 0 &&
+      const charText = ((e.charCode > 0 || e.keyCode > 0) &&
                         e.key !== "Undefined" && e.key !== "Backspace" &&
                         e.key !== "Delete" && e.key !== "Del" &&
                         e.key !== "Control" && e.key !== "Meta" &&
-                        (e.key.toUpperCase() !== "D" || !e.ctrlKey)) ? String.fromCharCode(e.charCode) : ""; // String.fromCharCode(e.charCode ? e.charCode : e.keyCode); // e.which
+                        (e.key.toUpperCase() !== "D" || !e.ctrlKey)) ? (e.key === "Enter" ? "\n" : e.key) : ""; // String.fromCharCode(e.charCode ? e.charCode : e.keyCode); // e.which
 
       if (handleMultiSelection(charText)) {
 
