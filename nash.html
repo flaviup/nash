@@ -4776,8 +4776,6 @@
 
       if (range && !selection.isCollapsed) {
 
-        if (!text) return true;
-
         // finds the current root container to work on
         let rootNode = range.commonAncestorContainer;
         let rootContainer = editor;
@@ -4836,23 +4834,70 @@
       return false;
     }
 
+    function isCopyCutOrPasteEvent(e) {
+
+      const KEY = e.key.toUpperCase();
+      return KEY === "COPY" || KEY === "CUT" || KEY === "PASTE" || ((KEY === "C" || KEY === "X" || KEY === "V") && (e.ctrlKey || e.metaKey));
+    }
+
+    function isDelEvent(e) {
+      return (e.key === "Delete" || e.key === "Del" || (e.key.toUpperCase() === "D" && e.ctrlKey));
+    }
+
+    function isBackspaceEvent(e) {
+      return e.key === "Backspace";
+    }
+
+    const KEY2EMPTY_STR = ["UNIDENTIFIED", "ALT", "ALTGRAPH", "CAPSLOCK", "CONTROL", "FN", "FNLOCK", "HYPER", "META", "OS", "NUMLOCK", "SCROLLLOCK",
+                           "SHIFT", "SUPER", "SYMBOL", "SYMBOLLOCK", "TAB", "ARROWDOWN", "ARROWLEFT", "ARROWRIGHT", "ARROWUP", "DOWN", "LEFT", "RIGHT", "UP",
+                           "END", "HOME", "PAGEDOWN", "PAGEUP", "BACKSPACE", "CLEAR", "COPY", "CRSEL", "CUT", "DEL", "DELETE", "ERASEEOF", "EXSEL", "INSERT",
+                           "PASTE", "REDO", "UNDO", "ACCEPT", "AGAIN", "ATTN", "CANCEL", "CONTEXTMENU", "APPS", "ESCAPE", "ESC", "EXECUTE", "FIND", "FINISH",
+                           "HELP", "PAUSE", "PLAY", "PROPS", "SELECT", "ZOOMIN", "ZOOMOUT", "BRIGHTNESSDOWN", "BRIGHTNESSUP", "EJECT", "LOGOFF", "POWER",
+                           "POWEROFF", "PRINTSCREEN", "HIBERNATE", "STANDBY", "WAKEUP", "ALLCANDIDATES", "ALPHANUMERIC", "CODEINPUT", "COMPOSE", "CONVERT",
+                           "DEAD", "FINALMODE", "GROUPFIRST", "GROUPLAST", "GROUPNEXT", "GROUPPREVIOUS", "MODECHANGE", "NEXTCANDIDATE", "NONCONVERT",
+                           "PREVIOUSCANDIDATE", "PROCESS", "SINGLECANDIDATE", "HANGULMODE", "HANJAMODE", "JUNJAMODE", "EISU", "HANKAKU", "HIRAGANA",
+                           "HIRAGANAKATAKANA", "KANAMODE", "KANJIMODE", "KATAKANA", "ROMAJI", "ZENKAKU", "ZENKAKUHANKAKU", "F1", "F2", "F3", "F4", "F5", "F6",
+                           "F7", "F8", "F9", "F10", "F11", "F12", "F13", "F14", "F15", "F16", "F17", "F18", "F19", "F20", "SOFT1", "SOFT2", "SOFT3", "SOFT4",
+                           "APPSWITCH", "CALL", "CAMERA", "CAMERAFOCUS", "ENDCALL", "GOBACK", "GOHOME", "MOZHOMESCREEN", "HEADSETHOOK", "LASTNUMBERREDIAL",
+                           "NOTIFICATION", "MANNERMODE", "VOICEDIAL", "CHANNELDOWN", "CHANNELUP", "MEDIAFASTFORWARD", "MEDIAPAUSE", "MEDIAPLAY", "MEDIAPLAYPAUSE",
+                           "MEDIARECORD", "MEDIAREWIND", "MEDIASTOP", "MEDIATRACKNEXT", "MEDIATRACKPREVIOUS", "AUDIOBALANCELEFT", "AUDIOBALANCERIGHT",
+                           "AUDIOBASSDOWN", "AUDIOBASSBOOSTDOWN", "AUDIOBASSBOOSTTOGGLE", "AUDIOBASSBOOSTUP", "AUDIOBASSUP", "AUDIOFADERFRONT", "AUDIOFADERREAR",
+                           "AUDIOSURROUNDMODENEXT", "AUDIOTREBLEDOWN", "AUDIOTREBLEUP", "AUDIOVOLUMEDOWN", "AUDIOVOLUMEMUTE", "AUDIOVOLUMEUP", "MICROPHONETOGGLE",
+                           "MICROPHONEVOLUMEDOWN", "MICROPHONEVOLUMEMUTE", "MICROPHONEVOLUMEUP", "CLOSE", "NEW", "OPEN", "PRINT", "SAVE", "SPELLCHECK", "MAILFORWARD",
+                           "MAILREPLY", "MAILSEND", "BROWSERBACK", "BROWSERFAVORITES", "BROWSERFORWARD", "BROWSERHOME", "BROWSERREFRESH", "BROWSERSEARCH", "BROWSERSTOP",
+                           "KEY11", "KEY12"];
+
+    function key2Str(e) {
+
+      const KEY = e.key.toUpperCase();
+      return KEY2EMPTY_STR.includes(KEY) ?
+             "" : (KEY === "ENTER" ?
+                  "\n" : ((KEY === "SPACEBAR" || KEY === " ") ?
+                          " " : ((e.ctrlKey || e.metaKey) ? "" : e.key)));
+    }
+
     function keydownHandler(e) {
 
-      if (e.key == "Undo") {
+      if (e.key.toUpperCase() == "UNDO") {
 
         UNDO_STACK.undo();
         cancelEvent(e);
         return;
       }
 
-      if (e.key == "Redo") {
+      if (e.key.toUpperCase() == "REDO") {
 
         UNDO_STACK.redo();
         cancelEvent(e);
         return;
       }
 
-      if (e.key.toUpperCase() === "C" && (e.ctrlKey || e.metaKey)) {
+      if (isCopyCutOrPasteEvent(e)) {
+        return;
+      }
+      const keyText = key2Str(e);
+
+      if (!keyText && !isDelEvent(e) && !isBackspaceEvent(e)) {
         return;
       }
       let range = null;
@@ -4861,18 +4906,19 @@
       if (selection.rangeCount) {
         range = selection.getRangeAt(0);
       }
-      const charText = ((e.charCode > 0 || e.keyCode > 0) &&
-                        e.key !== "Undefined" && e.key !== "Backspace" &&
-                        e.key !== "Delete" && e.key !== "Del" &&
-                        e.key !== "Control" && e.key !== "Meta" &&
-                        (e.key.toUpperCase() !== "D" || !e.ctrlKey)) ? (e.key === "Enter" ? "\n" : e.key) : ""; // String.fromCharCode(e.charCode ? e.charCode : e.keyCode); // e.which
 
-      if (handleMultiSelection(charText)) {
+      if (!range) {
 
         cancelEvent(e);
         return;
       }
-      let block = range?.startContainer;
+
+      if (handleMultiSelection(keyText)) {
+
+        cancelEvent(e);
+        return;
+      }
+      let block = range.startContainer;
 
       if (block) {
 
@@ -4895,7 +4941,7 @@
             cancelEvent(e);
             return;
         }
-        let p = block;
+        /*let p = block;
         let shouldNormalizeEditor = true;
 
         while (p && p.id !== "editor") {
@@ -4919,14 +4965,10 @@
             cancelEvent(e);
             return;
           }
-        }
+        }*/
       } else {
 
         cancelEvent(e);
-        return;
-      }
-
-      if (e.key === "Paste" || e.key === "Cut" || ((e.key.toUpperCase() === "V" || e.key.toUpperCase() === "X") && (e.ctrlKey || e.metaKey))) {
         return;
       }
 
@@ -4959,7 +5001,7 @@
       }
       let handleBackspace = false;
 
-      if ((e.key === "Delete" || e.key === "Del" || (e.key.toUpperCase() === "D" && e.ctrlKey)) && isCaretAtEnd(topNode, range)) {
+      if (isDelEvent(e) && isCaretAtEnd(topNode, range)) {
 
         const nextSibling = topNode.nextElementSibling;
 
@@ -5001,7 +5043,7 @@
           }
         }
       } else {
-        handleBackspace = (e.key === "Backspace" && isCaretAtStart(topNode, range));
+        handleBackspace = (isBackspaceEvent(e) && isCaretAtStart(topNode, range));
       }
 
       if (handleBackspace) {
