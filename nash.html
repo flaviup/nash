@@ -4765,21 +4765,8 @@
       }
     }
 
-    function keydownHandler(e) {
+    function handleMultiSelection(text) {
 
-      if (e.key == "Undo") {
-
-        UNDO_STACK.undo();
-        cancelEvent(e);
-        return;
-      }
-
-      if (e.key == "Redo") {
-
-        UNDO_STACK.redo();
-        cancelEvent(e);
-        return;
-      }
       let range = null;
       const selection = window.getSelection();
 
@@ -4788,6 +4775,8 @@
       }
 
       if (range && !selection.isCollapsed) {
+
+        if (!text) return true;
 
         // finds the current root container to work on
         let rootNode = range.commonAncestorContainer;
@@ -4811,7 +4800,9 @@
           if (selections.length === 1) {
 
             if (isEditableTextNode(selections[0].node)) {
-
+              selection.deleteFromDocument();
+              selection.getRangeAt(0).insertNode(document.createTextNode(text));
+              selection.collapseToEnd();
             } else if (editor.firstChild !== selections[0].node) {
               removeNodes = [selections[0].node];
             }
@@ -4838,6 +4829,45 @@
           let savedHtmlContents = selections[0].node.innerHTML;
           UNDO_STACK.push(replaceSelectedContent, undoReplaceSelectedContent, selections[0].node.id, removeNodes, selections[selections.length - 1].node.nextElementSibling?.id, savedHtmlContents);
         }
+
+        return true;
+      }
+
+      return false;
+    }
+
+    function keydownHandler(e) {
+
+      if (e.key == "Undo") {
+
+        UNDO_STACK.undo();
+        cancelEvent(e);
+        return;
+      }
+
+      if (e.key == "Redo") {
+
+        UNDO_STACK.redo();
+        cancelEvent(e);
+        return;
+      }
+
+      if (e.key.toUpperCase() === "C" && (e.ctrlKey || e.metaKey)) {
+        return;
+      }
+      let range = null;
+      const selection = window.getSelection();
+
+      if (selection.rangeCount) {
+        range = selection.getRangeAt(0);
+      }
+      const charText = (e.charCode > 0 &&
+                        e.key !== "Undefined" && e.key !== "Backspace" &&
+                        e.key !== "Delete" && e.key !== "Del" &&
+                        e.key !== "Control" && e.key !== "Meta" &&
+                        (e.key.toUpperCase() !== "D" || !e.ctrlKey)) ? String.fromCharCode(e.charCode) : ""; // String.fromCharCode(e.charCode ? e.charCode : e.keyCode); // e.which
+
+      if (handleMultiSelection(charText)) {
 
         cancelEvent(e);
         return;
@@ -5051,32 +5081,46 @@
     function handlePaste(e) {
 
       let range = null;
-
       const selection = window.getSelection();
 
       if (selection.rangeCount) {
         range = selection.getRangeAt(0);
       }
 
-      if (range && selection.isCollapsed) {
+      if (!range?.startContainer || range.startContainer === editor) {
+
+        cancelEvent(e);
+        return;
+      }
+
+      if (selection.isCollapsed) {
 
         const topNode = getTopLevelNodeOfCurrentPosition(range);
 
         if (isEditableTextNode(topNode)) {
 
-          const paste = (e.clipboardData || window.clipboardData)?.getData("text");
+          const pasteText = (e.clipboardData || window.clipboardData)?.getData("text");
 
-          if (paste) {
+          if (pasteText) {
 
             if (range.startContainer.nodeType === Node.TEXT_NODE) {
 
               const text = range.startContainer.textContent;
-              range.startContainer.textContent = text.substring(0, range.startOffset) + paste + text.substring(range.startOffset);
+              range.startContainer.textContent = text.substring(0, range.startOffset) + pasteText + text.substring(range.startOffset);
             } else if (range.startContainer.nodeType === Node.ELEMENT_NODE) {
-              range.startContainer.insertBefore(document.createTextNode(paste), range.startContainer);
+
+              if (range.startContainer.parentNode === editor) {
+                range.startContainer.insertBefore(document.createTextNode(pasteText), range.startOffset < range.startContainer.childNodes.length ? range.startContainer.childNodes[range.startOffset] : null);
+              } else {
+                range.startContainer.parentNode.insertBefore(document.createTextNode(pasteText), range.startContainer);
+              }
             }
           }
         }
+      } else {
+
+        const pasteText = (e.clipboardData || window.clipboardData)?.getData("text");
+        if (pasteText) handleMultiSelection(pasteText);
       }
       cancelEvent(e);
     }
