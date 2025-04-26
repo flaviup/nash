@@ -4742,26 +4742,32 @@
       return selPositions;
     }
 
-    function replaceSelectedContent(_, removeNodes, _2, _3) {
+    function replaceSelectedContent(firstNodeId, removeNodes, _, _2, afterContents) {
+
+      const firstNode = firstNodeId ? document.getElementById(firstNodeId) : null;
+
+      if (firstNode && firstNode.innerHTML !== afterContents) {
+        firstNode.innerHTML = afterContents;
+      }
 
       for (let node of removeNodes) {
         editorRemoveChild(node);
       }
     }
 
-    function undoReplaceSelectedContent(firstNodeId, removeNodes, nextElementSiblingId, savedContents) {
+    function undoReplaceSelectedContent(firstNodeId, removeNodes, nextElementSiblingId, savedContents, _) {
 
+      const firstNode = firstNodeId ? document.getElementById(firstNodeId) : null;
+
+      if (firstNode && firstNode.innerHTML !== savedContents) {
+        firstNode.innerHTML = savedContents;
+      }
       let nextSiblingId = nextElementSiblingId;
 
       for (let i = removeNodes.length - 1; i > -1; i--) {
 
         editorInsertBefore(removeNodes[i], nextSiblingId);
         nextSiblingId = removeNodes[i].id;
-      }
-      const firstNode = firstNodeId ? document.getElementById(firstNodeId) : null;
-
-      if (firstNode && firstNode.innerHTML !== savedContents) {
-        firstNode.innerHTML = savedContents;
       }
     }
 
@@ -4794,12 +4800,14 @@
         if (selections.length) {
 
           let removeNodes = [];
+          const savedContents = selections[0].node.innerHTML;
 
           if (selections.length === 1) {
 
             if (isEditableTextNode(selections[0].node)) {
+
               selection.deleteFromDocument();
-              selection.getRangeAt(0).insertNode(document.createTextNode(text));
+              range.insertNode(document.createTextNode(text));
               selection.collapseToEnd();
             } else if (editor.firstChild !== selections[0].node) {
               removeNodes = [selections[0].node];
@@ -4824,8 +4832,8 @@
               isLastNodeFullySelected = (endsWithBr && end > textLength - 2) || (!endsWithBr && end > textLength - 1);
             }
           }
-          let savedHtmlContents = selections[0].node.innerHTML;
-          UNDO_STACK.push(replaceSelectedContent, undoReplaceSelectedContent, selections[0].node.id, removeNodes, selections[selections.length - 1].node.nextElementSibling?.id, savedHtmlContents);
+          const afterContents = selections[0].node.innerHTML;
+          UNDO_STACK.push(replaceSelectedContent, undoReplaceSelectedContent, selections[0].node.id, removeNodes, selections[selections.length - 1].node.nextElementSibling?.id, savedContents, afterContents);
         }
 
         return true;
