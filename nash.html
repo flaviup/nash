@@ -4811,7 +4811,7 @@
           let savedContents = null;
           let firstNodeId = null;
           const firstNode = selections[0].node;
-          let lastText = "";
+          let lastContent = null;
 
           if (selections.length === 1) {
 
@@ -4836,8 +4836,7 @@
               const extractRange = range.cloneRange();
               extractRange.setStart(range.endContainer, range.endOffset);
               extractRange.setEndAfter(lastNode.lastChild || lastNode);
-              const extracted = extractRange.cloneContents();
-              lastText = extracted.innerHTML;
+              lastContent = extractRange.cloneContents();
             }
 
             if (isEditableTextNode(firstNode)) {
@@ -4850,7 +4849,7 @@
               range.insertNode(document.createTextNode(text));
               selection.collapseToEnd();
 
-              if (lastText) firstNode.innerHTML += lastText;
+              if (lastContent) firstNode.append(lastContent);
 
               removeNodes.shift();
             } else if (editor.firstChild === firstNode) {
@@ -4865,7 +4864,7 @@
             newTextBlock.setAttribute("id", `text${generateUId()}`);
             newTextBlock.setAttribute("class", "text-block");
             newTextBlock.textContent = text;
-            if (lastText) newTextBlock.innerHTML += lastText;
+            if (lastContent) newTextBlock.append(lastContent);
           }
           UNDO_STACK.push(replaceSelectedContent, undoReplaceSelectedContent, firstNodeId, removeNodes, selections[selections.length - 1].node.nextElementSibling?.id, savedContents, afterContents, newTextBlock);
         }
