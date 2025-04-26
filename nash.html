@@ -4742,7 +4742,7 @@
       return selPositions;
     }
 
-    function replaceSelectedContent(firstNodeId, removeNodes, _, _2, afterContents) {
+    function replaceSelectedContent(firstNodeId, removeNodes, nextElementSiblingId, _, afterContents, newTextBlock) {
 
       const firstNode = firstNodeId ? document.getElementById(firstNodeId) : null;
 
@@ -4753,9 +4753,17 @@
       for (let node of removeNodes) {
         editorRemoveChild(node);
       }
+
+      if (newTextBlock) {
+        editorInsertBefore(newTextBlock, nextElementSiblingId);
+      }
     }
 
-    function undoReplaceSelectedContent(firstNodeId, removeNodes, nextElementSiblingId, savedContents, _) {
+    function undoReplaceSelectedContent(firstNodeId, removeNodes, nextElementSiblingId, savedContents, _, newTextBlock) {
+
+      if (newTextBlock) {
+        editorRemoveChild(newTextBlock);
+      }
 
       const firstNode = firstNodeId ? document.getElementById(firstNodeId) : null;
 
@@ -4800,40 +4808,66 @@
         if (selections.length) {
 
           let removeNodes = [];
-          const savedContents = selections[0].node.innerHTML;
+          let savedContents = null;
+          let firstNodeId = null;
+          const firstNode = selections[0].node;
+          let lastText = "";
 
           if (selections.length === 1) {
 
-            if (isEditableTextNode(selections[0].node)) {
+            if (isEditableTextNode(firstNode)) {
 
+              savedContents = firstNode.innerHTML;
+              firstNodeId = firstNode.id;
               selection.deleteFromDocument();
               range.insertNode(document.createTextNode(text));
               selection.collapseToEnd();
-            } else if (editor.firstChild !== selections[0].node) {
-              removeNodes = [selections[0].node];
+            } else if (editor.firstChild !== firstNode) {
+              removeNodes = [firstNode];
             }
           } else {
 
             removeNodes = selections.map((e) => e.node);
 
-            if (isEditableTextNode(selections[0].node) && selections[0].start === 0 && editor.firstChild !== selections[0].node) {
-            } else {
+            const lastNode = selections[selections.length - 1].node;
+
+            if (isEditableTextNode(lastNode)) {
+
+              const extractRange = range.cloneRange();
+              extractRange.setStart(range.endContainer, range.endOffset);
+              extractRange.setEndAfter(lastNode.lastChild || lastNode);
+              const extracted = extractRange.cloneContents();
+              lastText = extracted.innerHTML;
+            }
+
+            if (isEditableTextNode(firstNode)) {
+
+              savedContents = firstNode.innerHTML;
+              firstNodeId = firstNode.id;
+
+              range.setEndAfter(firstNode.lastChild || firstNode);
+              range.deleteContents();
+              range.insertNode(document.createTextNode(text));
+              selection.collapseToEnd();
+
+              if (lastText) firstNode.innerHTML += lastText;
+
+              removeNodes.shift();
+            } else if (editor.firstChild === firstNode) {
               removeNodes.shift();
             }
-            let isLastNodeFullySelected = true;
-
-            if (isEditableTextNode(selections[selections.length - 1].node)) {
-
-              const end = selections[selections.length - 1].end;
-              const text = getNodeText(selections[selections.length - 1].node);
-              const textLength = text.length;
-              const endsWithBr = text.endsWith("\n");
-
-              isLastNodeFullySelected = (endsWithBr && end > textLength - 2) || (!endsWithBr && end > textLength - 1);
-            }
           }
-          const afterContents = selections[0].node.innerHTML;
-          UNDO_STACK.push(replaceSelectedContent, undoReplaceSelectedContent, selections[0].node.id, removeNodes, selections[selections.length - 1].node.nextElementSibling?.id, savedContents, afterContents);
+          const afterContents = firstNodeId ? firstNode.innerHTML : null;
+          const newTextBlock = firstNodeId ? null : document.createElement("p");
+
+          if (newTextBlock) {
+
+            newTextBlock.setAttribute("id", `text${generateUId()}`);
+            newTextBlock.setAttribute("class", "text-block");
+            newTextBlock.textContent = text;
+            if (lastText) newTextBlock.innerHTML += lastText;
+          }
+          UNDO_STACK.push(replaceSelectedContent, undoReplaceSelectedContent, firstNodeId, removeNodes, selections[selections.length - 1].node.nextElementSibling?.id, savedContents, afterContents, newTextBlock);
         }
 
         return true;
