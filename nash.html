@@ -4837,6 +4837,19 @@
               extractRange.setStart(range.endContainer, range.endOffset);
               extractRange.setEndAfter(lastNode.lastChild || lastNode);
               lastContent = extractRange.cloneContents();
+
+              if (lastNode.classList?.contains("code-block")) {
+
+                const childNodes = lastContent.querySelector("code").childNodes;
+
+                if (childNodes?.length) {
+
+                  lastContent = document.createDocumentFragment();
+                  childNodes.forEach((childNode) => lastContent.appendChild(childNode));
+                } else {
+                  lastContent = null;
+                }
+              }
             }
 
             if (isEditableTextNode(firstNode)) {
