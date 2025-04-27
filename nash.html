@@ -4856,13 +4856,14 @@
 
               savedContents = firstNode.innerHTML;
               firstNodeId = firstNode.id;
+              const insertionNode = firstNode.classList?.contains("code-block") ? firstNode.querySelector("code"): firstNode;
 
-              range.setEndAfter(firstNode.lastChild || firstNode);
+              range.setEndAfter(insertionNode.lastChild || insertionNode);
               range.deleteContents();
               range.insertNode(document.createTextNode(text));
               selection.collapseToEnd();
 
-              if (lastContent) firstNode.append(lastContent);
+              if (lastContent) insertionNode.append(lastContent);
 
               removeNodes.shift();
             } else if (editor.firstChild === firstNode) {
