@@ -4241,7 +4241,11 @@
         if (!endContainer) range.setEnd(startContainer, startOffset);
         window.getSelection().removeAllRanges();
         window.getSelection().addRange(range);
+
+        return range;
       }
+
+      return null;
     }
 
     function doSplitBlock(newBlock, blockId, afterBlockContents, _, _2) {
@@ -4759,7 +4763,7 @@
       return selPositions;
     }
 
-    function replaceSelectedContent(firstNodeId, removeNodes, nextElementSiblingId, _, afterContents, newTextBlock, newRangeLimits) {
+    function replaceSelectedContent(firstNodeId, removeNodes, nextElementSiblingId, _, afterContents, newTextBlock, _2, newRangeLimits) {
 
       for (let node of removeNodes) {
         editorRemoveChild(node);
@@ -4778,7 +4782,7 @@
       }
     }
 
-    function undoReplaceSelectedContent(firstNodeId, removeNodes, nextElementSiblingId, savedContents, _, newTextBlock, _2) {
+    function undoReplaceSelectedContent(firstNodeId, removeNodes, nextElementSiblingId, savedContents, _, newTextBlock, oldRangeLimits, _2) {
 
       if (newTextBlock) {
         editorRemoveChild(newTextBlock);
@@ -4795,6 +4799,60 @@
 
         editorInsertBefore(removeNodes[i], nextSiblingId);
         nextSiblingId = removeNodes[i].id;
+      }
+      let startContainer = null;
+      let startOffset = 0;
+      let endOffset = 0;
+
+      function getStart() {
+
+        const range = setRange(startContainer, { start: oldRangeLimits.start, end: (removeNodes.length > 0 ? oldRangeLimits.start : oldRangeLimits.end) });
+        startContainer = range.startContainer;
+        startOffset = range.startOffset;
+        endOffset = range.endOffset;
+      }
+
+      if (isEditableTextNode(firstNode)) {
+
+        startContainer = firstNode.classList?.contains("code-block") ? firstNode.querySelector("code") : firstNode;
+        getStart();
+      } else {
+        startContainer = firstNode;
+      }
+      let endContainer = startContainer;
+
+      function getEnd() {
+
+        const range = setRange(endContainer, { start: oldRangeLimits.end, end: oldRangeLimits.end });
+        endContainer = range.endContainer;
+        endOffset = range.endOffset;
+      }
+
+      if (removeNodes.length > 0) {
+
+        const lastNode = removeNodes[removeNodes.length - 1];
+
+        if (lastNode && lastNode !== firstNode) {
+
+          if (isEditableTextNode(lastNode)) {
+
+            endContainer = lastNode.classList?.contains("code-block") ? lastNode.querySelector("code") : lastNode;
+            getEnd();
+          } else if (lastNode) {
+
+            endContainer = lastNode;
+            endOffset = [...lastNode.parentNode.children].indexOf(lastNode);
+          }
+        }
+      }
+
+      if (startContainer && endContainer) {
+
+        const range = document.createRange();
+        range.setStart(startContainer, startOffset);
+        range.setEnd(endContainer, endOffset);
+        window.getSelection().removeAllRanges();
+        window.getSelection().addRange(range);
       }
     }
 
@@ -4831,6 +4889,7 @@
           let firstNodeId = null;
           let lastContent = null;
           let newCaretPosition = selections[0].start + text.length;
+          const oldRangeLimits = { start: selections[0].start, end: selections[selections.length - 1].end };
           const firstNode = selections[0].node;
 
           if (selections.length === 1) {
@@ -4907,7 +4966,7 @@
             if (!getNodeText(newTextBlock)) newTextBlock.appendChild(document.createElement("br"));
           }
           const newRangeLimits = { start: newCaretPosition, end: newCaretPosition };
-          UNDO_STACK.push(replaceSelectedContent, undoReplaceSelectedContent, firstNodeId, removeNodes, selections[selections.length - 1].node.nextElementSibling?.id, savedContents, afterContents, newTextBlock, newRangeLimits);
+          UNDO_STACK.push(replaceSelectedContent, undoReplaceSelectedContent, firstNodeId, removeNodes, selections[selections.length - 1].node.nextElementSibling?.id, savedContents, afterContents, newTextBlock, oldRangeLimits, newRangeLimits);
         }
 
         return true;
