@@ -4840,7 +4840,7 @@
               savedContents = firstNode.innerHTML;
               firstNodeId = firstNode.id;
               selection.deleteFromDocument();
-              range.insertNode(document.createTextNode(text));
+              if (text) range.insertNode(document.createTextNode(text));
               selection.collapseToEnd();
             } else if (editor.firstChild !== firstNode) {
               removeNodes = [firstNode];
@@ -4880,7 +4880,7 @@
 
               range.setEndAfter(insertionNode.lastChild || insertionNode);
               range.deleteContents();
-              range.insertNode(document.createTextNode(text));
+              if (text) range.insertNode(document.createTextNode(text));
               selection.collapseToEnd();
 
               if (lastContent) {
@@ -4903,6 +4903,8 @@
             newTextBlock.setAttribute("class", "text-block");
             newTextBlock.textContent = text;
             if (lastContent) newTextBlock.append(lastContent);
+
+            if (!getNodeText(newTextBlock)) newTextBlock.appendChild(document.createElement("br"));
           }
           const newRangeLimits = { start: newCaretPosition, end: newCaretPosition };
           UNDO_STACK.push(replaceSelectedContent, undoReplaceSelectedContent, firstNodeId, removeNodes, selections[selections.length - 1].node.nextElementSibling?.id, savedContents, afterContents, newTextBlock, newRangeLimits);
