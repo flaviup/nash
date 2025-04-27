@@ -1746,6 +1746,23 @@
       return range;
     }
 
+    function setCaretAtEnd(node) {
+
+      const ldc = getLastDeepestChild(node.classList?.contains("code-block") ? node.querySelector("code"): node);
+      const range = document.createRange();
+
+      if (ldc.nodeName === "BR") range.setStartBefore(ldc);
+      else range.setStartAfter(ldc);
+
+      range.collapse(true);
+
+      const selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
+
+      return range;
+    }
+
     function editorInsertBefore(childNode, siblingNodeId) {
 
       if (childNode && !editor.contains(childNode)) {
@@ -4196,7 +4213,7 @@
   
             const pos = positions.get(nodeInfo.node);
             
-            if (!startContainer &&
+            if ((nodeInfo.node.nodeType === Node.TEXT_NODE || nodeInfo.nodeName === "BR") &&
                 pos.start <= rangeLimits.start &&
                 rangeLimits.start <= pos.end) {
 
@@ -4204,15 +4221,13 @@
               startOffset = rangeLimits.start - pos.start;
             }
 
-            if (!endContainer &&
+            if ((nodeInfo.node.nodeType === Node.TEXT_NODE || nodeInfo.nodeName === "BR") &&
                 pos.start <= rangeLimits.end &&
                 rangeLimits.end <= pos.end) {
 
                 endContainer = nodeInfo.node;
                 endOffset = rangeLimits.end - pos.start;
             }
-
-            if (startContainer && endContainer) break;
           }
         }
       }
@@ -4221,7 +4236,9 @@
 
         const range = document.createRange();
         if (startContainer) range.setStart(startContainer, startOffset);
-        if (endContainer) range.setStart(endContainer, endOffset);
+        if (endContainer) range.setEnd(endContainer, endOffset);
+        if (!startContainer) range.setStart(endContainer, endOffset);
+        if (!endContainer) range.setEnd(startContainer, startOffset);
         window.getSelection().removeAllRanges();
         window.getSelection().addRange(range);
       }
@@ -4742,24 +4759,26 @@
       return selPositions;
     }
 
-    function replaceSelectedContent(firstNodeId, removeNodes, nextElementSiblingId, _, afterContents, newTextBlock) {
-
-      const firstNode = firstNodeId ? document.getElementById(firstNodeId) : null;
-
-      if (firstNode && firstNode.innerHTML !== afterContents) {
-        firstNode.innerHTML = afterContents;
-      }
+    function replaceSelectedContent(firstNodeId, removeNodes, nextElementSiblingId, _, afterContents, newTextBlock, newRangeLimits) {
 
       for (let node of removeNodes) {
         editorRemoveChild(node);
       }
+      const firstNode = firstNodeId ? document.getElementById(firstNodeId) : null;
+
+      if (firstNode) {
+
+        if (firstNode.innerHTML !== afterContents) firstNode.innerHTML = afterContents;
+        setRange(firstNode, newRangeLimits);
+      }
 
       if (newTextBlock) {
         editorInsertBefore(newTextBlock, nextElementSiblingId);
+        setCaretAtEnd(newTextBlock);
       }
     }
 
-    function undoReplaceSelectedContent(firstNodeId, removeNodes, nextElementSiblingId, savedContents, _, newTextBlock) {
+    function undoReplaceSelectedContent(firstNodeId, removeNodes, nextElementSiblingId, savedContents, _, newTextBlock, _2) {
 
       if (newTextBlock) {
         editorRemoveChild(newTextBlock);
@@ -4810,8 +4829,9 @@
           let removeNodes = [];
           let savedContents = null;
           let firstNodeId = null;
-          const firstNode = selections[0].node;
           let lastContent = null;
+          let newCaretPosition = selections[0].start + text.length;
+          const firstNode = selections[0].node;
 
           if (selections.length === 1) {
 
@@ -4863,7 +4883,11 @@
               range.insertNode(document.createTextNode(text));
               selection.collapseToEnd();
 
-              if (lastContent) insertionNode.append(lastContent);
+              if (lastContent) {
+
+                insertionNode.append(lastContent);
+                newCaretPosition += getNodeText(lastContent).length;
+              }
 
               removeNodes.shift();
             } else if (editor.firstChild === firstNode) {
@@ -4880,7 +4904,8 @@
             newTextBlock.textContent = text;
             if (lastContent) newTextBlock.append(lastContent);
           }
-          UNDO_STACK.push(replaceSelectedContent, undoReplaceSelectedContent, firstNodeId, removeNodes, selections[selections.length - 1].node.nextElementSibling?.id, savedContents, afterContents, newTextBlock);
+          const newRangeLimits = { start: newCaretPosition, end: newCaretPosition };
+          UNDO_STACK.push(replaceSelectedContent, undoReplaceSelectedContent, firstNodeId, removeNodes, selections[selections.length - 1].node.nextElementSibling?.id, savedContents, afterContents, newTextBlock, newRangeLimits);
         }
 
         return true;
