@@ -4856,6 +4856,17 @@
       }
     }
 
+    function insertTextInRange(text, range) {
+
+      if (range.startContainer.nodeType === Node.TEXT_NODE) {
+
+        const textContent = range.startContainer.textContent;
+        range.startContainer.textContent = textContent.substring(0, range.startOffset) + text + textContent.substring(range.startOffset);
+      } else if (range.startContainer.nodeType === Node.ELEMENT_NODE) {
+        range.insertNode(document.createTextNode(text));
+      }
+    }
+
     function handleMultiSelection(text) {
 
       let range = null;
@@ -4899,7 +4910,7 @@
               savedContents = firstNode.innerHTML;
               firstNodeId = firstNode.id;
               selection.deleteFromDocument();
-              if (text) range.insertNode(document.createTextNode(text));
+              if (text) insertTextInRange(text, range);
               selection.collapseToEnd();
             } else if (editor.firstChild !== firstNode) {
               removeNodes = [firstNode];
@@ -4939,7 +4950,7 @@
 
               range.setEndAfter(insertionNode.lastChild || insertionNode);
               range.deleteContents();
-              if (text) range.insertNode(document.createTextNode(text));
+              if (text) insertTextInRange(text, range);
               selection.collapseToEnd();
 
               if (lastContent) {
@@ -5082,31 +5093,6 @@
             cancelEvent(e);
             return;
         }
-        /*let p = block;
-        let shouldNormalizeEditor = true;
-
-        while (p && p.id !== "editor") {
-
-          if (p.classList?.contains("text-block") ||
-              p.classList?.contains("code-block") ||
-              p.classList?.contains("embedded-table")) {
-            shouldNormalizeEditor = false;
-            break;
-          }
-          p = p.parentNode;
-        }
-
-        if (shouldNormalizeEditor) {
-
-          // don't block some control keys (like Left, Right, Up and Down); block the rest
-          const keyCode = e.keyCode || e.which;
-
-          if (keyCode < 33 || keyCode > 44) {
-
-            cancelEvent(e);
-            return;
-          }
-        }*/
       } else {
 
         cancelEvent(e);
@@ -5285,19 +5271,7 @@
           const pasteText = (e.clipboardData || window.clipboardData)?.getData("text");
 
           if (pasteText) {
-
-            if (range.startContainer.nodeType === Node.TEXT_NODE) {
-
-              const text = range.startContainer.textContent;
-              range.startContainer.textContent = text.substring(0, range.startOffset) + pasteText + text.substring(range.startOffset);
-            } else if (range.startContainer.nodeType === Node.ELEMENT_NODE) {
-
-              if (range.startContainer.parentNode === editor) {
-                range.startContainer.insertBefore(document.createTextNode(pasteText), range.startOffset < range.startContainer.childNodes.length ? range.startContainer.childNodes[range.startOffset] : null);
-              } else {
-                range.startContainer.parentNode.insertBefore(document.createTextNode(pasteText), range.startContainer);
-              }
-            }
+            insertTextInRange(pasteText, range);
           }
         }
       } else {
