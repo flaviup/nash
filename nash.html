@@ -1733,12 +1733,25 @@
     const editor = document.getElementById("editor");
     const filename = document.getElementById("filename");
 
-    // Helper: Places the caret at a given element and offset.
-    function setCaret(el, pos) {
+    // Helper: Places the caret at a given node and offset.
+    function setCaret(node, pos) {
 
       const selection = window.getSelection();
       const range = document.createRange();
-      range.setStart(el, pos);
+      range.setStart(node, pos);
+      range.collapse(true);
+      selection.removeAllRanges();
+      selection.addRange(range);
+
+      return range;
+    }
+
+    // Helper: Places the caret after a given node.
+    function setCaretAfter(node) {
+
+      const selection = window.getSelection();
+      const range = document.createRange();
+      range.setStartAfter(node);
       range.collapse(true);
       selection.removeAllRanges();
       selection.addRange(range);
@@ -3478,7 +3491,7 @@
 
       while (node) {
 
-        if (node.nodeType === Node.ELEMENT_NODE) {
+        if (node.nodeType === Node.ELEMENT_NODE && node.hasChildNodes) {
           elements.push(...node.childNodes);
         }
 
@@ -4175,12 +4188,52 @@
       return node;
     }
 
+    // Helper: Gets the specified node index in the parent's child nodes list
+    function getChildNodeIndex(node) {
+
+      if (!node) return -1;
+
+      let index = 0;
+
+      while (node.previousSibling) {
+
+        ++index;
+        node = node.previousSibling;
+      }
+
+      return index;
+    }
+
+    function getNodeLimitOffset(node, offset, positions) {
+
+      if (node.nodeType === Node.TEXT_NODE) {
+        return (positions.has(node) ? positions.get(node).start : 0) + offset;
+      } else if (node.nodeType === Node.ELEMENT_NODE) {
+
+        let child = node.firstChild;
+        let i = 0;
+        let pos = (positions.has(node) ? positions.get(node).start : 0);
+
+        while (child && i < offset) {
+
+          if (positions.has(child)) pos = positions.get(child).end;
+
+          child = child.nextSibling;
+          ++i;
+        }
+
+        return pos;
+      }
+
+      return 0;
+    }
+
     // Helper: Gets the range's absolute limits within the node's text
     function getRangeLimits(node, range) {
 
       const positions = getNodePositions(node);
-      const start = positions.get(range.startContainer).start + range.startOffset;
-      const end = positions.get(range.endContainer).start + range.endOffset;
+      const start = getNodeLimitOffset(range.startContainer, range.startOffset, positions);
+      const end = getNodeLimitOffset(range.endContainer, range.endOffset, positions);
 
       return {
         start: start,
@@ -4199,7 +4252,6 @@
       let endOffset = -1;
 
       const nodes = [{node: node, visit: 0}];
-      let length = 0;
 
       while (nodes.length > 0) {
 
@@ -4215,20 +4267,37 @@
   
             const pos = positions.get(nodeInfo.node);
 
-            if (nodeInfo.node.nodeType === Node.TEXT_NODE || nodeInfo.nodeName === "BR") {
+            if ((nodeInfo.node.nodeType === Node.TEXT_NODE && getNodeText(nodeInfo.node)) || nodeInfo.node.nodeName === "BR") {
             
-              if (pos.start <= rangeLimits.start &&
-                  rangeLimits.start <= pos.end) {
+              if (pos.start === rangeLimits.start ||
+                  (pos.start < rangeLimits.start &&
+                  rangeLimits.start < pos.end)) {
 
-                startContainer = nodeInfo.node;
-                startOffset = rangeLimits.start - pos.start;
+                if (nodeInfo.node.nodeName === "BR") {
+
+                  startContainer = nodeInfo.node.parentNode;
+                  startOffset = getChildNodeIndex(nodeInfo.node);
+                } else {
+
+                  startContainer = nodeInfo.node;
+                  startOffset = rangeLimits.start - pos.start;
+                }
               }
 
-              if (pos.start <= rangeLimits.end &&
-                  rangeLimits.end <= pos.end) {
+              if ((pos.start === rangeLimits.end &&
+                  rangeLimits.start === rangeLimits.end) ||
+                  (pos.start < rangeLimits.end &&
+                  rangeLimits.end <= pos.end)) {
+
+                if (nodeInfo.node.nodeName === "BR") {
+
+                  endContainer = nodeInfo.node.parentNode;
+                  endOffset = getChildNodeIndex(nodeInfo.node) + 1;
+                } else {
 
                   endContainer = nodeInfo.node;
                   endOffset = rangeLimits.end - pos.start;
+                }
               }
             }
           }
@@ -4415,26 +4484,28 @@
           let newRange = null;
 
           const textNode = range.startContainer;
+          const parentNode = textNode.parentNode;
 
           if (textNode.nodeName === "BR") {
 
             const brNode = document.createElement("br");
-            textNode.parentNode.insertBefore(brNode, textNode.nextSibling);
-            newRange = setCaret(brNode, 0);
+            parentNode.insertBefore(brNode, textNode.nextSibling);
+            newRange = setCaretAfter(brNode);
           } else if (validParentNodeCallback(textNode) || textNode.nodeType === Node.ELEMENT_NODE) {
 
+            const brNode = document.createElement("br");
+
             if (textNode.childNodes.length > range.startOffset) {
-              textNode.insertBefore(document.createElement("br"), textNode.childNodes[range.startOffset]);
+              textNode.insertBefore(brNode, textNode.childNodes[range.startOffset]);
             } else {
-              textNode.appendChild(document.createElement("br"));
+              textNode.appendChild(brNode);
             }
-            newRange = setCaret(textNode, range.startOffset + 1);
+            newRange = setCaretAfter(brNode);
           } else if (textNode.nodeType === Node.TEXT_NODE) {
 
             const text1 = textNode.textContent.substring(0, range.startOffset);
             const text2 = textNode.textContent.substring(range.startOffset);
             const newTextNode = text2?.length ? document.createTextNode(text2) : null;
-            const parentNode = textNode.parentNode;
             const nextSibling = textNode.nextSibling;
             const brNode = document.createElement("br");
             parentNode.insertBefore(brNode, nextSibling);
@@ -4460,20 +4531,20 @@
 
                   const brNode2 = document.createElement("br");
                   parentNode.insertBefore(brNode2, nextSibling);
-                  newRange = setCaret(parentNode, [...parentNode.childNodes].indexOf(brNode2));
+                  newRange = setCaretAfter(brNode2);
                 } else {
                   let p = parentNode;
                   while (p && !p.nextSibling) p = p.parentNode;
                   if (p?.nextSibling) newRange = setCaret(p.nextSibling, 0);
                 }
               } else {
-                newRange = setCaret(parentNode, [...parentNode.childNodes].indexOf(nextSibling));
+                newRange = setCaret(parentNode, getChildNodeIndex(nextSibling));
               }
             } else {
 
               const brNode2 = document.createElement("br");
               parentNode.insertBefore(brNode2, nextSibling);
-              newRange = setCaret(brNode2, 0);
+              newRange = setCaretAfter(brNode2);
             }
           }
 
@@ -4808,6 +4879,7 @@
       }
 
       if (newTextBlock) {
+
         editorInsertBefore(newTextBlock, nextElementSiblingId);
         setCaretAtEnd(newTextBlock);
       }
@@ -4835,29 +4907,23 @@
       let startOffset = 0;
       let endOffset = 0;
 
-      function getStart() {
-
-        const range = setRange(startContainer, { start: oldRangeLimits.start, end: (removeNodes.length > 0 ? oldRangeLimits.start : oldRangeLimits.end) });
-        startContainer = range.startContainer;
-        startOffset = range.startOffset;
-        endOffset = range.endOffset;
-      }
-
       if (isEditableTextNode(firstNode)) {
 
         startContainer = firstNode.classList?.contains("code-block") ? firstNode.querySelector("code") : firstNode;
-        getStart();
+        const range = setRange(startContainer, { start: oldRangeLimits.start, end: (removeNodes.length > 0 ? oldRangeLimits.start : oldRangeLimits.end) });
+
+        if (range) {
+
+          startContainer = range.startContainer;
+          startOffset = range.startOffset;
+          endOffset = range.endOffset;
+        }
       } else {
-        startContainer = firstNode;
+
+        startContainer = firstNode.parentNode;
+        startOffset = getChildNodeIndex(firstNode);
       }
       let endContainer = startContainer;
-
-      function getEnd() {
-
-        const range = setRange(endContainer, { start: oldRangeLimits.end, end: oldRangeLimits.end });
-        endContainer = range.endContainer;
-        endOffset = range.endOffset;
-      }
 
       if (removeNodes.length > 0) {
 
@@ -4868,11 +4934,16 @@
           if (isEditableTextNode(lastNode)) {
 
             endContainer = lastNode.classList?.contains("code-block") ? lastNode.querySelector("code") : lastNode;
-            getEnd();
+            const range = setRange(endContainer, { start: oldRangeLimits.end, end: oldRangeLimits.end });
+
+            if (range) {
+              endContainer = range.endContainer;
+              endOffset = range.endOffset;
+            }
           } else if (lastNode) {
 
-            endContainer = lastNode;
-            endOffset = [...lastNode.parentNode.children].indexOf(lastNode);
+            endContainer = lastNode.parentNode;
+            endOffset = getChildNodeIndex(lastNode) + 1;
           }
         }
       }
@@ -4940,6 +5011,7 @@
         range.setEnd(insertion.node, insertion.offset);
         window.getSelection().collapseToEnd();
       }
+      if (!topNode.innerHTML) topNode.innerHTML = "<br/>";
       const afterContents = topNode.innerHTML;
       const afterRangeLimits = getRangeLimits(topNode, range);
       UNDO_STACK.push(doChangeText, undoChangeText, topNode, savedContents, savedRangeLimits, afterContents, afterRangeLimits);
@@ -4956,11 +5028,16 @@
       const savedRangeLimits = getRangeLimits(topNode, range);
       const delRangeLimits = { start: savedRangeLimits.start + (usingBackspace ?  - 1 : 0), end: savedRangeLimits.end + (usingBackspace ? 0 : 1) };
       const delRange = setRange(topNode, delRangeLimits);
-      delRange?.deleteContents();
-      window.getSelection().collapseToStart();
-      const afterContents = topNode.innerHTML;
-      const afterRangeLimits = getRangeLimits(topNode, range);
-      UNDO_STACK.push(doChangeText, undoChangeText, topNode, savedContents, savedRangeLimits, afterContents, afterRangeLimits);
+
+      if (delRange) {
+
+        delRange.deleteContents();
+        window.getSelection().collapseToStart();
+        if (!topNode.innerHTML) topNode.innerHTML = "<br/>";
+        const afterContents = topNode.innerHTML;
+        const afterRangeLimits = getRangeLimits(topNode, range);
+        UNDO_STACK.push(doChangeText, undoChangeText, topNode, savedContents, savedRangeLimits, afterContents, afterRangeLimits);
+      }
     }
 
     function handleMultiSelection(text) {
@@ -5060,6 +5137,7 @@
               removeNodes.shift();
             }
           }
+          if (!firstNode.innerHTML) firstNode.innerHTML = "<br/>";
           const afterContents = firstNodeId ? firstNode.innerHTML : null;
           const newTextBlock = firstNodeId ? null : document.createElement("p");
 
