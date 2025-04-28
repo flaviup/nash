@@ -4409,13 +4409,17 @@
 
         if (block.nodeType === Node.ELEMENT_NODE && validParentNodeCallback(block)) {
 
+          const savedContents = block.innerHTML;
+          const savedRangeLimits = getRangeLimits(block, range);
+          let newRange = null;
+
           const textNode = range.startContainer;
 
           if (textNode.nodeName === "BR") {
 
             const brNode = document.createElement("br");
             textNode.parentNode.insertBefore(brNode, textNode.nextSibling);
-            setCaret(brNode, 0);
+            newRange = setCaret(brNode, 0);
           } else if (validParentNodeCallback(textNode) || textNode.nodeType === Node.ELEMENT_NODE) {
 
             if (textNode.childNodes.length > range.startOffset) {
@@ -4423,7 +4427,7 @@
             } else {
               textNode.appendChild(document.createElement("br"));
             }
-            setCaret(textNode, range.startOffset + 1);
+            newRange = setCaret(textNode, range.startOffset + 1);
           } else if (textNode.nodeType === Node.TEXT_NODE) {
 
             const text1 = textNode.textContent.substring(0, range.startOffset);
@@ -4446,7 +4450,7 @@
             if (newTextNode) {
 
               parentNode.insertBefore(newTextNode, nextSibling);
-              setCaret(newTextNode, 0);
+              newRange = setCaret(newTextNode, 0);
             } else if (text1?.length) {
 
               if (!nextSibling) {
@@ -4455,22 +4459,30 @@
 
                   const brNode2 = document.createElement("br");
                   parentNode.insertBefore(brNode2, nextSibling);
-                  setCaret(parentNode, [...parentNode.childNodes].indexOf(brNode2));
+                  newRange = setCaret(parentNode, [...parentNode.childNodes].indexOf(brNode2));
                 } else {
                   let p = parentNode;
                   while (p && !p.nextSibling) p = p.parentNode;
-                  if (p?.nextSibling) setCaret(p.nextSibling, 0);
+                  if (p?.nextSibling) newRange = setCaret(p.nextSibling, 0);
                 }
               } else {
-                setCaret(parentNode, [...parentNode.childNodes].indexOf(nextSibling));
+                newRange = setCaret(parentNode, [...parentNode.childNodes].indexOf(nextSibling));
               }
             } else {
 
               const brNode2 = document.createElement("br");
               parentNode.insertBefore(brNode2, nextSibling);
-              setCaret(brNode2, 0);
+              newRange = setCaret(brNode2, 0);
             }
           }
+
+          if (!newRange && window.getSelection().rangeCount) {
+            newRange = window.getSelection().getRangeAt(0);
+          }
+          const afterContents = block.innerHTML;
+          const afterRangeLimits = newRange ? getRangeLimits(block, newRange) : savedRangeLimits;
+          UNDO_STACK.push(doChangeText, undoChangeText, block, savedContents, savedRangeLimits, afterContents, afterRangeLimits);
+
           return true;
         }
         block = block.parentNode;
@@ -4681,6 +4693,22 @@
       return node && (node.classList?.contains("text-block") || node.classList?.contains("code-block") || ["TH", "TD"].includes(node.parentNode?.nodeName));
     }
 
+    function isTableNode(node) {
+      return node && node.classList?.contains("embedded-table");
+    }
+
+    function getTableCell(node) {
+
+      while (node) {
+
+        if (node.nodeName === "TH" || node.nodeName === "TD") return node;
+        if (node.parentNode === editor) return null;
+        node = node.parentNode;
+      }
+
+      return null;
+    }
+
     // Gets the list of all nodes and text positions of the start and end nodes within the root container and within the specified range
     function getSelectionNodesAndPositions(rootContainer, range) {
 
@@ -4876,9 +4904,7 @@
       return null;
     }
 
-    function doInsertText(nodeId, _, _2, afterContents, afterRangeLimits) {
-
-      const node = nodeId ? document.getElementById(nodeId) : null;
+    function doChangeText(node, _, _2, afterContents, afterRangeLimits) {
 
       if (node) {
 
@@ -4887,9 +4913,7 @@
       }
     }
 
-    function undoInsertText(nodeId, savedContents, savedRangeLimits, _, _2) {
-
-      const node = nodeId ? document.getElementById(nodeId) : null;
+    function undoChangeText(node, savedContents, savedRangeLimits, _, _2) {
 
       if (node) {
 
@@ -4900,6 +4924,11 @@
 
     function handleTextInsertion(text, range, topNode) {
 
+      if (isTableNode(topNode)) {
+
+        topNode = getTableCell(range.startContainer);
+        if (!topNode) return;
+      }
       const savedContents = topNode.innerHTML;
       const savedRangeLimits = getRangeLimits(topNode, range);
       const insertion = insertTextInRange(text, range);
@@ -4912,11 +4941,16 @@
       }
       const afterContents = topNode.innerHTML;
       const afterRangeLimits = getRangeLimits(topNode, range);
-      UNDO_STACK.push(doInsertText, undoInsertText, topNode.id, savedContents, savedRangeLimits, afterContents, afterRangeLimits);
+      UNDO_STACK.push(doChangeText, undoChangeText, topNode, savedContents, savedRangeLimits, afterContents, afterRangeLimits);
     }
 
     function handleTextDeletion(range, topNode, usingBackspace) {
 
+      if (isTableNode(topNode)) {
+
+        topNode = getTableCell(range.startContainer);
+        if (!topNode) return;
+      }
       const savedContents = topNode.innerHTML;
       const savedRangeLimits = getRangeLimits(topNode, range);
       const delRangeLimits = { start: savedRangeLimits.start + (usingBackspace ?  - 1 : 0), end: savedRangeLimits.end + (usingBackspace ? 0 : 1) };
@@ -4925,7 +4959,7 @@
       window.getSelection().collapseToStart();
       const afterContents = topNode.innerHTML;
       const afterRangeLimits = getRangeLimits(topNode, range);
-      UNDO_STACK.push(doInsertText, undoInsertText, topNode.id, savedContents, savedRangeLimits, afterContents, afterRangeLimits);
+      UNDO_STACK.push(doChangeText, undoChangeText, topNode, savedContents, savedRangeLimits, afterContents, afterRangeLimits);
     }
 
     function handleMultiSelection(text) {
@@ -5053,6 +5087,40 @@
       return KEY === "COPY" || KEY === "CUT" || KEY === "PASTE" || ((KEY === "C" || KEY === "X" || KEY === "V") && (e.ctrlKey || e.metaKey));
     }
 
+    function isUndoEvent(e) {
+
+      const KEY = e.key.toUpperCase();
+
+      if (KEY === "UNDO") {
+        return true;
+      }
+
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && KEY === "Z") {
+        return true;
+      }
+
+      return false;
+    }
+
+    function isRedoEvent(e) {
+
+      const KEY = e.key.toUpperCase();
+
+      if (KEY === "REDO") {
+        return true;
+      }
+
+      if (e.ctrlKey && KEY === "Y") {
+        return true;
+      }
+
+      if (e.shiftKey && e.metaKey && KEY === "Z") {
+        return true;
+      }
+
+      return false;
+    }
+
     function isDelEvent(e) {
       return (e.key === "Delete" || e.key === "Del" || (e.key.toUpperCase() === "D" && e.ctrlKey));
     }
@@ -5091,14 +5159,14 @@
 
     function keydownHandler(e) {
 
-      if (e.key.toUpperCase() == "UNDO") {
+      if (isUndoEvent(e)) {
 
         UNDO_STACK.undo();
         cancelEvent(e);
         return;
       }
 
-      if (e.key.toUpperCase() == "REDO") {
+      if (isRedoEvent(e)) {
 
         UNDO_STACK.redo();
         cancelEvent(e);
@@ -5317,10 +5385,6 @@
         handleTextInsertion(keyText, range, topNode);
         cancelEvent(e);
         return;
-      }
-
-      if ((e.ctrlKey || e.metaKey) && (e.key === "z" || e.key === "y")) {
-        e.preventDefault();
       }
     }
 
