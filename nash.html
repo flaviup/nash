@@ -4214,21 +4214,22 @@
           if (positions.has(nodeInfo.node)) {
   
             const pos = positions.get(nodeInfo.node);
+
+            if (nodeInfo.node.nodeType === Node.TEXT_NODE || nodeInfo.nodeName === "BR") {
             
-            if ((nodeInfo.node.nodeType === Node.TEXT_NODE || nodeInfo.nodeName === "BR") &&
-                pos.start <= rangeLimits.start &&
-                rangeLimits.start <= pos.end) {
+              if (pos.start <= rangeLimits.start &&
+                  rangeLimits.start <= pos.end) {
 
-              startContainer = nodeInfo.node;
-              startOffset = rangeLimits.start - pos.start;
-            }
+                startContainer = nodeInfo.node;
+                startOffset = rangeLimits.start - pos.start;
+              }
 
-            if ((nodeInfo.node.nodeType === Node.TEXT_NODE || nodeInfo.nodeName === "BR") &&
-                pos.start <= rangeLimits.end &&
-                rangeLimits.end <= pos.end) {
+              if (pos.start <= rangeLimits.end &&
+                  rangeLimits.end <= pos.end) {
 
-                endContainer = nodeInfo.node;
-                endOffset = rangeLimits.end - pos.start;
+                  endContainer = nodeInfo.node;
+                  endOffset = rangeLimits.end - pos.start;
+              }
             }
           }
         }
