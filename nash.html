@@ -3500,8 +3500,8 @@
           });
 
           while (node.nextSibling &&
-                  node.nextSibling.nodeType !== Node.TEXT_NODE &&
-                  node.nextSibling.nodeType !== Node.ELEMENT_NODE)
+                 node.nextSibling.nodeType !== Node.TEXT_NODE &&
+                 node.nextSibling.nodeType !== Node.ELEMENT_NODE)
             node = node.nextSibling;
         }
         node = node.nextSibling ?? (elements.length > 0 ? elements.shift() : null);
@@ -4773,7 +4773,7 @@
       if (firstNode) {
 
         if (firstNode.innerHTML !== afterContents) firstNode.innerHTML = afterContents;
-        setRange(firstNode, newRangeLimits);
+        setRange(firstNode.classList?.contains("code-block") ? firstNode.querySelector("code") : firstNode, newRangeLimits);
       }
 
       if (newTextBlock) {
@@ -4861,10 +4861,56 @@
       if (range.startContainer.nodeType === Node.TEXT_NODE) {
 
         const textContent = range.startContainer.textContent;
+        const endRangeOffset = range.startOffset + text.length;
         range.startContainer.textContent = textContent.substring(0, range.startOffset) + text + textContent.substring(range.startOffset);
+        return { node: range.startContainer, offset: endRangeOffset };
       } else if (range.startContainer.nodeType === Node.ELEMENT_NODE) {
-        range.insertNode(document.createTextNode(text));
+
+        const textNode = document.createTextNode(text);
+        range.insertNode(textNode);
+        return { node: textNode, offset: text.length };
       }
+
+      return null;
+    }
+
+    function doInsertText(text, nodeId, _, _2, afterContents, afterRangeLimits) {
+
+      const node = nodeId ? document.getElementById(nodeId) : null;
+
+      if (node) {
+
+        if (node.innerHTML !== afterContents) node.innerHTML = afterContents;
+        setRange(node.classList?.contains("code-block") ? node.querySelector("code") : node, afterRangeLimits);
+      }
+    }
+
+    function undoInsertText(text, nodeId, savedContents, savedRangeLimits, _, _2) {
+
+      const node = nodeId ? document.getElementById(nodeId) : null;
+
+      if (node) {
+
+        if (node.innerHTML !== savedContents) node.innerHTML = savedContents;
+        setRange(node.classList?.contains("code-block") ? node.querySelector("code") : node, savedRangeLimits);
+      }
+    }
+
+    function handleTextInsertion(text, range, topNode) {
+
+      const savedContents = topNode.innerHTML;
+      const savedRangeLimits = getRangeLimits(topNode, range);
+      const insertion = insertTextInRange(text, range);
+
+      if (insertion) {
+
+        range.setStart(insertion.node, insertion.offset);
+        range.setEnd(insertion.node, insertion.offset);
+        window.getSelection().collapseToEnd();
+      }
+      const afterContents = topNode.innerHTML;
+      const afterRangeLimits = getRangeLimits(topNode, range);
+      UNDO_STACK.push(doInsertText, undoInsertText, text, topNode.id, savedContents, savedRangeLimits, afterContents, afterRangeLimits);
     }
 
     function handleMultiSelection(text) {
@@ -5048,8 +5094,10 @@
         return;
       }
       const keyText = key2Str(e);
+      const isDeleteKey = isDelEvent(e);
+      const isBackspaceKey = isBackspaceEvent(e);
 
-      if (!keyText && !isDelEvent(e) && !isBackspaceEvent(e)) {
+      if (!keyText && !isDeleteKey && !isBackspaceKey) {
         return;
       }
       let range = null;
@@ -5126,9 +5174,9 @@
         cancelEvent(e);
         return;
       }
-      let handleBackspace = false;
+      let handleDeleteAtBoundaries = false;
 
-      if (isDelEvent(e) && isCaretAtEnd(topNode, range)) {
+      if (isDeleteKey && isCaretAtEnd(topNode, range)) {
 
         const nextSibling = topNode.nextElementSibling;
 
@@ -5144,15 +5192,15 @@
 
             if (nextSiblingIsText || nextSiblingIsCode) {
 
-              handleBackspace = topNodeIsText && nextSiblingIsText;
+              handleDeleteAtBoundaries = topNodeIsText && nextSiblingIsText;
 
-              if (!handleBackspace) {
+              if (!handleDeleteAtBoundaries) {
 
                 const nextText = getNodeText(nextSibling);
-                handleBackspace = nextText === "\n" || nextText.length === 0;
+                handleDeleteAtBoundaries = nextText === "\n" || nextText.length === 0;
               }
 
-              if (handleBackspace) {
+              if (handleDeleteAtBoundaries) {
 
                 topNode = nextSibling;
                 range = setCaret(nextSiblingIsCode ? nextSibling.querySelector("code") : nextSibling, 0);
@@ -5170,10 +5218,10 @@
           }
         }
       } else {
-        handleBackspace = (isBackspaceEvent(e) && isCaretAtStart(topNode, range));
+        handleDeleteAtBoundaries = (isBackspaceKey && isCaretAtStart(topNode, range));
       }
 
-      if (handleBackspace) {
+      if (handleDeleteAtBoundaries) {
 
         // blocks moving of the current line in the code block into the previous sibling p node
         if (topNode.classList?.contains("code-block") && !(block?.previousSibling)) {
@@ -5235,7 +5283,19 @@
           UNDO_STACK.push(joinAdjacentTextBlocks, undoJoinAdjacentTextBlocks, topNode, topNode.nextElementSibling?.id, previousElementSibling.innerHTML, previousElementSibling.id);
 
           cancelEvent(e);
+          return;
         }
+      }
+
+      if (isDeleteKey) {
+
+      } else if (isBackspaceKey) {
+
+      } else if (keyText) {
+
+        handleTextInsertion(keyText, range, topNode);
+        cancelEvent(e);
+        return;
       }
 
       if ((e.ctrlKey || e.metaKey) && (e.key === "z" || e.key === "y")) {
@@ -5271,7 +5331,7 @@
           const pasteText = (e.clipboardData || window.clipboardData)?.getData("text");
 
           if (pasteText) {
-            insertTextInRange(pasteText, range);
+            handleTextInsertion(pasteText, range, topNode);
           }
         }
       } else {
