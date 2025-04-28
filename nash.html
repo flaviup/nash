@@ -4190,6 +4190,8 @@
 
     function setRange(node, rangeLimits) {
 
+      if (node.classList?.contains("code-block")) node = node.querySelector("code");
+
       const positions = getNodePositions(node);
       let startContainer = null;
       let startOffset = -1;
@@ -4773,7 +4775,7 @@
       if (firstNode) {
 
         if (firstNode.innerHTML !== afterContents) firstNode.innerHTML = afterContents;
-        setRange(firstNode.classList?.contains("code-block") ? firstNode.querySelector("code") : firstNode, newRangeLimits);
+        setRange(firstNode, newRangeLimits);
       }
 
       if (newTextBlock) {
@@ -4874,25 +4876,25 @@
       return null;
     }
 
-    function doInsertText(text, nodeId, _, _2, afterContents, afterRangeLimits) {
+    function doInsertText(nodeId, _, _2, afterContents, afterRangeLimits) {
 
       const node = nodeId ? document.getElementById(nodeId) : null;
 
       if (node) {
 
         if (node.innerHTML !== afterContents) node.innerHTML = afterContents;
-        setRange(node.classList?.contains("code-block") ? node.querySelector("code") : node, afterRangeLimits);
+        setRange(node, afterRangeLimits);
       }
     }
 
-    function undoInsertText(text, nodeId, savedContents, savedRangeLimits, _, _2) {
+    function undoInsertText(nodeId, savedContents, savedRangeLimits, _, _2) {
 
       const node = nodeId ? document.getElementById(nodeId) : null;
 
       if (node) {
 
         if (node.innerHTML !== savedContents) node.innerHTML = savedContents;
-        setRange(node.classList?.contains("code-block") ? node.querySelector("code") : node, savedRangeLimits);
+        setRange(node, savedRangeLimits);
       }
     }
 
@@ -4910,7 +4912,20 @@
       }
       const afterContents = topNode.innerHTML;
       const afterRangeLimits = getRangeLimits(topNode, range);
-      UNDO_STACK.push(doInsertText, undoInsertText, text, topNode.id, savedContents, savedRangeLimits, afterContents, afterRangeLimits);
+      UNDO_STACK.push(doInsertText, undoInsertText, topNode.id, savedContents, savedRangeLimits, afterContents, afterRangeLimits);
+    }
+
+    function handleTextDeletion(range, topNode, usingBackspace) {
+
+      const savedContents = topNode.innerHTML;
+      const savedRangeLimits = getRangeLimits(topNode, range);
+      const delRangeLimits = { start: savedRangeLimits.start + (usingBackspace ?  - 1 : 0), end: savedRangeLimits.end + (usingBackspace ? 0 : 1) };
+      const delRange = setRange(topNode, delRangeLimits);
+      delRange?.deleteContents();
+      window.getSelection().collapseToStart();
+      const afterContents = topNode.innerHTML;
+      const afterRangeLimits = getRangeLimits(topNode, range);
+      UNDO_STACK.push(doInsertText, undoInsertText, topNode.id, savedContents, savedRangeLimits, afterContents, afterRangeLimits);
     }
 
     function handleMultiSelection(text) {
@@ -5289,8 +5304,14 @@
 
       if (isDeleteKey) {
 
+        handleTextDeletion(range, topNode, false);
+        cancelEvent(e);
+        return;
       } else if (isBackspaceKey) {
 
+        handleTextDeletion(range, topNode, true);
+        cancelEvent(e);
+        return;
       } else if (keyText) {
 
         handleTextInsertion(keyText, range, topNode);
