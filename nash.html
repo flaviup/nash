@@ -3639,7 +3639,7 @@
 
       // determines which type of nodes are stylable (P or any direct child of TH or TD)
       function isSelectableNodeForStyling(node) {
-        return node && (node.nodeName === "P" || ["TH", "TD"].includes(node.parentNode?.nodeName));
+        return node && (node.nodeName === "P" || isTableCell(node.parentNode));
       }
 
       // Gets the list of text positions of all the nodes within the root container and within the specified range
@@ -3846,7 +3846,7 @@
 
       while (rootNode && rootNode !== rootContainer) {
 
-        if (["TH", "TD"].includes(rootNode.nodeName)) {
+        if (isTableCell(rootNode)) {
           rootContainer = rootNode.parentNode;
           break;
         }
@@ -4201,6 +4201,23 @@
 
         ++index;
         node = node.previousSibling;
+      }
+
+      return index;
+    }
+
+    // Helper: Gets the specified element index in the parent's same type elements list
+    function getSameTypeElementIndex(element) {
+
+      if (!element) return -1;
+
+      let index = 0;
+      let elType = element.nodeName;
+
+      while (element.previousElementSibling) {
+
+        if (element.previousElementSibling.nodeName === elType) ++index;
+        element = element.previousElementSibling;
       }
 
       return index;
@@ -4763,9 +4780,13 @@
       return true;
     }
 
+    function isTableCell(node) {
+      return node && (node.nodeName === "TH" || node.nodeName === "TD");
+    }
+
     // Determines if the node is a node that contains text that can be edited
     function isEditableTextNode(node) {
-      return node && (node.classList?.contains("text-block") || node.classList?.contains("code-block") || ["TH", "TD"].includes(node.parentNode?.nodeName));
+      return node && (node.classList?.contains("text-block") || node.classList?.contains("code-block") || isTableCell(node));
     }
 
     function isTableNode(node) {
@@ -4776,7 +4797,7 @@
 
       while (node) {
 
-        if (node.nodeName === "TH" || node.nodeName === "TD") return node;
+        if (isTableCell(node)) return node;
         if (node.parentNode === editor) return null;
         node = node.parentNode;
       }
@@ -4868,12 +4889,50 @@
       return selPositions;
     }
 
+    function makeNodeId(node) {
+
+      if (isTableCell(node)) {
+
+        let child = node;
+        let tr = null;
+
+        while (child && !isTableNode(child.parentNode)) {
+
+          child = child.parentNode;
+
+          if (child.nodeName === "TR") tr = child;
+        }
+
+        if (child?.parentNode) {
+
+          const table = child.parentNode;
+          let tid = table.id;
+          let trIdx = tr ? (getSameTypeElementIndex(tr) + 1) : null;
+
+          if (trIdx) {
+
+            let cellIdx = getSameTypeElementIndex(node) + 1;
+            return `#${tid} tr:nth-of-type(${trIdx}) ${node.nodeName.toLowerCase()}:nth-of-type(${cellIdx})`;
+          }
+        }
+
+        return null;
+      }
+
+      return node?.id;
+    }
+
+    function getNodeFromId(nodeId) {
+
+      return nodeId ? (nodeId.includes(" ") ? document.querySelector(nodeId) : document.getElementById(nodeId)) : null;
+    }
+
     function replaceSelectedContent(firstNodeId, removeNodes, nextElementSiblingId, _, afterContents, newTextBlock, _2, newRangeLimits) {
 
       for (let node of removeNodes) {
         editorRemoveChild(node);
       }
-      const firstNode = firstNodeId ? document.getElementById(firstNodeId) : null;
+      const firstNode = getNodeFromId(firstNodeId);
 
       if (firstNode) {
 
@@ -4893,8 +4952,7 @@
       if (newTextBlock) {
         editorRemoveChild(newTextBlock);
       }
-
-      const firstNode = firstNodeId ? document.getElementById(firstNodeId) : null;
+      const firstNode = getNodeFromId(firstNodeId);
 
       if (firstNode && firstNode.innerHTML !== savedContents) {
         firstNode.innerHTML = savedContents;
@@ -4906,6 +4964,9 @@
         editorInsertBefore(removeNodes[i], nextSiblingId);
         nextSiblingId = removeNodes[i].id;
       }
+
+      // set the selection range
+
       let startContainer = null;
       let startOffset = 0;
       let endOffset = 0;
@@ -5117,7 +5178,7 @@
 
         while (rootNode && rootNode !== rootContainer) {
 
-          if (["TH", "TD"].includes(rootNode.nodeName)) {
+          if (isTableCell(rootNode)) {
             rootContainer = rootNode.parentNode;
             break;
           }
@@ -5141,7 +5202,7 @@
             if (isEditableTextNode(firstNode)) {
 
               savedContents = firstNode.innerHTML;
-              firstNodeId = firstNode.id;
+              firstNodeId = makeNodeId(firstNode);
               selection.deleteFromDocument();
               if (text) insertTextInRange(text, range);
               selection.collapseToEnd();
@@ -5178,7 +5239,7 @@
             if (isEditableTextNode(firstNode)) {
 
               savedContents = firstNode.innerHTML;
-              firstNodeId = firstNode.id;
+              firstNodeId = makeNodeId(firstNode);
               const insertionNode = firstNode.classList?.contains("code-block") ? firstNode.querySelector("code"): firstNode;
 
               range.setEndAfter(insertionNode.lastChild || insertionNode);
@@ -5554,7 +5615,7 @@
 
         const topNode = getTopLevelNodeOfCurrentPosition(range);
 
-        if (isEditableTextNode(topNode)) {
+        if (isEditableTextNode(topNode) || isTableNode(topNode)) {
 
           const pasteText = (e.clipboardData || window.clipboardData)?.getData("text");
 
@@ -5571,12 +5632,14 @@
     }
 
     function clickHandler(e) {
+
       const target = e.target.closest("a");
       if (!target || !document.getElementById("editorContainer").contains(target)) return;
 
       e.preventDefault();
 
       const userConfirmed = confirm(`"${target.href}" open this url?`);
+
       if (userConfirmed) {
         window.open(target.href, "_blank");
       }
