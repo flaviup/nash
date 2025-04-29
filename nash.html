@@ -2624,6 +2624,28 @@
       audioRecordingInserter.insert(lastValidSelectionRange);
     }
 
+    function setMathExpression(nodeId, expression) {
+
+      const node = document.getElementById(nodeId);
+      const mathNode = node?.querySelector("math");
+
+      if (mathNode) {
+
+        node.setAttribute("data-math", expression);
+        mathup(expression, { bare: true }).updateDOM(mathNode);
+      }
+    }
+
+    function doMathExpression(nodeId, newExpression, _) {
+
+      setMathExpression(nodeId, newExpression);
+    }
+
+    function undoMathExpression(nodeId, _, oldExpression) {
+
+      setMathExpression(nodeId, oldExpression);
+    }
+
     function onMathClick(e) {
 
       let node = e.target;
@@ -2639,27 +2661,7 @@
 
       if (!newExpression || currentExpression === newExpression) return false;
 
-      UNDO_STACK.push((nodeId, newExpression, _) => {
-
-        const node = document.getElementById(nodeId);
-
-        if (!node) return;
-
-        node.setAttribute("data-math", newExpression);
-        const mathNode = node.querySelector("math");
-
-        if (mathNode) mathup(newExpression, { bare: true }).updateDOM(mathNode);
-      }, (nodeId, _, oldExpression) => {
-
-        const node = document.getElementById(nodeId);
-
-        if (!node) return;
-
-        node.setAttribute("data-math", oldExpression);
-        const mathNode = node.querySelector("math");
-
-        if (mathNode) mathup(oldExpression, { bare: true }).updateDOM(mathNode);
-      }, node.id, newExpression, currentExpression);
+      UNDO_STACK.push(doMathExpression, undoMathExpression, node.id, newExpression, currentExpression);
 
       return true;
     }
