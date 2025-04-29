@@ -3727,7 +3727,7 @@
       // Creates the HTML node with the specified text and styles, having the specified parent
       function createHtmlNode(parentNode, text, styleBitPattern, start, end) {
 
-        text = text.replace(/\t/, "&nbsp;"); // "&emsp;" "&ensp;"
+        text = text.replace(/[\t ]/g, "\u00A0"); // "&emsp;" "&ensp;"
         let nodeStart = null, nodeEnd = null, startOffset = 0, endOffset = 0;
 
         function callback(startNode, endNode, offsetStart, offsetEnd) {
@@ -4963,7 +4963,7 @@
 
     function insertTextInRange(text, range) {
 
-      //text = text.replace(/ /, "&nbsp;"); // "&emsp;" "&ensp;"
+      text = text.replace(/[\t ]/g, "\u00A0");
 
       if (range.startContainer.nodeType === Node.TEXT_NODE) {
 
@@ -4971,9 +4971,10 @@
 
         if (textElements.length === 1) {
 
-          const textContent = range.startContainer.textContent;
+          let textContent = range.startContainer.textContent;
           const endRangeOffset = range.startOffset + text.length;
-          range.startContainer.textContent = textContent.substring(0, range.startOffset) + text + textContent.substring(range.startOffset);
+          textContent = textContent.substring(0, range.startOffset) + text + textContent.substring(range.startOffset);
+          range.startContainer.textContent = textContent;
 
           return { node: range.startContainer, offset: endRangeOffset };
         } else if (textElements.length > 1) {
@@ -4982,7 +4983,7 @@
           const textContent = range.startContainer.textContent;
           const startContent = textContent.substring(0, range.startOffset);
           const endContent = textContent.substring(range.startOffset);
-          let nextSibling = range.startContainer.nextSibling;
+          const nextSibling = range.startContainer.nextSibling;
 
           range.startContainer.textContent = startContent + getNodeText(textElements[0]);
 
@@ -4990,9 +4991,10 @@
             parentNode.insertBefore(textElements[i], nextSibling);
           }
           const lastNode = textElements[textElements.length - 1];
-          lastNode.textContent = lastNode.textContent + endContent;
+          const lastText = getNodeText(lastNode);
+          lastNode.textContent = lastText + endContent;
 
-          return { node: lastNode, offset: getNodeText(lastNode).length };
+          return { node: lastNode, offset: lastText.length };
         }
       } else if (range.startContainer.nodeType === Node.ELEMENT_NODE) {
 
