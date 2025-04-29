@@ -4258,6 +4258,7 @@
         const nodeInfo = nodes.pop();
 
         if (nodeInfo.visit < 1 && nodeInfo.node.hasChildNodes) {
+
           nodeInfo.visit++;
           nodes.push(nodeInfo);
           nodes.push(...[...nodeInfo.node.childNodes].map((node) => { return { node: node, visit: 0 }; }));
@@ -4292,7 +4293,7 @@
                 if (nodeInfo.node.nodeName === "BR") {
 
                   endContainer = nodeInfo.node.parentNode;
-                  endOffset = getChildNodeIndex(nodeInfo.node) + 1;
+                  endOffset = getChildNodeIndex(nodeInfo.node) + (pos.start === rangeLimits.end ? 0 : 1);
                 } else {
 
                   endContainer = nodeInfo.node;
@@ -4413,7 +4414,7 @@
       }
       const afterBlockContents = block.innerHTML;
 
-      UNDO_STACK.push(doSplitBlock, undoSplitBlock, newBlock, block.id, afterBlockContents, savedBlockContents, savedRangeLimits);
+      if (savedBlockContents !== afterBlockContents) UNDO_STACK.push(doSplitBlock, undoSplitBlock, newBlock, block.id, afterBlockContents, savedBlockContents, savedRangeLimits);
     }
 
     // Normalizes stray text nodes and nested blocks.
@@ -4553,7 +4554,7 @@
           }
           const afterContents = block.innerHTML;
           const afterRangeLimits = newRange ? getRangeLimits(block, newRange) : savedRangeLimits;
-          UNDO_STACK.push(doChangeText, undoChangeText, block, savedContents, savedRangeLimits, afterContents, afterRangeLimits);
+          if (savedContents !== afterContents) UNDO_STACK.push(doChangeText, undoChangeText, block, savedContents, savedRangeLimits, afterContents, afterRangeLimits);
 
           return true;
         }
@@ -4994,6 +4995,26 @@
       }
     }
 
+    function sanitizeEditableTextNode(node) {
+
+      const contentNode = node.classList?.contains("code-block") ? node.querySelector("code") : node;
+
+      if (getNodeText(contentNode)) {
+
+        const emptyChildren = [];
+        let child = contentNode.firstChild;
+
+        while (child) {
+
+          if (!getNodeText(child)) emptyChildren.push(child);
+          child = child.nextSibling;
+        }
+        emptyChildren.forEach((node) => node.remove());
+      } else {
+        contentNode.innerHTML = "<br/>";
+      }
+    }
+
     function handleTextInsertion(text, range, topNode) {
 
       if (isTableNode(topNode)) {
@@ -5011,10 +5032,11 @@
         range.setEnd(insertion.node, insertion.offset);
         window.getSelection().collapseToEnd();
       }
-      if (!topNode.innerHTML) topNode.innerHTML = "<br/>";
+      sanitizeEditableTextNode(topNode);
       const afterContents = topNode.innerHTML;
       const afterRangeLimits = getRangeLimits(topNode, range);
-      UNDO_STACK.push(doChangeText, undoChangeText, topNode, savedContents, savedRangeLimits, afterContents, afterRangeLimits);
+
+      if (savedContents !== afterContents) UNDO_STACK.push(doChangeText, undoChangeText, topNode, savedContents, savedRangeLimits, afterContents, afterRangeLimits);
     }
 
     function handleTextDeletion(range, topNode, usingBackspace) {
@@ -5033,10 +5055,12 @@
 
         delRange.deleteContents();
         window.getSelection().collapseToStart();
-        if (!topNode.innerHTML) topNode.innerHTML = "<br/>";
+
+        sanitizeEditableTextNode(topNode);
         const afterContents = topNode.innerHTML;
-        const afterRangeLimits = getRangeLimits(topNode, range);
-        UNDO_STACK.push(doChangeText, undoChangeText, topNode, savedContents, savedRangeLimits, afterContents, afterRangeLimits);
+        const afterRangeLimits = getRangeLimits(topNode, delRange);
+
+        if (savedContents !== afterContents) UNDO_STACK.push(doChangeText, undoChangeText, topNode, savedContents, savedRangeLimits, afterContents, afterRangeLimits);
       }
     }
 
@@ -5137,7 +5161,7 @@
               removeNodes.shift();
             }
           }
-          if (!firstNode.innerHTML) firstNode.innerHTML = "<br/>";
+          sanitizeEditableTextNode(firstNode);
           const afterContents = firstNodeId ? firstNode.innerHTML : null;
           const newTextBlock = firstNodeId ? null : document.createElement("p");
 
@@ -5151,7 +5175,11 @@
             if (!getNodeText(newTextBlock)) newTextBlock.appendChild(document.createElement("br"));
           }
           const newRangeLimits = { start: newCaretPosition, end: newCaretPosition };
-          UNDO_STACK.push(replaceSelectedContent, undoReplaceSelectedContent, firstNodeId, removeNodes, selections[selections.length - 1].node.nextElementSibling?.id, savedContents, afterContents, newTextBlock, oldRangeLimits, newRangeLimits);
+
+          if (savedContents !== afterContents || newTextBlock)
+            UNDO_STACK.push(replaceSelectedContent, undoReplaceSelectedContent, firstNodeId, removeNodes,
+                            selections[selections.length - 1].node.nextElementSibling?.id, savedContents,
+                            afterContents, newTextBlock, oldRangeLimits, newRangeLimits);
         }
 
         return true;
