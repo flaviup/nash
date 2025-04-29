@@ -3525,6 +3525,46 @@
       return positions;
     }
 
+    // Creates HTML text elements and BR elements from the specified text
+    function createHtmlElementsFromText(text, start, end, callback) {
+
+      const elements = text.split("\n");
+
+      for (let i = 0; i < elements.length; i++) {
+        elements[i] = document.createTextNode(elements[i]);
+      }
+
+      for (let i = elements.length - 1; i > 0; i--) {
+        elements.splice(i, 0, document.createElement("br"));
+      }
+
+      if (start > -1 || end > -1) {
+
+        let length = 0;
+        let startNode = null, endNode = null, offsetStart = 0, offsetEnd = 0;
+
+        for (let i = 0; i < elements.length; i++) {
+
+          const currElementLength = ((elements[i].nodeName === "BR") ? 1 : elements[i].textContent.length);
+
+          if (length <= start && start < length + currElementLength) {
+            startNode = elements[i];
+            offsetStart = start - length;
+          }
+
+          if (length < end && end <= length + currElementLength) {
+            endNode = elements[i];
+            offsetEnd = end - length;
+          }
+
+          length += currElementLength;
+        }
+        callback(startNode, endNode, offsetStart, offsetEnd);
+      }
+      
+      return elements;
+    }
+
     // The core function that does the styling
     // using binary indexed trees
     function wrapRangeText(range, styleIndex) {
@@ -3674,46 +3714,6 @@
         }
 
         return selPositions;
-      }
-
-      // Creates HTML text elements and BR elements from the specified text
-      function createHtmlElementsFromText(text, start, end, callback) {
-
-        const elements = text.split("\n");
-
-        for (let i = 0; i < elements.length; i++) {
-          elements[i] = document.createTextNode(elements[i]);
-        }
-
-        for (let i = elements.length - 1; i > 0; i--) {
-          elements.splice(i, 0, document.createElement("br"));
-        }
-
-        if (start > -1 || end > -1) {
-
-          let length = 0;
-          let startNode = null, endNode = null, offsetStart = 0, offsetEnd = 0;
-
-          for (let i = 0; i < elements.length; i++) {
-
-            const currElementLength = ((elements[i].nodeName === "BR") ? 1 : elements[i].textContent.length);
-
-            if (length <= start && start < length + currElementLength) {
-              startNode = elements[i];
-              offsetStart = start - length;
-            }
-
-            if (length < end && end <= length + currElementLength) {
-              endNode = elements[i];
-              offsetEnd = end - length;
-            }
-
-            length += currElementLength;
-          }
-          callback(startNode, endNode, offsetStart, offsetEnd);
-        }
-        
-        return elements;
       }
 
       // Applies CSS style to the element
@@ -4963,17 +4963,49 @@
 
     function insertTextInRange(text, range) {
 
+      //text = text.replace(/ /, "&nbsp;"); // "&emsp;" "&ensp;"
+
       if (range.startContainer.nodeType === Node.TEXT_NODE) {
 
-        const textContent = range.startContainer.textContent;
-        const endRangeOffset = range.startOffset + text.length;
-        range.startContainer.textContent = textContent.substring(0, range.startOffset) + text + textContent.substring(range.startOffset);
-        return { node: range.startContainer, offset: endRangeOffset };
+        const textElements = createHtmlElementsFromText(text, -1, -1, null);
+
+        if (textElements.length === 1) {
+
+          const textContent = range.startContainer.textContent;
+          const endRangeOffset = range.startOffset + text.length;
+          range.startContainer.textContent = textContent.substring(0, range.startOffset) + text + textContent.substring(range.startOffset);
+
+          return { node: range.startContainer, offset: endRangeOffset };
+        } else if (textElements.length > 1) {
+
+          const parentNode = range.startContainer.parentNode;
+          const textContent = range.startContainer.textContent;
+          const startContent = textContent.substring(0, range.startOffset);
+          const endContent = textContent.substring(range.startOffset);
+          let nextSibling = range.startContainer.nextSibling;
+
+          range.startContainer.textContent = startContent + getNodeText(textElements[0]);
+
+          for (let i = 1; i < textElements.length; ++i) {
+            parentNode.insertBefore(textElements[i], nextSibling);
+          }
+          const lastNode = textElements[textElements.length - 1];
+          lastNode.textContent = lastNode.textContent + endContent;
+
+          return { node: lastNode, offset: getNodeText(lastNode).length };
+        }
       } else if (range.startContainer.nodeType === Node.ELEMENT_NODE) {
 
-        const textNode = document.createTextNode(text);
-        range.insertNode(textNode);
-        return { node: textNode, offset: text.length };
+        const textElements = createHtmlElementsFromText(text, -1, -1, null);
+
+        if (textElements.length > 0) {
+
+          textElements.reverse();
+          textElements.forEach((textElement) => range.insertNode(textElement));
+          const lastNode = textElements[0];
+
+          return { node: lastNode, offset: getNodeText(lastNode).length };
+        }
       }
 
       return null;
@@ -5171,7 +5203,7 @@
 
             newTextBlock.setAttribute("id", `text${generateUId()}`);
             newTextBlock.setAttribute("class", "text-block");
-            newTextBlock.textContent = text;
+            newTextBlock.append(...createHtmlElementsFromText(text, -1, -1, null));
             if (lastContent) newTextBlock.append(lastContent);
 
             if (!getNodeText(newTextBlock)) newTextBlock.appendChild(document.createElement("br"));
