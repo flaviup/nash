@@ -4945,7 +4945,7 @@
       if (newTextBlock) {
 
         editorInsertBefore(newTextBlock, nextElementSiblingId);
-        setCaretAtEnd(newTextBlock);
+        setRange(newTextBlock, newRangeLimits);
       }
     }
 
@@ -5024,15 +5024,20 @@
       }
     }
 
+    function htmlTextToChildNodesArray(text) {
+
+      const template = document.createElement("template");
+      template.innerHTML = text.trim();
+      return [...template.content.childNodes].filter((node) => node.nodeName !== "META");
+    }
+
     function insertTextInRange(text, range, isHtml = false) {
 
       let htmlNodes = null;
 
       if (isHtml) {
 
-        const template = document.createElement('template');
-        template.innerHTML = text.trim();
-        htmlNodes = [...template.content.childNodes].filter((node) => node.nodeName !== "META");
+        htmlNodes = (text instanceof Array) ? text : htmlTextToChildNodesArray(text);
         text = "";
       } else {
         text = text.replace(/[\t ]/g, "\u00A0");
@@ -5271,9 +5276,10 @@
           let savedContents = null;
           let firstNodeId = null;
           let lastContent = null;
-          let newCaretPosition = selections[0].start + text.length;
+          let newCaretPosition = selections[0].start;
           const oldRangeLimits = { start: selections[0].start, end: selections[selections.length - 1].end };
           const firstNode = selections[0].node;
+
 
           if (selections.length === 1) {
 
@@ -5282,8 +5288,21 @@
               savedContents = firstNode.innerHTML;
               firstNodeId = makeNodeId(firstNode);
               selection.deleteFromDocument();
-              if (text) insertTextInRange(text, range, isHtml);
+
+              if (text) {
+
+                const insertion = insertTextInRange(text, range, isHtml);
+
+                if (insertion) {
+
+                  range.setStart(insertion.node, insertion.offset);
+                  range.setEnd(insertion.node, insertion.offset);
+                }
+              }
               selection.collapseToEnd();
+              sanitizeEditableTextNode(firstNode);
+              const afterRangeLimits = getRangeLimits(firstNode, range);
+              newCaretPosition = afterRangeLimits.end;
             } else if (editor.firstChild !== firstNode) {
               removeNodes = [firstNode];
             }
@@ -5322,13 +5341,26 @@
 
               range.setEndAfter(insertionNode.lastChild || insertionNode);
               range.deleteContents();
-              if (text) insertTextInRange(text, range, isHtml);
+
+              if (text) {
+
+                const insertion = insertTextInRange(text, range, isHtml);
+
+                if (insertion) {
+
+                  range.setStart(insertion.node, insertion.offset);
+                  range.setEnd(insertion.node, insertion.offset);
+                }
+              }
               selection.collapseToEnd();
+              sanitizeEditableTextNode(firstNode);
+              const afterRangeLimits = getRangeLimits(firstNode, range);
+              newCaretPosition = afterRangeLimits.end;
 
               if (lastContent) {
 
                 insertionNode.append(lastContent);
-                newCaretPosition += getNodeText(lastContent).length;
+                sanitizeEditableTextNode(firstNode);
               }
 
               removeNodes.shift();
@@ -5336,7 +5368,8 @@
               removeNodes.shift();
             }
           }
-          sanitizeEditableTextNode(firstNode);
+
+          if (!firstNodeId) sanitizeEditableTextNode(firstNode);
           const afterContents = firstNodeId ? firstNode.innerHTML : null;
           const newTextBlock = firstNodeId ? null : document.createElement("p");
 
@@ -5344,7 +5377,9 @@
 
             newTextBlock.setAttribute("id", `text${generateUId()}`);
             newTextBlock.setAttribute("class", "text-block");
-            newTextBlock.append(...createHtmlElementsFromText(text, -1, -1, null));
+            newTextBlock.append(...(isHtml ? htmlTextToChildNodesArray(text) : createHtmlElementsFromText(text, -1, -1, null)));
+            const txt = getNodeText(newTextBlock);
+            newCaretPosition = txt.length;
             if (lastContent) newTextBlock.append(lastContent);
 
             if (!getNodeText(newTextBlock)) newTextBlock.appendChild(document.createElement("br"));
@@ -5700,9 +5735,9 @@
       let retNode = null;
       let leafNode = null;
 
-      function cloneNode(node) {
+      function cloneNode(node, range) {
 
-        const clonedNode = node.nodeType === Node.TEXT_NODE ? document.createTextNode(node.textContent) : document.createElement(node.nodeName.toLowerCase());
+        const clonedNode = node.nodeType === Node.TEXT_NODE ? document.createTextNode(node.textContent.substring(range.startOffset, range.endOffset)) : document.createElement(node.nodeName.toLowerCase());
 
         if (node.nodeType === Node.ELEMENT_NODE) {
 
@@ -5731,7 +5766,7 @@
           retNode = retNode || docFrag;
           leafNode = leafNode || retNode;
 
-          if (leafNode.nodeType === Node.ELEMENT_NODE) {
+          if (leafNode.nodeType !== Node.TEXT_NODE) {
 
             const extractRange = range.cloneRange();
             const contents = extractRange.cloneContents();
@@ -5740,10 +5775,10 @@
 
           if (retNode !== docFrag) docFrag.append(retNode);
 
-          return docFrag;
+          return docFrag.querySelector(STYLE_TAGS.join(", ")) ? docFrag : null; // return only contents that have style nodes
         } else if (!node.id && node.parentNode && node.parentNode !== editor && node.parentNode.nodeName !== "CODE") {
 
-          const clonedNode = cloneNode(node);
+          const clonedNode = cloneNode(node, range);
 
           if (retNode) clonedNode.append(retNode);
 
@@ -5768,7 +5803,7 @@
       return container.innerHTML;
     }
 
-    function handleCut(e) {
+    function handleCutCopy(e, cut) {
 
       let range = null;
       const selection = window.getSelection();
@@ -5800,8 +5835,16 @@
       } else {
         (e.clipboardData || window.clipboardData)?.setData("text/plain", selection.toString());
       }
-      handleMultiSelection("");
+      if (cut) handleMultiSelection("");
       e.preventDefault();
+    }
+
+    function handleCut(e) {
+      handleCutCopy(e, true);
+    }
+
+    function handleCopy(e) {
+      handleCutCopy(e, false);
     }
 
     function handlePaste(e) {
@@ -5913,6 +5956,7 @@
     editor.addEventListener("input", cleanEditor);
     editor.addEventListener("focus", cleanEditor);
     editor.addEventListener("cut", handleCut);
+    editor.addEventListener("copy", handleCopy);
     editor.addEventListener("paste", handlePaste);
 
     filename.addEventListener("input", updateTitle);
