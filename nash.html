@@ -3863,7 +3863,7 @@
       styleBitPattern.set(styleIndex); // the bit pattern of the style we want to apply over the selected text
 
       // for each root container's direct selected child we get the current styling (getStyledPositions)
-      for (const p of selPositions) {
+      for (let p of selPositions) {
 
         const styled = getStyledPositions(p.positions, STYLES, p.positions.get(p.node).end);
 
@@ -5031,14 +5031,41 @@
       return [...template.content.childNodes].filter((node) => node.nodeName !== "META");
     }
 
+    function htmlTextToPlainText(html) {
+
+      const divNode = document.createElement("div");
+      divNode.innerHTML = html;
+
+      return getNodeText(divNode);
+    }
+
     function insertTextInRange(text, range, isHtml = false) {
 
       let htmlNodes = null;
 
       if (isHtml) {
 
-        htmlNodes = (text instanceof Array) ? text : htmlTextToChildNodesArray(text);
-        text = "";
+        let transformToPlainText = false;
+        let p = range.startContainer;
+
+        while (p && p !== editor) {
+
+          if (p.nodeName === "CODE") { // inserting html in code blocks is not allowed
+            transformToPlainText = true;
+            break;
+          }
+          p = p.parentNode;
+        }
+
+        if (transformToPlainText) {
+
+          text = htmlTextToPlainText(text);
+          isHtml = false;
+        } else {
+
+          htmlNodes = htmlTextToChildNodesArray(text);
+          text = "";
+        }
       } else {
         text = text.replace(/[\t ]/g, "\u00A0");
       }
@@ -5211,6 +5238,8 @@
         range.setStart(insertion.node, insertion.offset);
         range.setEnd(insertion.node, insertion.offset);
         window.getSelection().collapseToEnd();
+      } else {
+        return;
       }
       sanitizeEditableTextNode(topNode);
       const afterContents = topNode.innerHTML;
@@ -5297,6 +5326,8 @@
 
                   range.setStart(insertion.node, insertion.offset);
                   range.setEnd(insertion.node, insertion.offset);
+                } else {
+                  return true;
                 }
               }
               selection.collapseToEnd();
@@ -5350,6 +5381,8 @@
 
                   range.setStart(insertion.node, insertion.offset);
                   range.setEnd(insertion.node, insertion.offset);
+                } else {
+                  return true;
                 }
               }
               selection.collapseToEnd();
@@ -5708,19 +5741,26 @@
     function getStyledContent(selectedFragment) {
 
       const docFrag = document.createDocumentFragment();
-      let firstChildAdded = false;
+      const childNodes = [...selectedFragment.childNodes];
 
-      for (let child of selectedFragment.childNodes) {
+      for (let child of childNodes) {
 
-        if (child.nodeName === "BR" || child.nodeType === Node.TEXT_NODE) {
-
+        if (child.nodeName === "BR") {
           docFrag.append(child);
-          firstChildAdded = true;
+        } else if (child.nodeType === Node.TEXT_NODE) {
+
+          if (child.textContent) {
+
+            if (child.textContent === "\n") {
+              docFrag.append(document.createElement("br"));
+            } else {
+              docFrag.append(child);
+            }
+          }
         } else if (isEditableTextNode(child)) {
 
-          if (firstChildAdded) docFrag.append(document.createElement("br"));
-          docFrag.append(...(child.classList?.contains("code-block") ? child.querySelector("code") : child).childNodes);
-          firstChildAdded = true;
+          const ch = (child.classList?.contains("code-block") ? child.querySelector("code") : child).childNodes;
+          docFrag.append(...ch);
         } else {
           return null;
         }
