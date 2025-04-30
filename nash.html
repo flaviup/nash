@@ -1828,6 +1828,8 @@
 
     editor.UNDO_STACK = UNDO_STACK;
 
+    const STYLE_TAGS = ["span", "strong", "em", "u", "s", "a"];
+
     const STYLES = [
       { tagName: "span", style: { "color": "var(--note-text-color-1)" }, attributes: null },
       { tagName: "span", style: { "color": "var(--note-text-color-2)" }, attributes: null },
@@ -2829,7 +2831,7 @@
           book.loaded.navigation.then(function (toc) {
 
             divNode.classList.remove("epub-loading");
-            const docfrag = document.createDocumentFragment();
+            const docFrag = document.createDocumentFragment();
 
             toc.forEach(function (chapter) {
 
@@ -2837,9 +2839,9 @@
               option.textContent = chapter.label;
               option.setAttribute("ref", chapter.href);
 
-              docfrag.appendChild(option);
+              docFrag.appendChild(option);
             });
-            selectToc.appendChild(docfrag);
+            selectToc.appendChild(docFrag);
             selectToc.onchange = function () {
 
               const index = selectToc.selectedIndex,
@@ -5022,52 +5024,128 @@
       }
     }
 
-    function insertTextInRange(text, range) {
+    function insertTextInRange(text, range, isHtml = false) {
 
-      text = text.replace(/[\t ]/g, "\u00A0");
+      let htmlNodes = null;
+
+      if (isHtml) {
+
+        const template = document.createElement('template');
+        template.innerHTML = text.trim();
+        htmlNodes = [...template.content.childNodes].filter((node) => node.nodeName !== "META");
+        text = "";
+      } else {
+        text = text.replace(/[\t ]/g, "\u00A0");
+      }
+
+      function getOffsetAtEnd(node) {
+
+        if (node.nodeType === Node.TEXT_NODE) {
+
+          return getNodeText(node).length;
+        } else if (node.nodeType === Node.ELEMENT_NODE) {
+
+          if (node.nodeName === "BR") return 1;
+
+          return node.childNodes.length;
+        }
+
+        return 0;
+      }
 
       if (range.startContainer.nodeType === Node.TEXT_NODE) {
 
-        const textElements = createHtmlElementsFromText(text, -1, -1, null);
+        const nodes = htmlNodes ?? createHtmlElementsFromText(text, -1, -1, null);
+        let textContent = range.startContainer.textContent;
 
-        if (textElements.length === 1) {
+        if (nodes.length === 1) {
 
-          let textContent = range.startContainer.textContent;
-          const endRangeOffset = range.startOffset + text.length;
-          textContent = textContent.substring(0, range.startOffset) + text + textContent.substring(range.startOffset);
-          range.startContainer.textContent = textContent;
+          if (nodes[0].nodeType === Node.TEXT_NODE) {
 
-          return { node: range.startContainer, offset: endRangeOffset };
-        } else if (textElements.length > 1) {
+            text = getNodeText(nodes[0]);
+            const endRangeOffset = range.startOffset + text.length;
+            textContent = textContent.substring(0, range.startOffset) + text + textContent.substring(range.startOffset);
+            if (textContent !== range.startContainer.textContent) range.startContainer.textContent = textContent;
+
+            return { node: range.startContainer, offset: endRangeOffset };
+          } else if (nodes[0].nodeType === Node.ELEMENT_NODE) {
+
+            const parentNode = range.startContainer.parentNode;
+            const startContent = textContent.substring(0, range.startOffset);
+            const endContent = textContent.substring(range.startOffset);
+            const nextSibling = range.startContainer.nextSibling;
+
+            if (startContent !== range.startContainer.textContent) range.startContainer.textContent = startContent;
+            parentNode.insertBefore(nodes[0], nextSibling);
+
+            if (endContent) {
+              parentNode.insertBefore(document.createTextNode(endContent), nextSibling);
+            }
+
+            return { node: nodes[0], offset: getOffsetAtEnd(nodes[0]) };
+          }
+        } else if (nodes.length > 1) {
 
           const parentNode = range.startContainer.parentNode;
-          const textContent = range.startContainer.textContent;
           const startContent = textContent.substring(0, range.startOffset);
           const endContent = textContent.substring(range.startOffset);
           const nextSibling = range.startContainer.nextSibling;
 
-          range.startContainer.textContent = startContent + getNodeText(textElements[0]);
+          textContent = startContent;
+          let i = 0;
 
-          for (let i = 1; i < textElements.length; ++i) {
-            parentNode.insertBefore(textElements[i], nextSibling);
+          while (i < nodes.length && nodes[i].nodeType === Node.TEXT_NODE) {
+
+            textContent += getNodeText(nodes[i]);
+            ++i;
           }
-          const lastNode = textElements[textElements.length - 1];
-          const lastText = getNodeText(lastNode);
-          lastNode.textContent = lastText + endContent;
 
-          return { node: lastNode, offset: lastText.length };
+          for (let j = i; j < nodes.length; ++j) {
+            parentNode.insertBefore(nodes[j], nextSibling);
+          }
+
+          if (i < nodes.length) {
+
+            if (textContent !== range.startContainer.textContent) range.startContainer.textContent = textContent;
+
+            const lastNode = nodes[nodes.length - 1];
+
+            if (lastNode.nodeType === Node.TEXT_NODE) {
+
+              let lastText = getNodeText(lastNode);
+              const offset = lastText.length;
+              lastText += endContent;
+
+              if (lastText !== lastNode.textContent) lastNode.textContent = lastText;
+
+              return { node: lastNode, offset: offset };
+            } else if (endContent) {
+
+              parentNode.insertBefore(document.createTextNode(endContent), nextSibling);
+            }
+
+            return { node: lastNode, offset: getOffsetAtEnd(lastNode) };
+          } else {
+
+            const offset = textContent.length;
+            textContent += endContent;
+
+            if (textContent !== range.startContainer.textContent) range.startContainer.textContent = textContent;
+
+            return { node: range.startContainer, offset: offset };
+          }
         }
       } else if (range.startContainer.nodeType === Node.ELEMENT_NODE) {
 
-        const textElements = createHtmlElementsFromText(text, -1, -1, null);
+        const nodes = htmlNodes ?? createHtmlElementsFromText(text, -1, -1, null);
 
-        if (textElements.length > 0) {
+        if (nodes.length > 0) {
 
-          textElements.reverse();
-          textElements.forEach((textElement) => range.insertNode(textElement));
-          const lastNode = textElements[0];
+          nodes.reverse();
+          nodes.forEach((node) => range.insertNode(node));
+          const lastNode = nodes[0];
 
-          return { node: lastNode, offset: getNodeText(lastNode).length };
+          return { node: lastNode, offset: getOffsetAtEnd(lastNode) };
         }
       }
 
@@ -5112,7 +5190,7 @@
       }
     }
 
-    function handleTextInsertion(text, range, topNode) {
+    function handleTextInsertion(text, range, topNode, isHtml = false) {
 
       if (isTableNode(topNode)) {
 
@@ -5121,7 +5199,7 @@
       }
       const savedContents = topNode.innerHTML;
       const savedRangeLimits = getRangeLimits(topNode, range);
-      const insertion = insertTextInRange(text, range);
+      const insertion = insertTextInRange(text, range, isHtml);
 
       if (insertion) {
 
@@ -5161,7 +5239,7 @@
       }
     }
 
-    function handleMultiSelection(text) {
+    function handleMultiSelection(text, isHtml = false) {
 
       let range = null;
       const selection = window.getSelection();
@@ -5204,7 +5282,7 @@
               savedContents = firstNode.innerHTML;
               firstNodeId = makeNodeId(firstNode);
               selection.deleteFromDocument();
-              if (text) insertTextInRange(text, range);
+              if (text) insertTextInRange(text, range, isHtml);
               selection.collapseToEnd();
             } else if (editor.firstChild !== firstNode) {
               removeNodes = [firstNode];
@@ -5244,7 +5322,7 @@
 
               range.setEndAfter(insertionNode.lastChild || insertionNode);
               range.deleteContents();
-              if (text) insertTextInRange(text, range);
+              if (text) insertTextInRange(text, range, isHtml);
               selection.collapseToEnd();
 
               if (lastContent) {
@@ -5592,8 +5670,138 @@
       }
     }
 
+    function getStyledContent(selectedFragment) {
+
+      const docFrag = document.createDocumentFragment();
+      let firstChildAdded = false;
+
+      for (let child of selectedFragment.childNodes) {
+
+        if (child.nodeName === "BR" || child.nodeType === Node.TEXT_NODE) {
+
+          docFrag.append(child);
+          firstChildAdded = true;
+        } else if (isEditableTextNode(child)) {
+
+          if (firstChildAdded) docFrag.append(document.createElement("br"));
+          docFrag.append(...(child.classList?.contains("code-block") ? child.querySelector("code") : child).childNodes);
+          firstChildAdded = true;
+        } else {
+          return null;
+        }
+      }
+
+      return docFrag.querySelector(STYLE_TAGS.join(", ")) ? docFrag : null; // return only contents that have style nodes
+    }
+
+    function getSingleNodeStyledContent(range) {
+
+      let node = range.commonAncestorContainer;
+      let retNode = null;
+      let leafNode = null;
+
+      function cloneNode(node) {
+
+        const clonedNode = node.nodeType === Node.TEXT_NODE ? document.createTextNode(node.textContent) : document.createElement(node.nodeName.toLowerCase());
+
+        if (node.nodeType === Node.ELEMENT_NODE) {
+
+          // Copy attributes
+          for (let attr of node.attributes) {
+            clonedNode.setAttribute(attr.name, attr.value);
+          }
+
+          // Copy inline styles
+          if (node.style?.cssText) clonedNode.style.cssText = node.style.cssText;
+
+          // Copy classes
+          if (node.className) clonedNode.className = node.className;
+        }
+
+        return clonedNode;
+      }
+
+      while (node && node !== editor) {
+
+        if (node.nodeName === "CODE") return null; // code contents is considered unstyled
+
+        if (isEditableTextNode(node)) { // all editable text nodes, except code blocks
+
+          const docFrag = document.createDocumentFragment();
+          retNode = retNode || docFrag;
+          leafNode = leafNode || retNode;
+
+          if (leafNode.nodeType === Node.ELEMENT_NODE) {
+
+            const extractRange = range.cloneRange();
+            const contents = extractRange.cloneContents();
+            leafNode.append(...contents.childNodes);
+          }
+
+          if (retNode !== docFrag) docFrag.append(retNode);
+
+          return docFrag;
+        } else if (!node.id && node.parentNode && node.parentNode !== editor && node.parentNode.nodeName !== "CODE") {
+
+          const clonedNode = cloneNode(node);
+
+          if (retNode) clonedNode.append(retNode);
+
+          retNode = clonedNode;
+          leafNode = leafNode || retNode;
+        }
+        node = node.parentNode;
+      }
+
+      return null;
+    }
+
+    function fragmentToInnerHtml(fragment) { // destroys the fragment
+
+      if (!(fragment instanceof DocumentFragment)) {
+        throw new TypeError("Expected a DocumentFragment.");
+      }
+
+      const container = document.createElement("div");
+      container.appendChild(fragment);
+
+      return container.innerHTML;
+    }
+
     function handleCut(e) {
-      cancelEvent(e);
+
+      let range = null;
+      const selection = window.getSelection();
+
+      if (selection.rangeCount) {
+        range = selection.getRangeAt(0);
+      }
+
+      if (!range?.startContainer || !range.endContainer ||
+          range.startContainer === editor || range.endContainer === editor ||
+          selection.isCollapsed) {
+
+        cancelEvent(e);
+        return;
+      }
+      let styledContentFrag = getSingleNodeStyledContent(range);
+
+      if (!styledContentFrag) {
+
+        const extractRange = range.cloneRange();
+        const contents = extractRange.cloneContents();
+        styledContentFrag = getStyledContent(contents);
+      }
+
+      if (styledContentFrag) {
+
+        const html = fragmentToInnerHtml(styledContentFrag);
+        (e.clipboardData || window.clipboardData)?.setData("text/html", html);
+      } else {
+        (e.clipboardData || window.clipboardData)?.setData("text/plain", selection.toString());
+      }
+      handleMultiSelection("");
+      e.preventDefault();
     }
 
     function handlePaste(e) {
@@ -5605,11 +5813,15 @@
         range = selection.getRangeAt(0);
       }
 
-      if (!range?.startContainer || range.startContainer === editor) {
+      if (!range?.startContainer || !range.endContainer ||
+          range.startContainer === editor || range.endContainer === editor) {
 
         cancelEvent(e);
         return;
       }
+      const cbData = e.clipboardData || window.clipboardData;
+
+      if (!cbData) return;
 
       if (selection.isCollapsed) {
 
@@ -5617,16 +5829,27 @@
 
         if (isEditableTextNode(topNode) || isTableNode(topNode)) {
 
-          const pasteText = (e.clipboardData || window.clipboardData)?.getData("text");
+          const pasteText = cbData.getData("text") || cbData.getData("text/plain");
 
           if (pasteText) {
             handleTextInsertion(pasteText, range, topNode);
+          } else {
+
+            const pasteHtml = cbData.getData("html") || cbData.getData("text/html");
+            if (pasteHtml) handleTextInsertion(pasteHtml, range, topNode, true);
           }
         }
       } else {
 
-        const pasteText = (e.clipboardData || window.clipboardData)?.getData("text");
-        if (pasteText) handleMultiSelection(pasteText);
+        const pasteText = cbData.getData("text") || cbData.getData("text/plain");
+
+        if (pasteText) {
+          handleMultiSelection(pasteText);
+        } else {
+
+          const pasteHtml = cbData.getData("html") || cbData.getData("text/html");
+          if (pasteHtml) handleMultiSelection(pasteHtml, true);
+        }
       }
       cancelEvent(e);
     }
