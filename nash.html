@@ -181,7 +181,7 @@
       position: -webkit-sticky;
       top: 5px;
       padding: 0 10px;
-      z-index: 9999;
+      z-index: 9998;
     }
 
     #toolbar {
@@ -307,6 +307,101 @@
     /* Show text dropdown when .show is added */
     .text-dropdown-content.show {
       display: block;
+    }
+
+    /* Page dropdown container (hidden by default) */
+    .page-dropdown {
+      display: none;
+      position: fixed;
+      width: 100vw;
+      top: 0;
+      left: 0;
+      background: var(--control-bg-color);
+      z-index: 9999;
+    }
+
+    /* Show page dropdown when .show is added */
+    .page-dropdown.show {
+      display: block;
+    }
+
+    /* Page dropdown toolbar button */
+    .page-dropdown-toolbar-item > button {
+      padding: 6px 10px;
+    }
+
+    .page-dropdown button {
+      width: 100%;
+      text-align: left;
+    }
+
+    .page-dropdown .fileUpload label {
+      max-width: 100%;
+      text-align: left;
+      display: block;
+    }
+
+    .page-dropdown-title {
+      width: 100%;
+      padding: 1rem;
+      text-align: left;
+      background: var(--control-bg-color);
+      color: var(--control-text-color);
+      border: none;
+      outline: none;
+      font-size: 1.5rem;
+      font-weight: 500;
+    }
+
+    .page-dropdown-item {
+      border-bottom: 1px solid #ccc;
+    }
+
+    .page-dropdown-header {
+      width: 100%;
+      padding: 1rem;
+      text-align: left;
+      background: var(--control-bg-color);
+      color: var(--control-text-color);
+      cursor: pointer;
+      border: none;
+      outline: none;
+      font-size: 1.1rem;
+    }
+
+    /* Page dropdown content (collapsed by default) */
+    .page-dropdown-content {
+      display: block;
+      position: absolute;
+      width: 100%;
+      top: 0;
+      left: 0;
+      overflow: hidden;
+      max-height: 0;
+      background: var(--control-bg-color);
+      border: 1px solid var(--control-bg-color);
+      color: var(--control-text-color);
+      padding: 0 1rem;
+      z-index: 9999;
+      transition: max-height 0.3s ease, padding 0.3s ease;
+    }
+
+    .page-dropdown-content.open {
+      padding: 1rem;
+    }
+
+    .page-dropdown-content-open { /* Always open */
+      display: block;
+      position: absolute;
+      width: 100%;
+      top: 0;
+      left: 0;
+      overflow: hidden;
+      background: var(--control-bg-color);
+      border: 1px solid var(--control-bg-color);
+      color: var(--control-text-color);
+      padding: 1rem;
+      z-index: 9999;
     }
 
     /* Grid of swatches */
@@ -814,6 +909,20 @@
       justify-content: flex-end;
     }
 
+    .mobile-only {
+      display: none;
+    }
+
+    @media (max-width: 800px) {
+      .mobile-only {
+        display: block !important;
+      }
+
+      .no-mobile {
+        display: none !important;
+      }
+    }
+
     @media print {
       .no-print {
         display: none !important;
@@ -841,17 +950,17 @@
 
     <div class="top-container">
       <div id="toolbar" class="no-print">
-        <button id="btnH1" title="Extra large text">XL</button>
-        <button id="btnH2" title="Large text">L</button>
-        <button id="btnM" title="Medium text">M</button>
-        <button id="btnS" title="Small text">S</button>
+        <button id="btnH1" class="no-mobile" title="Extra large text">XL</button>
+        <button id="btnH2" class="no-mobile" title="Large text">L</button>
+        <button id="btnM" class="no-mobile" title="Medium text">M</button>
+        <button id="btnS" class="no-mobile" title="Small text">S</button>
 
         <button id="btnB" title="Bold text" disabled><b>B</b></button>
         <button id="btnI" title="Italic text" disabled><i>I</i></button>
         <button id="btnU" title="Underline text" disabled><u>U</u></button>
         <button id="btnStrikethrough" title="Strikethrough text" disabled>Ꞩ</button>
 
-        <div class="dropdown">
+        <div class="dropdown no-mobile">
           <button id="btnTextColorMenu" title="Colorize text" disabled>Color</button>
           <div id="textColorDropdown" class="dropdown-content">
             <div class="swatch-grid">
@@ -876,7 +985,7 @@
         </div>
 
         <!-- Highlight Color Dropdown -->
-        <div class="dropdown">
+        <div class="dropdown no-mobile">
           <button id="btnTextHighlightMenu" title="Highlight text" disabled>Highlight</button>
           <div id="highlightDropdown" class="dropdown-content">
             <div class="swatch-grid">
@@ -901,7 +1010,7 @@
         </div>
 
         <!-- Font Size Dropdown -->
-        <div class="text-dropdown">
+        <div class="text-dropdown no-mobile">
           <button id="btnFontSizeMenu" title="Change text size" disabled><b>T</b></button>
           <div id="fontSizeDropdown" class="text-dropdown-content">
             <div class="text">
@@ -921,7 +1030,7 @@
           </div>
         </div>
 
-        <div class="text-dropdown">
+        <div class="text-dropdown no-mobile">
           <button id="btnAlign" title="Alignment">Align</button>
           <div id="alignDropdown" class="text-dropdown-content">
             <button id="btnLeftTextAlign" title="Align to the left">Left</button>
@@ -931,11 +1040,15 @@
           </div>
         </div>
 
+        <div class="page-dropdown-toolbar-item mobile-only">
+          <button id="mbtnStyle" title="Styling">Style</button>
+        </div>
+
         <div id="splitbar">|</div>
         <button id="btnText" title="Add text">📝</button>
         <button id="btnCode" title="Add source code text">🖥</button>
 
-        <div class="text-dropdown">
+        <div class="text-dropdown no-mobile">
           <button id="btnLinks" title="Insert links">🔗</button>
           <div id="linksDropdown" class="text-dropdown-content">
             <button id="btnLinkText" title="Make text link" disabled>🌎 Text Link</button>
@@ -946,7 +1059,7 @@
           </div>
         </div>
 
-        <div class="text-dropdown">
+        <div class="text-dropdown no-mobile">
           <button id="btnEmbed" title="Embed contents">📎</button>
           <div id="embedDropdown" class="text-dropdown-content">
             <button id="btnEmbedWeb" title="Embed web page or HTML object">🌎 Web</button>
@@ -967,16 +1080,16 @@
             </div>
 
             <div class="fileUpload">
-              <label for="epubUpload" title="Embed ePUB file">📖 ePub</label>
+              <label for="epubUpload" title="Embed ePub file">📖 ePub</label>
               <input type="file" id="epubUpload" accept=".epub" onclick="this.value = null">
             </div>
           </div>
         </div>
 
         <button id="btnRecordAudio" title="Record audio">🎤</button>
-        <button id="btnEmbedMath" title="Insert math expression">Σ</button>
+        <button id="btnEmbedMath" class="no-mobile" title="Insert math expression">Σ</button>
 
-        <div class="text-dropdown">
+        <div class="text-dropdown no-mobile">
           <button id="btnTable" title="Add table">Table</button>
           <div id="tableDropdown" class="text-dropdown-content">
             <button id="btnSimpleTable" title="Add simple table">Simple Table</button>
@@ -984,14 +1097,18 @@
           </div>
         </div>
 
+        <div class="page-dropdown-toolbar-item mobile-only">
+          <button id="mbtnInsert" title="Insert objects">Insert</button>
+        </div>
+
         <div id="splitbar">|</div>
         <button id="btnUndo" disabled title="Undo">↩</button>
         <button id="btnRedo" disabled title="Redo">↪</button>
 
         <div id="splitbar" style="margin-left: auto;">|</div>
-        <!-- Block conversion -->
-        <div class="text-dropdown">
-          <button id="btnSaveMenu" title="Save or Share">💾</button>
+
+        <div class="text-dropdown no-mobile">
+          <button id="btnSaveMenu" title="Save or share">💾</button>
           <div id="saveDropdown" class="text-dropdown-content">
             <button id="btnSave">Save</button>
             <button id="btnSaveTo">Save To...</button>
@@ -1002,6 +1119,9 @@
           </div>
         </div>
 
+        <div class="page-dropdown-toolbar-item mobile-only">
+          <button id="mbtnSaveMenu" title="Save or share">💾</button>
+        </div>
       </div>
       <div id="recordingBar" class="hidden" aria-hidden="true"></div>
     </div>
@@ -1017,6 +1137,158 @@
       <br/>
       <small>Nash 1.0.20250430</small>
     </div>
+
+    <div id="styleDropdown" class="page-dropdown">
+      <div class="page-dropdown-title">Style</div>
+      <div class="page-dropdown-item">
+        <button class="page-dropdown-header">Font Sizing</button>
+        <div class="page-dropdown-content">
+          <button id="mbtnH1" title="Extra large text">Extra Large</button>
+          <button id="mbtnH2" title="Large text">Large</button>
+          <button id="mbtnM" title="Medium text">Medium</button>
+          <button id="mbtnS" title="Small text">Small</button>
+        </div>
+      </div>
+      <div class="page-dropdown-item">
+        <button class="page-dropdown-header">Font Scaling</button>
+        <div class="page-dropdown-content">
+          <button id="mbtnFontSize1" title="25%">25%</button>
+          <button id="mbtnFontSize2" title="33.33%">33.33%</button>
+          <button id="mbtnFontSize3" title="50%">50%</button>
+          <button id="mbtnFontSize4" title="66.66%">66.66%</button>
+          <button id="mbtnFontSize5" title="75%">75%</button>
+          <button id="mbtnFontSize6" title="125%">125%</button>
+          <button id="mbtnFontSize7" title="150%">150%</button>
+          <button id="mbtnFontSize8" title="175%">175%</button>
+          <button id="mbtnFontSize9" title="200%">200%</button>
+          <button id="mbtnFontSize10" title="250%">250%</button>
+          <button id="mbtnFontSize11" title="300%">300%</button>
+          <button id="mbtnFontSize12" title="350%">350%</button>
+        </div>
+      </div>
+      <div class="page-dropdown-item">
+        <button class="page-dropdown-header">Text Color</button>
+        <div class="page-dropdown-content">
+          <div class="swatch-grid">
+            <button id="mbtnTextColor1" class="color-swatch" style="background: var(--note-text-color-1);"
+              onmousedown="event.preventDefault();"></button>
+            <button id="mbtnTextColor2" class="color-swatch" style="background: var(--note-text-color-2);"
+              onmousedown="event.preventDefault();"></button>
+            <button id="mbtnTextColor3" class="color-swatch" style="background: var(--note-text-color-3);"
+              onmousedown="event.preventDefault();"></button>
+            <button id="mbtnTextColor4" class="color-swatch" style="background: var(--note-text-color-4);"
+              onmousedown="event.preventDefault();"></button>
+            <button id="mbtnTextColor5" class="color-swatch" style="background: var(--note-text-color-5);"
+              onmousedown="event.preventDefault();"></button>
+            <button id="mbtnTextColor6" class="color-swatch" style="background: var(--note-text-color-6);"
+              onmousedown="event.preventDefault();"></button>
+            <button id="mbtnTextColor7" class="color-swatch" style="background: var(--note-text-color-7);"
+              onmousedown="event.preventDefault();"></button>
+            <button id="mbtnTextColor8" class="color-swatch" style="background: var(--note-text-color-8);"
+              onmousedown="event.preventDefault();"></button>
+          </div>
+        </div>
+      </div>
+      <div class="page-dropdown-item">
+        <button class="page-dropdown-header">Highlight Color</button>
+        <div class="page-dropdown-content">
+          <div class="swatch-grid">
+            <button id="mbtnTextHighlight1" class="color-swatch" style="background: var(--note-highlight-color-1);"
+              onmousedown="event.preventDefault();"></button>
+            <button id="mbtnTextHighlight2" class="color-swatch" style="background: var(--note-highlight-color-2);"
+              onmousedown="event.preventDefault();"></button>
+            <button id="mbtnTextHighlight3" class="color-swatch" style="background: var(--note-highlight-color-3);"
+              onmousedown="event.preventDefault();"></button>
+            <button id="mbtnTextHighlight4" class="color-swatch" style="background: var(--note-highlight-color-4);"
+              onmousedown="event.preventDefault();"></button>
+            <button id="mbtnTextHighlight5" class="color-swatch" style="background: var(--note-highlight-color-5);"
+              onmousedown="event.preventDefault();"></button>
+            <button id="mbtnTextHighlight6" class="color-swatch" style="background: var(--note-highlight-color-6);"
+              onmousedown="event.preventDefault();"></button>
+            <button id="mbtnTextHighlight7" class="color-swatch" style="background: var(--note-highlight-color-7);"
+              onmousedown="event.preventDefault();"></button>
+            <button id="mbtnTextHighlight8" class="color-swatch" style="background: var(--note-highlight-color-8);"
+              onmousedown="event.preventDefault();"></button>
+          </div>
+        </div>
+      </div>
+      <div class="page-dropdown-item">
+        <button class="page-dropdown-header">Align</button>
+        <div class="page-dropdown-content">
+          <button id="mbtnLeftTextAlign" title="Align to the left">Left</button>
+          <button id="mbtnCenterTextAlign" title="Align to the center">Center</button>
+          <button id="mbtnRightTextAlign" title="Align to the right">Right</button>
+          <button id="mbtnJustifyTextAlign" title="Justify text">Justify</button>
+        </div>
+      </div>
+      <button id="mbtnCancelStyle" title="Close the menu">Cancel</button>
+    </div>
+
+    <div id="insertDropdown" class="page-dropdown">
+      <div class="page-dropdown-title">Insert</div>
+      <div class="page-dropdown-item">
+        <button class="page-dropdown-header">Link</button>
+        <div class="page-dropdown-content">
+          <button id="mbtnLinkText" title="Make text link" disabled>🌎 Text Link</button>
+          <button id="mbtnLinkImage" title="Insert image link">📷 Image Link</button>
+          <button id="mbtnLinkAudio" title="Insert audio link">🔈 Audio Link</button>
+          <button id="mbtnLinkVideo" title="Insert video link">🎞 Video Link</button>
+          <button id="mbtnLinkPdf" title="Insert PDF file link">📕 PDF Link</button>
+        </div>
+      </div>
+      <div class="page-dropdown-item">
+        <button class="page-dropdown-header">Embed</button>
+        <div class="page-dropdown-content">
+          <button id="mbtnEmbedWeb" title="Embed web page or HTML object">🌎 Web</button>
+
+          <div class="fileUpload">
+            <label for="mimageUpload" title="Embed image file">📷 Image</label>
+            <input type="file" id="mimageUpload" accept="image/*" onclick="this.value = null">
+          </div>
+
+          <div class="fileUpload">
+            <label for="maudioUpload" title="Embed audio file">🔈 Audio</label>
+            <input type="file" id="maudioUpload" accept="audio/*" onclick="this.value = null">
+          </div>
+
+          <div class="fileUpload">
+            <label for="mpdfUpload" title="Embed PDF file">📕 PDF</label>
+            <input type="file" id="mpdfUpload" accept=".pdf" onclick="this.value = null">
+          </div>
+
+          <div class="fileUpload">
+            <label for="mepubUpload" title="Embed ePub file">📖 ePub</label>
+            <input type="file" id="mepubUpload" accept=".epub" onclick="this.value = null">
+          </div>
+
+          <button id="mbtnEmbedMath" title="Insert math expression">Σ Math</button>
+        </div>
+      </div>
+      <div class="page-dropdown-item">
+        <button class="page-dropdown-header">Table</button>
+        <div class="page-dropdown-content">
+          <button id="mbtnSimpleTable" title="Add simple table">Simple Table</button>
+          <button id="mbtnHeadlessTable" title="Add headless table">Headless Table</button>
+        </div>
+      </div>
+      <button id="mbtnCancelInsert" title="Close the menu">Cancel</button>
+    </div>
+
+    <div id="msaveDropdown" class="page-dropdown">
+      <div class="page-dropdown-title">Save & Share</div>
+      <div class="page-dropdown-item">
+        <div class="page-dropdown-content-open">
+          <button id="mbtnSave">Save</button>
+          <button id="mbtnSaveTo">Save To...</button>
+          <button id="mbtnShare">Share</button>
+          <button id="mbtnSaveReadOnly">Save as Read-Only</button>
+          <button id="mbtnSaveToReadOnly">Save To as Read-Only</button>
+          <button id="mbtnShareReadOnly">Share as Read-Only</button>
+        </div>
+      </div>
+      <button id="mbtnCancelSave" title="Close the menu">Cancel</button>
+    </div>
+
   </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -3323,7 +3595,7 @@
         dropdown.classList.remove("show");
       } else {
         // Close any open dropdowns first
-        document.querySelectorAll(".dropdown-content, .text-dropdown-content").forEach(el => el.classList.remove("show"));
+        document.querySelectorAll(".dropdown-content, .text-dropdown-content, .page-dropdown").forEach(el => el.classList.remove("show"));
         dropdown.classList.add("show");
       }
     }
@@ -3337,6 +3609,10 @@
 
       if (!e.target.closest(".text-dropdown")) {
         document.querySelectorAll(".text-dropdown-content").forEach(el => el.classList.remove("show"));
+      }
+
+      if (!e.target.closest(".page-dropdown-toolbar-item") && !e.target.closest(".page-dropdown-header")) {
+        document.querySelectorAll(".page-dropdown").forEach(el => el.classList.remove("show"));
       }
     });
 
@@ -6063,6 +6339,23 @@
     document.getElementById("btnM").addEventListener("click", (e) => changeBlock("medium-text"));
     document.getElementById("btnS").addEventListener("click", (e) => changeBlock("small-text"));
 
+    document.getElementById("mbtnH1").addEventListener("click", (e) => {
+      toggleDropdown("styleDropdown");
+      changeBlock("xlarge-text");
+    });
+    document.getElementById("mbtnH2").addEventListener("click", (e) => {
+      toggleDropdown("styleDropdown");
+      changeBlock("large-text");
+    });
+    document.getElementById("mbtnM").addEventListener("click", (e) => {
+      toggleDropdown("styleDropdown");
+      changeBlock("medium-text");
+    });
+    document.getElementById("mbtnS").addEventListener("click", (e) => {
+      toggleDropdown("styleDropdown");
+      changeBlock("small-text");
+    });
+
     document.getElementById("btnB").addEventListener("click", (e) => applyFormat(STYLE_STRONG_INDEX));
     document.getElementById("btnI").addEventListener("click", (e) => applyFormat(STYLE_EM_INDEX));
     document.getElementById("btnU").addEventListener("click", (e) => applyFormat(STYLE_U_INDEX));
@@ -6075,6 +6368,10 @@
         applyTextColor(i);
         toggleDropdown("textColorDropdown");
       });
+      document.getElementById(`mbtnTextColor${i}`).addEventListener("click", (e) => {
+        applyTextColor(i);
+        toggleDropdown("styleDropdown");
+      });
     }
 
     document.getElementById("btnTextHighlightMenu").addEventListener("click", (e) => toggleDropdown("highlightDropdown"));
@@ -6084,6 +6381,10 @@
         applyHighlightColor(i);
         toggleDropdown("highlightDropdown");
       });
+      document.getElementById(`mbtnTextHighlight${i}`).addEventListener("click", (e) => {
+        applyHighlightColor(i);
+        toggleDropdown("styleDropdown");
+      });
     }
 
     document.getElementById("btnFontSizeMenu").addEventListener("click", (e) => toggleDropdown("fontSizeDropdown"));
@@ -6092,6 +6393,10 @@
       document.getElementById(`btnFontSize${i}`).addEventListener("click", (e) => {
         applyFontSize(i);
         toggleDropdown("fontSizeDropdown");
+      });
+      document.getElementById(`mbtnFontSize${i}`).addEventListener("click", (e) => {
+        applyFontSize(i);
+        toggleDropdown("styleDropdown");
       });
     }
 
@@ -6110,6 +6415,23 @@
     });
     document.getElementById("btnJustifyTextAlign").addEventListener("click", (e) => {
       toggleDropdown("alignDropdown");
+      doAlign(AlignType.JUSTIFY);
+    });
+
+    document.getElementById("mbtnLeftTextAlign").addEventListener("click", (e) => {
+      toggleDropdown("styleDropdown");
+      doAlign(AlignType.LEFT);
+    });
+    document.getElementById("mbtnCenterTextAlign").addEventListener("click", (e) => {
+      toggleDropdown("styleDropdown");
+      doAlign(AlignType.CENTER);
+    });
+    document.getElementById("mbtnRightTextAlign").addEventListener("click", (e) => {
+      toggleDropdown("styleDropdown");
+      doAlign(AlignType.RIGHT);
+    });
+    document.getElementById("mbtnJustifyTextAlign").addEventListener("click", (e) => {
+      toggleDropdown("styleDropdown");
       doAlign(AlignType.JUSTIFY);
     });
 
@@ -6138,6 +6460,27 @@
       insertPdfLink();
     });
 
+    document.getElementById("mbtnLinkText").addEventListener("click", (e) => {
+      toggleDropdown("insertDropdown");
+      applyURL();
+    });
+    document.getElementById("mbtnLinkImage").addEventListener("click", (e) => {
+      toggleDropdown("insertDropdown");
+      insertImageLink();
+    });
+    document.getElementById("mbtnLinkAudio").addEventListener("click", (e) => {
+      toggleDropdown("insertDropdown");
+      insertAudioLink();
+    });
+    document.getElementById("mbtnLinkVideo").addEventListener("click", (e) => {
+      toggleDropdown("insertDropdown");
+      insertVideoLink();
+    });
+    document.getElementById("mbtnLinkPdf").addEventListener("click", (e) => {
+      toggleDropdown("insertDropdown");
+      insertPdfLink();
+    });
+
     document.getElementById("btnEmbed").addEventListener("click", (e) => toggleDropdown("embedDropdown"));
     document.getElementById("btnEmbedWeb").addEventListener("click", (e) => {
       toggleDropdown("embedDropdown");
@@ -6160,9 +6503,34 @@
       insertEpub(e);
     });
 
+    document.getElementById("mbtnEmbedWeb").addEventListener("click", (e) => {
+      toggleDropdown("insertDropdown");
+      insertEmbeddedContent();
+    });
+    document.getElementById("mimageUpload").addEventListener("change", (e) => {
+      toggleDropdown("insertDropdown");
+      insertImage(e);
+    });
+    document.getElementById("maudioUpload").addEventListener("change", (e) => {
+      toggleDropdown("insertDropdown");
+      insertAudio(event);
+    });
+    document.getElementById("mpdfUpload").addEventListener("change", (e) => {
+      toggleDropdown("insertDropdown");
+      insertPdf(e);
+    });
+    document.getElementById("mepubUpload").addEventListener("change", (e) => {
+      toggleDropdown("insertDropdown");
+      insertEpub(e);
+    });
+
     document.getElementById("btnRecordAudio").addEventListener("click", (e) => insertAudioRecording());
 
     document.getElementById("btnEmbedMath").addEventListener("click", (e) => insertMath());
+    document.getElementById("mbtnEmbedMath").addEventListener("click", (e) => {
+      toggleDropdown("insertDropdown");
+      insertMath();
+    });
 
     document.getElementById("btnTable").addEventListener("click", (e) => toggleDropdown("tableDropdown"));
     document.getElementById("btnSimpleTable").addEventListener("click", (e) => {
@@ -6174,10 +6542,21 @@
       insertTable(true);
     });
 
+    document.getElementById("mbtnSimpleTable").addEventListener("click", (e) => {
+      toggleDropdown("insertDropdown");
+      insertTable(false);
+    });
+    document.getElementById("mbtnHeadlessTable").addEventListener("click", (e) => {
+      toggleDropdown("insertDropdown");
+      insertTable(true);
+    });
+
     document.getElementById("btnUndo").addEventListener("click", (e) => UNDO_STACK.undo());
     document.getElementById("btnRedo").addEventListener("click", (e) => UNDO_STACK.redo());
 
     document.getElementById("btnSaveMenu").addEventListener("click", (e) => toggleDropdown("saveDropdown"));
+    document.getElementById("mbtnSaveMenu").addEventListener("click", (e) => toggleDropdown("msaveDropdown"));
+
     document.getElementById("btnSave").addEventListener("click", (e) => {
       toggleDropdown("saveDropdown");
       exportToFile(SaveType.DOWNLOAD, true);
@@ -6201,6 +6580,67 @@
     document.getElementById("btnShareReadOnly").addEventListener("click", (e) => {
       toggleDropdown("saveDropdown");
       exportToFile(SaveType.SHARE, false);
+    });
+
+    document.getElementById("mbtnSave").addEventListener("click", (e) => {
+      toggleDropdown("msaveDropdown");
+      exportToFile(SaveType.DOWNLOAD, true);
+    });
+    document.getElementById("mbtnSaveTo").addEventListener("click", async (e) => {
+      toggleDropdown("msaveDropdown");
+      exportToFile(SaveType.FILE, true);
+    });
+    document.getElementById("mbtnShare").addEventListener("click", (e) => {
+      toggleDropdown("msaveDropdown");
+      exportToFile(SaveType.SHARE, true);
+    });
+    document.getElementById("mbtnSaveReadOnly").addEventListener("click", (e) => {
+      toggleDropdown("msaveDropdown");
+      exportToFile(SaveType.DOWNLOAD, false);
+    });
+    document.getElementById("mbtnSaveToReadOnly").addEventListener("click", async (e) => {
+      toggleDropdown("msaveDropdown");
+      exportToFile(SaveType.FILE, false);
+    });
+    document.getElementById("mbtnShareReadOnly").addEventListener("click", (e) => {
+      toggleDropdown("msaveDropdown");
+      exportToFile(SaveType.SHARE, false);
+    });
+
+    document.getElementById("mbtnStyle").addEventListener("click", (e) => toggleDropdown("styleDropdown"));
+    document.getElementById("mbtnInsert").addEventListener("click", (e) => toggleDropdown("insertDropdown"));
+
+    document.getElementById("mbtnCancelStyle").addEventListener("click", (e) => toggleDropdown("styleDropdown"));
+    document.getElementById("mbtnCancelInsert").addEventListener("click", (e) => toggleDropdown("insertDropdown"));
+    document.getElementById("mbtnCancelSave").addEventListener("click", (e) => toggleDropdown("msaveDropdown"));
+
+    document.querySelectorAll(".page-dropdown-header").forEach(header => {
+
+      header.addEventListener("click", () => {
+
+        const content = header.nextElementSibling;
+
+        // Close others if you want only one open at a time
+        document.querySelectorAll(".page-dropdown-content").forEach(item => {
+
+          if (item !== content) {
+
+            item.style.maxHeight = null;
+            item.classList.remove("open");
+          }
+        });
+
+        // Toggle current
+        if (content.style.maxHeight) {
+
+          content.style.maxHeight = null;
+          content.classList.remove("open");
+        } else {
+
+          content.style.maxHeight = content.scrollHeight + "px";
+          content.classList.add("open");
+        }
+      });
     });
 
     editor.focus();
