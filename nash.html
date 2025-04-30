@@ -846,13 +846,13 @@
         <button id="btnM" title="Medium text">M</button>
         <button id="btnS" title="Small text">S</button>
 
-        <button id="btnB" title="Bold text"><b>B</b></button>
-        <button id="btnI" title="Italic text"><i>I</i></button>
-        <button id="btnU" title="Underline text"><u>U</u></button>
-        <button id="btnStrikethrough" title="Strikethrough text">Ꞩ</button>
+        <button id="btnB" title="Bold text" disabled><b>B</b></button>
+        <button id="btnI" title="Italic text" disabled><i>I</i></button>
+        <button id="btnU" title="Underline text" disabled><u>U</u></button>
+        <button id="btnStrikethrough" title="Strikethrough text" disabled>Ꞩ</button>
 
         <div class="dropdown">
-          <button id="btnTextColorMenu" title="Colorize text">Color</button>
+          <button id="btnTextColorMenu" title="Colorize text" disabled>Color</button>
           <div id="textColorDropdown" class="dropdown-content">
             <div class="swatch-grid">
               <button id="btnTextColor1" class="color-swatch" style="background: var(--note-text-color-1);"
@@ -877,7 +877,7 @@
 
         <!-- Highlight Color Dropdown -->
         <div class="dropdown">
-          <button id="btnTextHighlightMenu" title="Highlight text">Highlight</button>
+          <button id="btnTextHighlightMenu" title="Highlight text" disabled>Highlight</button>
           <div id="highlightDropdown" class="dropdown-content">
             <div class="swatch-grid">
               <button id="btnTextHighlight1" class="color-swatch" style="background: var(--note-highlight-color-1);"
@@ -902,7 +902,7 @@
 
         <!-- Font Size Dropdown -->
         <div class="text-dropdown">
-          <button id="btnFontSizeMenu" title="Change text size"><b>T</b></button>
+          <button id="btnFontSizeMenu" title="Change text size" disabled><b>T</b></button>
           <div id="fontSizeDropdown" class="text-dropdown-content">
             <div class="text">
               <button id="btnFontSize1" title="25%">25%</button>
@@ -938,7 +938,7 @@
         <div class="text-dropdown">
           <button id="btnLinks" title="Insert links">🔗</button>
           <div id="linksDropdown" class="text-dropdown-content">
-            <button id="btnLinkText" title="Make text link">🌎 Text Link</button>
+            <button id="btnLinkText" title="Make text link" disabled>🌎 Text Link</button>
             <button id="btnLinkImage" title="Insert image link">📷 Image Link</button>
             <button id="btnLinkAudio" title="Insert audio link">🔈 Audio Link</button>
             <button id="btnLinkVideo" title="Insert video link">🎞 Video Link</button>
@@ -5984,10 +5984,52 @@
 
         document.getElementById("btnLinkText").removeAttribute("disabled");
         document.getElementById("btnLinkText").setAttribute("title", "Make text link");
+
+        document.getElementById("btnB").removeAttribute("disabled");
+        document.getElementById("btnB").setAttribute("title", "Bold text");
+
+        document.getElementById("btnI").removeAttribute("disabled");
+        document.getElementById("btnI").setAttribute("title", "Italic text");
+
+        document.getElementById("btnU").removeAttribute("disabled");
+        document.getElementById("btnU").setAttribute("title", "Underline text");
+
+        document.getElementById("btnStrikethrough").removeAttribute("disabled");
+        document.getElementById("btnStrikethrough").setAttribute("title", "Strikethrough text");
+
+        document.getElementById("btnTextColorMenu").removeAttribute("disabled");
+        document.getElementById("btnTextColorMenu").setAttribute("title", "Colorize text");
+
+        document.getElementById("btnTextHighlightMenu").removeAttribute("disabled");
+        document.getElementById("btnTextHighlightMenu").setAttribute("title", "Highlight text");
+
+        document.getElementById("btnFontSizeMenu").removeAttribute("disabled");
+        document.getElementById("btnFontSizeMenu").setAttribute("title", "Change text size");
       } else {
 
         document.getElementById("btnLinkText").setAttribute("disabled", " ");
         document.getElementById("btnLinkText").setAttribute("title", "Select a text to make link");
+
+        document.getElementById("btnB").setAttribute("disabled", " ");
+        document.getElementById("btnB").setAttribute("title", "Select a text to make bold");
+
+        document.getElementById("btnI").setAttribute("disabled", " ");
+        document.getElementById("btnI").setAttribute("title", "Select a text to make italic");
+
+        document.getElementById("btnU").setAttribute("disabled", " ");
+        document.getElementById("btnU").setAttribute("title", "Select a text to underline");
+
+        document.getElementById("btnStrikethrough").setAttribute("disabled", " ");
+        document.getElementById("btnStrikethrough").setAttribute("title", "Select a text to strikethrough");
+
+        document.getElementById("btnTextColorMenu").setAttribute("disabled", " ");
+        document.getElementById("btnTextColorMenu").setAttribute("title", "Select a text to colorize");
+
+        document.getElementById("btnTextHighlightMenu").setAttribute("disabled", " ");
+        document.getElementById("btnTextHighlightMenu").setAttribute("title", "Select a text to highlight");
+
+        document.getElementById("btnFontSizeMenu").setAttribute("disabled", " ");
+        document.getElementById("btnFontSizeMenu").setAttribute("title", "Select a text to change size");
       }
     };
 
