@@ -2638,12 +2638,12 @@
       }
     }
 
-    function doMathExpression(nodeId, newExpression, _) {
+    function doMathExpression(nodeId, _, newExpression) {
 
       setMathExpression(nodeId, newExpression);
     }
 
-    function undoMathExpression(nodeId, _, oldExpression) {
+    function undoMathExpression(nodeId, oldExpression, _) {
 
       setMathExpression(nodeId, oldExpression);
     }
@@ -2663,7 +2663,7 @@
 
       if (!newExpression || currentExpression === newExpression) return false;
 
-      UNDO_STACK.push(doMathExpression, undoMathExpression, node.id, newExpression, currentExpression);
+      UNDO_STACK.push(doMathExpression, undoMathExpression, node.id, currentExpression, newExpression);
 
       return true;
     }
@@ -3866,6 +3866,7 @@
       for (let p of selPositions) {
 
         const styled = getStyledPositions(p.positions, STYLES, p.positions.get(p.node).end);
+        delete p.positions; // reclaiming some memory by discarding the positions array property
 
         for (let i = p.start; i < p.end; ++i) { // we compare with the current style pattern, if all the selected text contains the style completely it means we want to remove the styling
           if (styled[i].bitAnd(styleBitPattern).isZero) removeStyle = false; // if there area characters that don't have the style then we must apply the new style
@@ -4342,7 +4343,7 @@
       return null;
     }
 
-    function doSplitBlock(newBlock, blockId, afterBlockContents, _, _2) {
+    function doSplitBlock(newBlock, blockId, _, _2, afterBlockContents) {
 
       const block = document.getElementById(blockId);
 
@@ -4355,7 +4356,7 @@
       editorInsertBefore(newBlock, block.nextElementSibling?.id);
     }
 
-    function undoSplitBlock(newBlock, blockId, afterBlockContents, savedBlockContents, savedRangeLimits) {
+    function undoSplitBlock(newBlock, blockId, savedBlockContents, savedRangeLimits, _) {
 
       const block = document.getElementById(blockId);
 
@@ -4435,7 +4436,7 @@
       }
       const afterBlockContents = block.innerHTML;
 
-      UNDO_STACK.push(doSplitBlock, undoSplitBlock, newBlock, block.id, afterBlockContents, savedBlockContents, savedRangeLimits);
+      UNDO_STACK.push(doSplitBlock, undoSplitBlock, newBlock, block.id, savedBlockContents, savedRangeLimits, afterBlockContents);
     }
 
     // Normalizes stray text nodes and nested blocks.
