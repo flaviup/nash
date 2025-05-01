@@ -6249,6 +6249,15 @@
       e.returnValue = "";
     }
 
+    function closeAllPageDropdownSections() {
+
+      document.querySelectorAll(".page-dropdown-content").forEach((item) => {
+
+        item.style.maxHeight = null;
+        item.classList?.remove("open");
+      });
+    }
+
     let lastValidSelectionRange = null;
 
     document.onselectionchange = () => {
@@ -6299,18 +6308,6 @@
         document.getElementById("mbtnLinkText").removeAttribute("disabled");
         document.getElementById("mbtnLinkText").setAttribute("title", "Make text link");
 
-        document.getElementById("mbtnB").removeAttribute("disabled");
-        document.getElementById("mbtnB").setAttribute("title", "Bold text");
-
-        document.getElementById("mbtnI").removeAttribute("disabled");
-        document.getElementById("mbtnI").setAttribute("title", "Italic text");
-
-        document.getElementById("mbtnU").removeAttribute("disabled");
-        document.getElementById("mbtnU").setAttribute("title", "Underline text");
-
-        document.getElementById("mbtnStrikethrough").removeAttribute("disabled");
-        document.getElementById("mbtnStrikethrough").setAttribute("title", "Strikethrough text");
-
         document.getElementById("mbtnTextColorMenu").removeAttribute("disabled");
         document.getElementById("mbtnTextColorMenu").setAttribute("title", "Colorize text");
 
@@ -6349,18 +6346,6 @@
 
         document.getElementById("mbtnLinkText").setAttribute("disabled", " ");
         document.getElementById("mbtnLinkText").setAttribute("title", "Select a text to make link");
-
-        document.getElementById("mbtnB").setAttribute("disabled", " ");
-        document.getElementById("mbtnB").setAttribute("title", "Select a text to make bold");
-
-        document.getElementById("mbtnI").setAttribute("disabled", " ");
-        document.getElementById("mbtnI").setAttribute("title", "Select a text to make italic");
-
-        document.getElementById("mbtnU").setAttribute("disabled", " ");
-        document.getElementById("mbtnU").setAttribute("title", "Select a text to underline");
-
-        document.getElementById("mbtnStrikethrough").setAttribute("disabled", " ");
-        document.getElementById("mbtnStrikethrough").setAttribute("title", "Select a text to strikethrough");
 
         document.getElementById("mbtnTextColorMenu").setAttribute("disabled", " ");
         document.getElementById("mbtnTextColorMenu").setAttribute("title", "Select a text to colorize");
@@ -6671,8 +6656,16 @@
       exportToFile(SaveType.SHARE, false);
     });
 
-    document.getElementById("mbtnStyle").addEventListener("click", (e) => toggleDropdown("styleDropdown"));
-    document.getElementById("mbtnInsert").addEventListener("click", (e) => toggleDropdown("insertDropdown"));
+    document.getElementById("mbtnStyle").addEventListener("click", (e) => {
+
+      closeAllPageDropdownSections();
+      toggleDropdown("styleDropdown");
+    });
+    document.getElementById("mbtnInsert").addEventListener("click", (e) => {
+
+      closeAllPageDropdownSections();
+      toggleDropdown("insertDropdown");
+    });
 
     document.getElementById("mbtnCancelStyle").addEventListener("click", (e) => toggleDropdown("styleDropdown"));
     document.getElementById("mbtnCancelInsert").addEventListener("click", (e) => toggleDropdown("insertDropdown"));
@@ -6690,7 +6683,7 @@
           if (item !== content) {
 
             item.style.maxHeight = null;
-            item.classList.remove("open");
+            item.classList?.remove("open");
           }
         });
 
@@ -6698,11 +6691,11 @@
         if (content.style.maxHeight) {
 
           content.style.maxHeight = null;
-          content.classList.remove("open");
+          content.classList?.remove("open");
         } else {
 
           content.style.maxHeight = content.scrollHeight + "px";
-          content.classList.add("open");
+          content.classList?.add("open");
         }
       });
     });
