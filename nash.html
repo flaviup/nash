@@ -350,24 +350,12 @@
       color: var(--control-text-color);
       border: none;
       outline: none;
-      font-size: 1.5rem;
+      font-size: 1.4rem;
       font-weight: 500;
     }
 
     .page-dropdown-item {
       border-bottom: 1px solid #ccc;
-    }
-
-    .page-dropdown-header {
-      width: 100%;
-      padding: 1rem;
-      text-align: left;
-      background: var(--control-bg-color);
-      color: var(--control-text-color);
-      cursor: pointer;
-      border: none;
-      outline: none;
-      font-size: 1.1rem;
     }
 
     /* Page dropdown content (collapsed by default) */
@@ -380,7 +368,6 @@
       overflow: hidden;
       max-height: 0;
       background: var(--control-bg-color);
-      border: 1px solid var(--control-bg-color);
       color: var(--control-text-color);
       padding: 0 1rem;
       z-index: 9999;
@@ -399,10 +386,51 @@
       left: 0;
       overflow: hidden;
       background: var(--control-bg-color);
-      border: 1px solid var(--control-bg-color);
       color: var(--control-text-color);
       padding: 1rem;
       z-index: 9999;
+    }
+
+    .page-dropdown input[type="file"] {
+      display: none;
+    }
+
+    .page-dropdown button,
+    .page-dropdown label {
+      padding: 0.8rem;
+      border: none;
+      background: none;
+      color: var(--control-text-color);
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: opacity 0.2s
+    }
+
+    .page-dropdown button:hover,
+    .page-dropdown label:hover {
+      background: var(--control-hover-bg-color);
+      border-color: var(--control-hover-text-color);
+      color: var(--control-hover-text-color);
+    }
+
+    .page-dropdown button:disabled,
+    .page-dropdown label:disabled {
+      background: var(--control-disabled-bg-color);
+      border-color: var(--control-disabled-text-color);
+      color: var(--control-disabled-text-color);
+      cursor: not-allowed;
+    }
+
+    .page-dropdown-header {
+      width: 100%;
+      padding: 1rem;
+      text-align: left;
+      background: var(--control-bg-color);
+      color: var(--control-text-color);
+      cursor: pointer;
+      border: none;
+      outline: none;
+      font-size: 1.2rem;
     }
 
     .page-dropdown-close {
@@ -414,7 +442,7 @@
       cursor: pointer;
       border: none;
       outline: none;
-      font-size: 1.1rem;
+      font-size: 1.2rem;
     }
 
     /* Grid of swatches */
