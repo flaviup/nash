@@ -312,7 +312,7 @@
     /* Page dropdown container (hidden by default) */
     .page-dropdown {
       display: none;
-      position: fixed;
+      position: absolute;
       width: 100vw;
       top: 0;
       left: 0;
@@ -402,6 +402,18 @@
       color: var(--control-text-color);
       padding: 1rem;
       z-index: 9999;
+    }
+
+    .page-dropdown-close {
+      width: 100%;
+      padding: 1rem;
+      text-align: left;
+      background: var(--control-bg-color);
+      color: var(--control-text-color);
+      cursor: pointer;
+      border: none;
+      outline: none;
+      font-size: 1.1rem;
     }
 
     /* Grid of swatches */
@@ -1221,7 +1233,7 @@
           <button id="mbtnJustifyTextAlign" title="Justify text">Justify</button>
         </div>
       </div>
-      <button id="mbtnCancelStyle" title="Close the menu">Cancel</button>
+      <button id="mbtnCancelStyle" class="page-dropdown-close" title="Close the menu">❌</button>
     </div>
 
     <div id="insertDropdown" class="page-dropdown">
@@ -1271,7 +1283,7 @@
           <button id="mbtnHeadlessTable" title="Add headless table">Headless Table</button>
         </div>
       </div>
-      <button id="mbtnCancelInsert" title="Close the menu">Cancel</button>
+      <button id="mbtnCancelInsert" class="page-dropdown-close" title="Close the menu">❌</button>
     </div>
 
     <div id="msaveDropdown" class="page-dropdown">
@@ -1286,7 +1298,7 @@
           <button id="mbtnShareReadOnly">Share as Read-Only</button>
         </div>
       </div>
-      <button id="mbtnCancelSave" title="Close the menu">Cancel</button>
+      <button id="mbtnCancelSave" class="page-dropdown-close" title="Close the menu">❌</button>
     </div>
 
   </div>
