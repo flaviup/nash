@@ -4806,7 +4806,7 @@
     // Normalize stray text nodes and nested blocks.
     function cleanEditor() {
 
-      if (editor.firstChild && ["H1", "H2", "H3", "H4", "H5", "H6", "P", "SMALL"].includes(editor.firstChild.nodeName)) {
+      if (editor.firstChild && editor.firstChild.nodeName === "P") {
         return;
       }
       const htmlText = editor.innerHTML.trim();
