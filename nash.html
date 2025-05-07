@@ -5227,6 +5227,8 @@
 
       if (isTableCell(node)) {
 
+        if (node.cellId) return node.cellId;
+
         let child = node;
         let tr = null;
 
@@ -5240,13 +5242,15 @@
         if (child?.parentNode) {
 
           const table = child.parentNode;
-          let tid = table.id;
-          let trIdx = tr ? (getSameTypeElementIndex(tr) + 1) : null;
+          const tid = table.id;
+          const trIdx = tr ? (getSameTypeElementIndex(tr) + 1) : null;
 
           if (trIdx) {
 
-            let cellIdx = getSameTypeElementIndex(node) + 1;
-            return `#${tid} tr:nth-of-type(${trIdx}) ${node.nodeName.toLowerCase()}:nth-of-type(${cellIdx})`;
+            const cellIdx = getSameTypeElementIndex(node) + 1;
+            node.cellId = `#${tid} tr:nth-of-type(${trIdx}) ${node.nodeName.toLowerCase()}:nth-of-type(${cellIdx})`;
+
+            return node.cellId;
           }
         }
 
