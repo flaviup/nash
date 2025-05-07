@@ -1170,7 +1170,7 @@
     <div id="footer">
       <small><a href="https://github.com/flaviup">flaviup@github.com</a></small>
       <br/>
-      <small>Nash 1.0.20250501</small>
+      <small>Nash 1.0.20250507</small>
     </div>
 
     <div id="styleDropdown" class="page-dropdown">
@@ -1751,6 +1751,8 @@
 
     class UndoStack {
 
+      static MAX_UNDO = 4_000_000_000;
+
       static #_UNDO_STACK_CHANGE_EVENT_NAME = "UNDO_STACK_CHANGE";
 
       static #_UNDO_STACK_CHANGE_EVENT_CLEAR = 0;
@@ -1759,6 +1761,7 @@
       static #_UNDO_STACK_CHANGE_EVENT_UNDO = 3;
       static #_UNDO_STACK_CHANGE_EVENT_REDO = 4;
       static #_UNDO_STACK_CHANGE_EVENT_REMOVE_LAST = 5;
+      static #_UNDO_STACK_CHANGE_EVENT_REMOVE_FIRST = 6;
 
       #_past = [];
       #_future = [];
@@ -1834,6 +1837,17 @@
         };
         action.doWithData();
 
+        if (this.#_past.length === UndoStack.MAX_UNDO) {
+
+          const firstAction = this.#_past.shift();
+
+          if (firstAction) {
+
+            firstAction.cleanup();
+            pub(UndoStack.#_UNDO_STACK_CHANGE_EVENT_NAME, UndoStack.#_UNDO_STACK_CHANGE_EVENT_REMOVE_FIRST);
+          }
+        }
+
         // Adding a new action wipes the redoable steps
         this.#_past.push(action);
         UndoStack.#_cleanup(this.#_future);
@@ -1861,7 +1875,9 @@
               if (undoFn.cleanup) undoFn.cleanup();
             }
           };
+          let act = this.#_past[index];
           this.#_past[index] = action;
+          act?.cleanup();
         }
       }
 
@@ -1881,7 +1897,11 @@
 
           const action = this.#_past.pop();
 
-          if (action) pub(UndoStack.#_UNDO_STACK_CHANGE_EVENT_NAME, UndoStack.#_UNDO_STACK_CHANGE_EVENT_REMOVE_LAST);
+          if (action) {
+
+            action.cleanup();
+            pub(UndoStack.#_UNDO_STACK_CHANGE_EVENT_NAME, UndoStack.#_UNDO_STACK_CHANGE_EVENT_REMOVE_LAST);
+          }
       }
 
       redo() {
