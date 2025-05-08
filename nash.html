@@ -1948,7 +1948,7 @@
 
       if (p === la) return a;
       if (p === lb) return b;
-      const S = la < lb ? la - 1 : lb - 1;
+
       let s = 0;
 
       while (s < la && s < lb) {
@@ -1959,10 +1959,15 @@
       if (s === la) return a;
       if (s === lb) return b;
 
-      const a2 = (p === 0 && s === 0) ? a : a.substring(p, la - s); // (p > la - s) should not happen
-      const b2 = (p === 0 && s === 0) ? b : b.substring(p, lb - s); // (p > lb - s) should not happen
+      if (p > la - s) s = la - p;
+      if (p > lb - s) s = lb - p;
+
+      const a2 = (p === 0 && s === 0) ? a : a.substring(p, la - s);
+      const b2 = (p === 0 && s === 0) ? b : b.substring(p, lb - s);
       let lcs = "";
-      {
+      
+      if (a2 && b2) {
+
         const dp = Array.from({ length: a2.length + 1 }, () => Array(b2.length + 1).fill(''));
 
         for (let i = 1; i <= a2.length; i++) {
