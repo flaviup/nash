@@ -4938,8 +4938,7 @@
 
       if (savedBlockContents !== block.innerHTML) block.innerHTML = savedBlockContents;
 
-      if (savedBlockContents !== afterBlockContents)
-        UNDO_STACK.push(doSplitBlock, undoSplitBlock, newBlock, block.id, getTextTransformationSteps(savedBlockContents, afterBlockContents), savedRangeLimits);
+      UNDO_STACK.push(doSplitBlock, undoSplitBlock, newBlock, block.id, getTextTransformationSteps(savedBlockContents, afterBlockContents), savedRangeLimits);
     }
 
     // Normalizes stray text nodes and nested blocks.
