@@ -1931,6 +1931,159 @@
         document.getElementById("btnRedo").setAttribute("disabled", "");
     });
 
+    // LCS - Longest Common Subsequence
+    function getLCS(a, b) {
+
+      if (a === b) return a;
+      if (!a || !b) return "";
+
+      const la = a.length;
+      const lb = b.length;
+      let p = 0;
+
+      while (p < la && p < lb) {
+        if (a[p] !== b[p]) break;
+        ++p;
+      }
+
+      if (p === la) return a;
+      if (p === lb) return b;
+      const S = la < lb ? la - 1 : lb - 1;
+      let s = 0;
+
+      while (s < la && s < lb) {
+        if (a[la - s - 1] !== b[lb - s - 1]) break;
+        ++s;
+      }
+
+      if (s === la) return a;
+      if (s === lb) return b;
+
+      const a2 = (p === 0 && s === 0) ? a : a.substring(p, la - s); // (p > la - s) should not happen
+      const b2 = (p === 0 && s === 0) ? b : b.substring(p, lb - s); // (p > lb - s) should not happen
+      let lcs = "";
+      {
+        const dp = Array.from({ length: a2.length + 1 }, () => Array(b2.length + 1).fill(''));
+
+        for (let i = 1; i <= a2.length; i++) {
+          for (let j = 1; j <= b2.length; j++) {
+            if (a2[i - 1] === b2[j - 1]) {
+              dp[i][j] = dp[i - 1][j - 1] + a2[i - 1];
+            } else {
+              dp[i][j] = dp[i - 1][j].length > dp[i][j - 1].length ? dp[i - 1][j] : dp[i][j - 1];
+            }
+          }
+        }
+
+        lcs = dp[a2.length][b2.length];
+      }
+      const prefix = (p === 0) ? "" : a.substring(0, p);
+      const suffix = (s === 0) ? "" : a.substring(la - s);
+
+      return prefix + lcs + suffix;
+    }
+
+    // Text transformation - get the minimum operations (deletions and insertions)
+    // to transform the source text into the target text
+
+    class TextOperationType {
+      static #_DELETE = 0;
+      static #_INSERT = 1;
+
+      static get DELETE() { return this.#_DELETE; }
+      static get INSERT() { return this.#_INSERT; }
+
+      static invert(op) { return ((op + 1) & 1); };
+    }
+
+    function getTextTransformationSteps(source, target) {
+
+      if (source === target) return [];
+
+      if (!source) return [{ type: TextOperationType.INSERT, text: target, index: 0 }];
+
+      if (!target) return [{ type: TextOperationType.DELETE, text: source, index: 0 }];
+
+      const lcs = getLCS(source, target);
+      let i = 0, j = 0, k = 0;
+      const operations = [];
+      let current = source;
+
+      while (k < lcs.length) {
+
+        let del = "", ins = "";
+        let start = i;
+
+        while (source[i] !== lcs[k]) {
+          del += source[i++];
+        }
+
+        if (del) {
+
+          operations.push({ type: TextOperationType.DELETE, text: del, index: start });
+          current = current.slice(0, start) + current.slice(start + del.length);
+        }
+
+        start = j;
+
+        while (target[j] !== lcs[k]) {
+          ins += target[j++];
+        }
+
+        if (ins) {
+
+          operations.push({ type: TextOperationType.INSERT, text: ins, index: start });
+          current = current.slice(0, start) + ins + current.slice(start);
+        }
+
+        i++; j++; k++;
+      }
+
+      if (i < source.length) {
+
+        operations.push({ type: TextOperationType.DELETE, text: source.slice(i), index: i });
+        current = current.slice(0, i);
+      }
+
+      if (j < target.length) {
+
+        operations.push({ type: TextOperationType.INSERT, text: target.slice(j), index: current.length });
+        current = current + target.slice(j);
+      }
+      console.log(operations);
+
+      return operations;
+    }
+
+    function applyTextTransformationSteps(text, steps, reversed = false) {
+
+      function applyTextTransformationStep(text, step, inverted) {
+
+        let op = inverted ? TextOperationType.invert(step.type) : step.type;
+
+        switch (op) {
+          case TextOperationType.DELETE:
+            text = text.slice(0, step.index) + text.slice(step.index + step.text.length);
+            break;
+
+          case TextOperationType.INSERT:
+            text = text.slice(0, step.index) + step.text + text.slice(step.index);
+            break;
+
+          default:
+            break;
+        }
+
+        return text;
+      }
+
+      if (reversed) steps = steps?.toReversed();
+
+      steps?.forEach((step) => text = applyTextTransformationStep(text, step, reversed));
+
+      return text;
+    }
+
     // Media Recording
 
     class MediaRecordingStatus {
@@ -4674,11 +4827,13 @@
       return null;
     }
 
-    function doSplitBlock(newBlock, blockId, _, _2, afterBlockContents) {
+    function doSplitBlock(newBlock, blockId, textTransformationSteps, _) {
 
       const block = document.getElementById(blockId);
 
       if (!block) return;
+
+      const afterBlockContents = applyTextTransformationSteps(block.innerHTML, textTransformationSteps);
 
       if (block.innerHTML !== afterBlockContents) {
         block.innerHTML = afterBlockContents;
@@ -4687,13 +4842,15 @@
       editorInsertBefore(newBlock, block.nextElementSibling?.id);
     }
 
-    function undoSplitBlock(newBlock, blockId, savedBlockContents, savedRangeLimits, _) {
+    function undoSplitBlock(newBlock, blockId, textTransformationSteps, savedRangeLimits) {
 
       const block = document.getElementById(blockId);
 
       if (!block) return;
 
       editorRemoveChild(newBlock, null);
+
+      const savedBlockContents = applyTextTransformationSteps(block.innerHTML, textTransformationSteps, true);
 
       if (block.innerHTML !== savedBlockContents) {
         block.innerHTML = savedBlockContents;
@@ -4767,7 +4924,10 @@
       }
       const afterBlockContents = block.innerHTML;
 
-      UNDO_STACK.push(doSplitBlock, undoSplitBlock, newBlock, block.id, savedBlockContents, savedRangeLimits, afterBlockContents);
+      if (savedBlockContents !== block.innerHTML) block.innerHTML = savedBlockContents;
+
+      if (savedBlockContents !== afterBlockContents)
+        UNDO_STACK.push(doSplitBlock, undoSplitBlock, newBlock, block.id, getTextTransformationSteps(savedBlockContents, afterBlockContents), savedRangeLimits);
     }
 
     // Normalizes stray text nodes and nested blocks.
@@ -4907,7 +5067,10 @@
           }
           const afterContents = block.innerHTML;
           const afterRangeLimits = newRange ? getRangeLimits(block, newRange) : savedRangeLimits;
-          if (savedContents !== afterContents) UNDO_STACK.push(doChangeText, undoChangeText, block, savedContents, savedRangeLimits, afterContents, afterRangeLimits);
+          
+          if (savedContents !== block.innerHTML) block.innerHTML = savedContents;
+
+          if (savedContents !== afterContents) UNDO_STACK.push(doChangeText, undoChangeText, block, getTextTransformationSteps(savedContents, afterContents), savedRangeLimits, afterRangeLimits);
 
           return true;
         }
@@ -5265,7 +5428,7 @@
       return nodeId ? (nodeId.includes(" ") ? document.querySelector(nodeId) : document.getElementById(nodeId)) : null;
     }
 
-    function replaceSelectedContent(firstNodeId, removeNodes, nextElementSiblingId, _, afterContents, newTextBlock, _2, newRangeLimits) {
+    function replaceSelectedContent(firstNodeId, removeNodes, nextElementSiblingId, textTransformationSteps, newTextBlock, _2, newRangeLimits) {
 
       for (let node of removeNodes) {
         editorRemoveChild(node);
@@ -5273,6 +5436,8 @@
       const firstNode = getNodeFromId(firstNodeId);
 
       if (firstNode) {
+
+        const afterContents = applyTextTransformationSteps(firstNode.innerHTML, textTransformationSteps);
 
         if (firstNode.innerHTML !== afterContents) firstNode.innerHTML = afterContents;
         setRange(firstNode, newRangeLimits);
@@ -5285,15 +5450,18 @@
       }
     }
 
-    function undoReplaceSelectedContent(firstNodeId, removeNodes, nextElementSiblingId, savedContents, _, newTextBlock, oldRangeLimits, _2) {
+    function undoReplaceSelectedContent(firstNodeId, removeNodes, nextElementSiblingId, textTransformationSteps, newTextBlock, oldRangeLimits, _2) {
 
       if (newTextBlock) {
         editorRemoveChild(newTextBlock);
       }
       const firstNode = getNodeFromId(firstNodeId);
 
-      if (firstNode && firstNode.innerHTML !== savedContents) {
-        firstNode.innerHTML = savedContents;
+      if (firstNode) {
+
+        const savedContents = applyTextTransformationSteps(firstNode.innerHTML, textTransformationSteps, true);
+
+        if (firstNode.innerHTML !== savedContents) firstNode.innerHTML = savedContents;
       }
       let nextSiblingId = nextElementSiblingId;
 
@@ -5520,18 +5688,22 @@
       return null;
     }
 
-    function doChangeText(node, _, _2, afterContents, afterRangeLimits) {
+    function doChangeText(node, textTransformationSteps, _, afterRangeLimits) {
 
       if (node) {
+
+        const afterContents = applyTextTransformationSteps(node.innerHTML, textTransformationSteps);
 
         if (node.innerHTML !== afterContents) node.innerHTML = afterContents;
         setRange(node, afterRangeLimits);
       }
     }
 
-    function undoChangeText(node, savedContents, savedRangeLimits, _, _2) {
+    function undoChangeText(node, textTransformationSteps, savedRangeLimits, _,) {
 
       if (node) {
+
+        const savedContents = applyTextTransformationSteps(node.innerHTML, textTransformationSteps, true);
 
         if (node.innerHTML !== savedContents) node.innerHTML = savedContents;
         setRange(node, savedRangeLimits);
@@ -5581,7 +5753,9 @@
       const afterContents = topNode.innerHTML;
       const afterRangeLimits = getRangeLimits(topNode, range);
 
-      if (savedContents !== afterContents) UNDO_STACK.push(doChangeText, undoChangeText, topNode, savedContents, savedRangeLimits, afterContents, afterRangeLimits);
+      if (savedContents !== topNode.innerHTML) topNode.innerHTML = savedContents;
+
+      if (savedContents !== afterContents) UNDO_STACK.push(doChangeText, undoChangeText, topNode, getTextTransformationSteps(savedContents, afterContents), savedRangeLimits, afterRangeLimits);
     }
 
     function handleTextDeletion(range, topNode, usingBackspace) {
@@ -5605,7 +5779,9 @@
         const afterContents = topNode.innerHTML;
         const afterRangeLimits = getRangeLimits(topNode, delRange);
 
-        if (savedContents !== afterContents) UNDO_STACK.push(doChangeText, undoChangeText, topNode, savedContents, savedRangeLimits, afterContents, afterRangeLimits);
+        if (savedContents !== topNode.innerHTML) topNode.innerHTML = savedContents;
+
+        if (savedContents !== afterContents) UNDO_STACK.push(doChangeText, undoChangeText, topNode, getTextTransformationSteps(savedContents, afterContents), savedRangeLimits, afterRangeLimits);
       }
     }
 
@@ -5756,9 +5932,11 @@
           const newRangeLimits = { start: newCaretPosition, end: newCaretPosition };
 
           if (savedContents !== afterContents || newTextBlock)
+
+            if (!newTextBlock) firstNode.innerHTML = savedContents;
             UNDO_STACK.push(replaceSelectedContent, undoReplaceSelectedContent, firstNodeId, removeNodes,
-                            selections[selections.length - 1].node.nextElementSibling?.id, savedContents,
-                            afterContents, newTextBlock, oldRangeLimits, newRangeLimits);
+                            selections[selections.length - 1].node.nextElementSibling?.id,
+                            newTextBlock ? [] : getTextTransformationSteps(savedContents, afterContents), newTextBlock, oldRangeLimits, newRangeLimits);
         }
 
         return true;
