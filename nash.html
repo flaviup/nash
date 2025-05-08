@@ -2005,29 +2005,43 @@
       if (!target) return [{ type: TextOperationType.DELETE, text: source, index: 0 }];
 
       const lcs = getLCS(source, target);
-      let i = 0, j = 0, k = 0;
       const operations = [];
+      let i = 0, k = 0;
       let current = source;
 
       while (k < lcs.length) {
 
-        let del = "", ins = "";
+        let del = "";
         let start = i;
 
-        while (source[i] !== lcs[k]) {
-          del += source[i++];
+        while (current[i] !== lcs[k]) {
+          del += current[i++];
         }
 
         if (del) {
 
           operations.push({ type: TextOperationType.DELETE, text: del, index: start });
           current = current.slice(0, start) + current.slice(start + del.length);
+          i -= del.length;
         }
+        i++; k++;
+      }
 
-        start = j;
+      if (i < current.length) {
 
-        while (target[j] !== lcs[k]) {
-          ins += target[j++];
+        operations.push({ type: TextOperationType.DELETE, text: current.slice(i), index: i });
+        current = current.slice(0, i);
+      }
+      i = 0;
+      k = 0;
+
+      while (k < lcs.length) {
+
+        let ins = "";
+        let start = i;
+
+        while (target[i] !== lcs[k]) {
+          ins += target[i++];
         }
 
         if (ins) {
@@ -2036,19 +2050,13 @@
           current = current.slice(0, start) + ins + current.slice(start);
         }
 
-        i++; j++; k++;
+        i++; k++;
       }
 
-      if (i < source.length) {
+      if (i < target.length) {
 
-        operations.push({ type: TextOperationType.DELETE, text: source.slice(i), index: i });
-        current = current.slice(0, i);
-      }
-
-      if (j < target.length) {
-
-        operations.push({ type: TextOperationType.INSERT, text: target.slice(j), index: current.length });
-        current = current + target.slice(j);
+        operations.push({ type: TextOperationType.INSERT, text: target.slice(i), index: current.length });
+        current = current + target.slice(i);
       }
 
       return operations;
