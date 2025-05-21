@@ -141,6 +141,10 @@
       color: var(--page-text-color);
       margin: 0;
       padding: 40px;
+      /*targeting Chrome & Safari*/
+      display: -webkit-flex;
+      /*targeting IE10*/
+      display: -ms-flex;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -177,21 +181,25 @@
       position: -webkit-sticky;
       top: 5px;
       padding: 0 10px;
-      z-index: 9999;
+      z-index: 9998;
     }
 
     #toolbar {
       gap: 8px;
       background-color: var(--control-bg-color);
       border-radius: 12px;
+      /*targeting Chrome & Safari*/
+      display: -webkit-flex;
+      /*targeting IE10*/
+      display: -ms-flex;
       display: flex;
       flex-wrap: wrap;
       justify-content: flex-start;
       align-items: center;
+      overflow: visible;
     }
 
     #toolbar #splitbar {
-      margin-left: auto;
       font-size: 24px;
     }
 
@@ -302,6 +310,127 @@
       display: block;
     }
 
+    /* Page dropdown container (hidden by default) */
+    .page-dropdown {
+      display: none;
+      position: absolute;
+      width: 100vw;
+      top: 0;
+      left: 0;
+      background: var(--control-bg-color);
+      z-index: 9999;
+    }
+
+    /* Show page dropdown when .show is added */
+    .page-dropdown.show {
+      display: block;
+    }
+
+    /* Page dropdown toolbar button */
+    .page-dropdown-toolbar-item > button {
+      padding: 6px 10px;
+    }
+
+    .page-dropdown button {
+      width: 100%;
+      text-align: left;
+    }
+
+    .page-dropdown .fileUpload label {
+      max-width: 100%;
+      text-align: left;
+      display: block;
+    }
+
+    .page-dropdown-title {
+      width: 100%;
+      padding: 1rem;
+      text-align: left;
+      background: var(--control-bg-color);
+      color: var(--control-text-color);
+      border: none;
+      outline: none;
+      font-size: 2rem;
+      font-weight: 500;
+    }
+
+    .page-dropdown-item {
+      border-bottom: 1px solid #ccc;
+    }
+
+    /* Page dropdown content (collapsed by default) */
+    .page-dropdown-content {
+      display: block;
+      position: relative;
+      width: 100%;
+      top: 0;
+      left: 0;
+      overflow: hidden;
+      max-height: 0;
+      background: var(--control-bg-color);
+      color: var(--control-text-color);
+      padding: 0 1rem;
+      z-index: 9999;
+      transition: max-height 0.3s ease, padding 0.3s ease;
+    }
+
+    .page-dropdown-content.open {
+      padding: 1rem;
+    }
+
+    .page-dropdown-content-open { /* Always open */
+      display: block;
+      position: relative;
+      width: 100%;
+      top: 0;
+      left: 0;
+      overflow: hidden;
+      background: var(--control-bg-color);
+      color: var(--control-text-color);
+      padding: 1rem;
+      z-index: 9999;
+    }
+
+    .page-dropdown input[type="file"] {
+      display: none;
+    }
+
+    .page-dropdown button,
+    .page-dropdown label {
+      padding: 0.8rem;
+      border: none;
+      background: none;
+      color: var(--control-text-color);
+      font-size: 1.4rem;
+      cursor: pointer;
+      transition: opacity 0.2s
+    }
+
+    .page-dropdown button:hover,
+    .page-dropdown label:hover {
+      background: var(--control-hover-bg-color);
+      border-color: var(--control-hover-text-color);
+      color: var(--control-hover-text-color);
+    }
+
+    .page-dropdown button:disabled,
+    .page-dropdown label:disabled {
+      background: var(--control-disabled-bg-color);
+      border-color: var(--control-disabled-text-color);
+      color: var(--control-disabled-text-color);
+      cursor: not-allowed;
+    }
+
+    .page-dropdown-header {
+      padding: 1rem !important;
+      font-size: 1.6rem !important;
+    }
+
+    .page-dropdown-close {
+      padding: 1rem !important;
+      font-size: 1.6rem !important;
+    }
+
     /* Grid of swatches */
     .swatch-grid {
       display: grid;
@@ -323,7 +452,7 @@
       box-shadow: 0 0 4px rgba(0, 0, 0, 0.3);
     }
 
-    #fontSizeDropdown {
+    #fontScaleDropdown {
       width: 100px;
     }
 
@@ -615,8 +744,23 @@
       height: auto;
       margin: 0;
       border-radius: 12px;
-      background-color: white;
-      background: var(--audio-recording-controls-bg-color);
+      background-color: var(--audio-recording-controls-bg-color);
+      color: var(--audio-recording-controls-text-color);
+    }
+
+    .recording-cancelled-container {
+      /*targeting Chrome & Safari*/
+      display: -webkit-flex;
+      /*targeting IE10*/
+      display: -ms-flex;
+      display: flex;
+      align-items: start;
+      width: 100%;
+      height: auto;
+      margin: 0;
+      padding: 10px 0px;
+      border-radius: 12px;
+      background-color: var(--audio-recording-controls-bg-color);
       color: var(--audio-recording-controls-text-color);
     }
 
@@ -730,6 +874,22 @@
       display: block;
     }
 
+    .xlarge-text {
+      font-size: 32px;
+    }
+
+    .large-text {
+      font-size: 24px;
+    }
+
+    .medium-text {
+      font-size: 16px;
+    }
+
+    .small-text {
+      font-size: 12px;
+    }
+
     .left-text {
       text-align: left;
     }
@@ -747,21 +907,55 @@
     }
 
     .left-align {
+      /*targeting Chrome & Safari*/
+      display: -webkit-flex;
+      /*targeting IE10*/
+      display: -ms-flex;
       display: flex;
       flex-direction: row;
       justify-content: flex-start;
     }
 
     .center-align {
+      /*targeting Chrome & Safari*/
+      display: -webkit-flex;
+      /*targeting IE10*/
+      display: -ms-flex;
       display: flex;
       flex-direction: row;
       justify-content: center;
     }
 
     .right-align {
+      /*targeting Chrome & Safari*/
+      display: -webkit-flex;
+      /*targeting IE10*/
+      display: -ms-flex;
       display: flex;
       flex-direction: row;
       justify-content: flex-end;
+    }
+
+    .mobile-only {
+      display: none;
+    }
+
+    @media (max-width: 800px) {
+      .mobile-only {
+        display: block !important;
+      }
+
+      .no-mobile {
+        display: none !important;
+      }
+
+      #toolbar {
+        overflow: hidden;
+      }
+
+      .swatch-grid {
+        gap: 32px;
+      }
     }
 
     @media print {
@@ -791,18 +985,18 @@
 
     <div class="top-container">
       <div id="toolbar" class="no-print">
-        <button id="btnH1" title="Extra large text">XL</button>
-        <button id="btnH2" title="Large text">L</button>
-        <button id="btnM" title="Medium text">M</button>
-        <button id="btnS" title="Small text">S</button>
+        <button id="btnH1" class="no-mobile" title="Extra large text">XL</button>
+        <button id="btnH2" class="no-mobile" title="Large text">L</button>
+        <button id="btnM" class="no-mobile" title="Medium text">M</button>
+        <button id="btnS" class="no-mobile" title="Small text">S</button>
 
-        <button id="btnB" title="Bold text"><b>B</b></button>
-        <button id="btnI" title="Italic text"><i>I</i></button>
-        <button id="btnU" title="Underline text"><u>U</u></button>
-        <button id="btnStrikethrough" title="Strikethrough text">Ꞩ</button>
+        <button id="btnB" title="Select a text to make bold" disabled><b>B</b></button>
+        <button id="btnI" title="Select a text to make italic" disabled><i>I</i></button>
+        <button id="btnU" title="Select a text to underline" disabled><u>U</u></button>
+        <button id="btnStrikethrough" title="Select a text to strikethrough" disabled>Ꞩ</button>
 
-        <div class="dropdown">
-          <button id="btnTextColorMenu" title="Colorize text">Color</button>
+        <div class="dropdown no-mobile">
+          <button id="btnTextColorMenu" title="Select a text to colorize" disabled>Color</button>
           <div id="textColorDropdown" class="dropdown-content">
             <div class="swatch-grid">
               <button id="btnTextColor1" class="color-swatch" style="background: var(--note-text-color-1);"
@@ -826,8 +1020,8 @@
         </div>
 
         <!-- Highlight Color Dropdown -->
-        <div class="dropdown">
-          <button id="btnTextHighlightMenu" title="Highlight text">Highlight</button>
+        <div class="dropdown no-mobile">
+          <button id="btnTextHighlightMenu" title="Select a text to highlight" disabled>Highlight</button>
           <div id="highlightDropdown" class="dropdown-content">
             <div class="swatch-grid">
               <button id="btnTextHighlight1" class="color-swatch" style="background: var(--note-highlight-color-1);"
@@ -851,27 +1045,27 @@
         </div>
 
         <!-- Font Size Dropdown -->
-        <div class="text-dropdown">
-          <button id="btnFontSizeMenu" title="Change text size"><b>T</b></button>
-          <div id="fontSizeDropdown" class="text-dropdown-content">
+        <div class="text-dropdown no-mobile">
+          <button id="btnFontScaleMenu" title="Select a text to change scale" disabled><b>T</b></button>
+          <div id="fontScaleDropdown" class="text-dropdown-content">
             <div class="text">
-              <button id="btnFontSize1" title="25%">25%</button>
-              <button id="btnFontSize2" title="33.33%">33.33%</button>
-              <button id="btnFontSize3" title="50%">50%</button>
-              <button id="btnFontSize4" title="66.66%">66.66%</button>
-              <button id="btnFontSize5" title="75%">75%</button>
-              <button id="btnFontSize6" title="125%">125%</button>
-              <button id="btnFontSize7" title="150%">150%</button>
-              <button id="btnFontSize8" title="175%">175%</button>
-              <button id="btnFontSize9" title="200%">200%</button>
-              <button id="btnFontSize10" title="250%">250%</button>
-              <button id="btnFontSize11" title="300%">300%</button>
-              <button id="btnFontSize12" title="350%">350%</button>
+              <button id="btnFontScale1" title="25%">25%</button>
+              <button id="btnFontScale2" title="33.33%">33.33%</button>
+              <button id="btnFontScale3" title="50%">50%</button>
+              <button id="btnFontScale4" title="66.66%">66.66%</button>
+              <button id="btnFontScale5" title="75%">75%</button>
+              <button id="btnFontScale6" title="125%">125%</button>
+              <button id="btnFontScale7" title="150%">150%</button>
+              <button id="btnFontScale8" title="175%">175%</button>
+              <button id="btnFontScale9" title="200%">200%</button>
+              <button id="btnFontScale10" title="250%">250%</button>
+              <button id="btnFontScale11" title="300%">300%</button>
+              <button id="btnFontScale12" title="350%">350%</button>
             </div>
           </div>
         </div>
 
-        <div class="text-dropdown">
+        <div class="text-dropdown no-mobile">
           <button id="btnAlign" title="Alignment">Align</button>
           <div id="alignDropdown" class="text-dropdown-content">
             <button id="btnLeftTextAlign" title="Align to the left">Left</button>
@@ -881,13 +1075,18 @@
           </div>
         </div>
 
+        <div class="page-dropdown-toolbar-item mobile-only">
+          <button id="mbtnStyle" title="Styling">Style</button>
+        </div>
+
+        <div id="splitbar">|</div>
         <button id="btnText" title="Add text">📝</button>
         <button id="btnCode" title="Add source code text">🖥</button>
 
-        <div class="text-dropdown">
+        <div class="text-dropdown no-mobile">
           <button id="btnLinks" title="Insert links">🔗</button>
           <div id="linksDropdown" class="text-dropdown-content">
-            <button id="btnLinkText" title="Make text link">🌎 Text Link</button>
+            <button id="btnLinkText" title="Select a text to make link" disabled>🌎 Text Link</button>
             <button id="btnLinkImage" title="Insert image link">📷 Image Link</button>
             <button id="btnLinkAudio" title="Insert audio link">🔈 Audio Link</button>
             <button id="btnLinkVideo" title="Insert video link">🎞 Video Link</button>
@@ -895,7 +1094,7 @@
           </div>
         </div>
 
-        <div class="text-dropdown">
+        <div class="text-dropdown no-mobile">
           <button id="btnEmbed" title="Embed contents">📎</button>
           <div id="embedDropdown" class="text-dropdown-content">
             <button id="btnEmbedWeb" title="Embed web page or HTML object">🌎 Web</button>
@@ -916,16 +1115,16 @@
             </div>
 
             <div class="fileUpload">
-              <label for="epubUpload" title="Embed ePUB file">📖 ePub</label>
+              <label for="epubUpload" title="Embed ePub file">📖 ePub</label>
               <input type="file" id="epubUpload" accept=".epub" onclick="this.value = null">
             </div>
           </div>
         </div>
 
         <button id="btnRecordAudio" title="Record audio">🎤</button>
-        <button id="btnEmbedMath" title="Insert math expression">Σ</button>
+        <button id="btnEmbedMath" class="no-mobile" title="Insert math expression">Σ</button>
 
-        <div class="text-dropdown">
+        <div class="text-dropdown no-mobile">
           <button id="btnTable" title="Add table">Table</button>
           <div id="tableDropdown" class="text-dropdown-content">
             <button id="btnSimpleTable" title="Add simple table">Simple Table</button>
@@ -933,10 +1132,18 @@
           </div>
         </div>
 
+        <div class="page-dropdown-toolbar-item mobile-only">
+          <button id="mbtnInsert" title="Insert objects">Insert</button>
+        </div>
+
         <div id="splitbar">|</div>
-        <!-- Block conversion -->
-        <div class="text-dropdown">
-          <button id="btnSaveMenu" title="Save or Share">💾</button>
+        <button id="btnUndo" disabled title="Undo">↩</button>
+        <button id="btnRedo" disabled title="Redo">↪</button>
+
+        <div id="splitbar" style="margin-left: auto;">|</div>
+
+        <div class="text-dropdown no-mobile">
+          <button id="btnSaveMenu" title="Save or share">💾</button>
           <div id="saveDropdown" class="text-dropdown-content">
             <button id="btnSave">Save</button>
             <button id="btnSaveTo">Save To...</button>
@@ -947,21 +1154,176 @@
           </div>
         </div>
 
+        <div class="page-dropdown-toolbar-item mobile-only">
+          <button id="mbtnSaveMenu" title="Save or share">💾</button>
+        </div>
       </div>
       <div id="recordingBar" class="hidden" aria-hidden="true"></div>
     </div>
 
     <div id="editorContainer" class="thin-line">
       <div id="editor" contenteditable="true">
-        <p class="text-block"><br/></p>
+        <p id="text28096aea6fa9cc5d10934d24509e2c83" class="text-block"><br/></p>
       </div>
     </div>
 
     <div id="footer">
       <small><a href="https://github.com/flaviup">flaviup@github.com</a></small>
       <br/>
-      <small>Nash 0.1</small>
+      <small>Nash 1.0.20250521</small>
     </div>
+
+    <div id="styleDropdown" class="page-dropdown">
+      <div class="page-dropdown-title">Style</div>
+      <div class="page-dropdown-item">
+        <button id="mbtnFontSizeMenu" class="page-dropdown-header" title="Change text size">Font Sizing</button>
+        <div class="page-dropdown-content">
+          <button id="mbtnH1" title="Extra large text">Extra Large</button>
+          <button id="mbtnH2" title="Large text">Large</button>
+          <button id="mbtnM" title="Medium text">Medium</button>
+          <button id="mbtnS" title="Small text">Small</button>
+        </div>
+      </div>
+      <div class="page-dropdown-item">
+        <button id="mbtnFontScaleMenu" class="page-dropdown-header" title="Select a text to change scale" disabled>Font Scaling</button>
+        <div class="page-dropdown-content">
+          <button id="mbtnFontScale1" title="25%">25%</button>
+          <button id="mbtnFontScale2" title="33.33%">33.33%</button>
+          <button id="mbtnFontScale3" title="50%">50%</button>
+          <button id="mbtnFontScale4" title="66.66%">66.66%</button>
+          <button id="mbtnFontScale5" title="75%">75%</button>
+          <button id="mbtnFontScale6" title="125%">125%</button>
+          <button id="mbtnFontScale7" title="150%">150%</button>
+          <button id="mbtnFontScale8" title="175%">175%</button>
+          <button id="mbtnFontScale9" title="200%">200%</button>
+          <button id="mbtnFontScale10" title="250%">250%</button>
+          <button id="mbtnFontScale11" title="300%">300%</button>
+          <button id="mbtnFontScale12" title="350%">350%</button>
+        </div>
+      </div>
+      <div class="page-dropdown-item">
+        <button id="mbtnTextColorMenu" class="page-dropdown-header" title="Select a text to colorize" disabled>Text Color</button>
+        <div class="page-dropdown-content">
+          <div class="swatch-grid">
+            <button id="mbtnTextColor1" class="color-swatch" style="background: var(--note-text-color-1);"
+              onmousedown="event.preventDefault();"></button>
+            <button id="mbtnTextColor2" class="color-swatch" style="background: var(--note-text-color-2);"
+              onmousedown="event.preventDefault();"></button>
+            <button id="mbtnTextColor3" class="color-swatch" style="background: var(--note-text-color-3);"
+              onmousedown="event.preventDefault();"></button>
+            <button id="mbtnTextColor4" class="color-swatch" style="background: var(--note-text-color-4);"
+              onmousedown="event.preventDefault();"></button>
+            <button id="mbtnTextColor5" class="color-swatch" style="background: var(--note-text-color-5);"
+              onmousedown="event.preventDefault();"></button>
+            <button id="mbtnTextColor6" class="color-swatch" style="background: var(--note-text-color-6);"
+              onmousedown="event.preventDefault();"></button>
+            <button id="mbtnTextColor7" class="color-swatch" style="background: var(--note-text-color-7);"
+              onmousedown="event.preventDefault();"></button>
+            <button id="mbtnTextColor8" class="color-swatch" style="background: var(--note-text-color-8);"
+              onmousedown="event.preventDefault();"></button>
+          </div>
+        </div>
+      </div>
+      <div class="page-dropdown-item">
+        <button id="mbtnTextHighlightMenu" class="page-dropdown-header" title="Select a text to highlight" disabled>Highlight Color</button>
+        <div class="page-dropdown-content">
+          <div class="swatch-grid">
+            <button id="mbtnTextHighlight1" class="color-swatch" style="background: var(--note-highlight-color-1);"
+              onmousedown="event.preventDefault();"></button>
+            <button id="mbtnTextHighlight2" class="color-swatch" style="background: var(--note-highlight-color-2);"
+              onmousedown="event.preventDefault();"></button>
+            <button id="mbtnTextHighlight3" class="color-swatch" style="background: var(--note-highlight-color-3);"
+              onmousedown="event.preventDefault();"></button>
+            <button id="mbtnTextHighlight4" class="color-swatch" style="background: var(--note-highlight-color-4);"
+              onmousedown="event.preventDefault();"></button>
+            <button id="mbtnTextHighlight5" class="color-swatch" style="background: var(--note-highlight-color-5);"
+              onmousedown="event.preventDefault();"></button>
+            <button id="mbtnTextHighlight6" class="color-swatch" style="background: var(--note-highlight-color-6);"
+              onmousedown="event.preventDefault();"></button>
+            <button id="mbtnTextHighlight7" class="color-swatch" style="background: var(--note-highlight-color-7);"
+              onmousedown="event.preventDefault();"></button>
+            <button id="mbtnTextHighlight8" class="color-swatch" style="background: var(--note-highlight-color-8);"
+              onmousedown="event.preventDefault();"></button>
+          </div>
+        </div>
+      </div>
+      <div class="page-dropdown-item">
+        <button id="mbtnAlign" class="page-dropdown-header" title="Alignment">Align</button>
+        <div class="page-dropdown-content">
+          <button id="mbtnLeftTextAlign" title="Align to the left">Left</button>
+          <button id="mbtnCenterTextAlign" title="Align to the center">Center</button>
+          <button id="mbtnRightTextAlign" title="Align to the right">Right</button>
+          <button id="mbtnJustifyTextAlign" title="Justify text">Justify</button>
+        </div>
+      </div>
+      <button id="mbtnCancelStyle" class="page-dropdown-close" title="Close the menu">❌</button>
+    </div>
+
+    <div id="insertDropdown" class="page-dropdown">
+      <div class="page-dropdown-title">Insert</div>
+      <div class="page-dropdown-item">
+        <button id="mbtnLinks" class="page-dropdown-header" title="Insert links">Link</button>
+        <div class="page-dropdown-content">
+          <button id="mbtnLinkText" title="Select a text to make link" disabled>🌎 Text Link</button>
+          <button id="mbtnLinkImage" title="Insert image link">📷 Image Link</button>
+          <button id="mbtnLinkAudio" title="Insert audio link">🔈 Audio Link</button>
+          <button id="mbtnLinkVideo" title="Insert video link">🎞 Video Link</button>
+          <button id="mbtnLinkPdf" title="Insert PDF file link">📕 PDF Link</button>
+        </div>
+      </div>
+      <div class="page-dropdown-item">
+        <button id="mbtnEmbed" class="page-dropdown-header" title="Embed contents">Embed</button>
+        <div class="page-dropdown-content">
+          <button id="mbtnEmbedWeb" title="Embed web page or HTML object">🌎 Web</button>
+
+          <div class="fileUpload">
+            <label for="mimageUpload" title="Embed image file">📷 Image</label>
+            <input type="file" id="mimageUpload" accept="image/*" onclick="this.value = null">
+          </div>
+
+          <div class="fileUpload">
+            <label for="maudioUpload" title="Embed audio file">🔈 Audio</label>
+            <input type="file" id="maudioUpload" accept="audio/*" onclick="this.value = null">
+          </div>
+
+          <div class="fileUpload">
+            <label for="mpdfUpload" title="Embed PDF file">📕 PDF</label>
+            <input type="file" id="mpdfUpload" accept=".pdf" onclick="this.value = null">
+          </div>
+
+          <div class="fileUpload">
+            <label for="mepubUpload" title="Embed ePub file">📖 ePub</label>
+            <input type="file" id="mepubUpload" accept=".epub" onclick="this.value = null">
+          </div>
+
+          <button id="mbtnEmbedMath" title="Insert math expression">Σ Math</button>
+        </div>
+      </div>
+      <div class="page-dropdown-item">
+        <button id="mbtnTable" class="page-dropdown-header" title="Add table">Table</button>
+        <div class="page-dropdown-content">
+          <button id="mbtnSimpleTable" title="Add simple table">Simple Table</button>
+          <button id="mbtnHeadlessTable" title="Add headless table">Headless Table</button>
+        </div>
+      </div>
+      <button id="mbtnCancelInsert" class="page-dropdown-close" title="Close the menu">❌</button>
+    </div>
+
+    <div id="msaveDropdown" class="page-dropdown">
+      <div class="page-dropdown-title">Save & Share</div>
+      <div class="page-dropdown-item">
+        <div class="page-dropdown-content-open">
+          <button id="mbtnSave">Save</button>
+          <button id="mbtnSaveTo">Save To...</button>
+          <button id="mbtnShare">Share</button>
+          <button id="mbtnSaveReadOnly">Save as Read-Only</button>
+          <button id="mbtnSaveToReadOnly">Save To as Read-Only</button>
+          <button id="mbtnShareReadOnly">Share as Read-Only</button>
+        </div>
+      </div>
+      <button id="mbtnCancelSave" class="page-dropdown-close" title="Close the menu">❌</button>
+    </div>
+
   </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -1378,6 +1740,362 @@
 
     })); // END OF PDFObject
 
+    // Pub-Sub / Observer Pattern
+    // based on https://github.com/hassanshaikley/pico-pubsub
+    const t = new EventTarget();
+    const sub = (e, c) => (t.addEventListener(e, c), () => t.removeEventListener(e, c));
+    const pub = (n, d) => t.dispatchEvent(new CustomEvent(n, { detail: d }));
+
+    // Undo-Redo
+    // based on https://blog.julik.nl/2025/03/a-tiny-undo-stack
+
+    class UndoStack {
+
+      static MAX_UNDO = 4_000_000_000;
+
+      static #_UNDO_STACK_CHANGE_EVENT_NAME = "UNDO_STACK_CHANGE";
+
+      static #_UNDO_STACK_CHANGE_EVENT_CLEAR = 0;
+      static #_UNDO_STACK_CHANGE_EVENT_CLEAR_REDO = 1;
+      static #_UNDO_STACK_CHANGE_EVENT_PUSH = 2;
+      static #_UNDO_STACK_CHANGE_EVENT_UNDO = 3;
+      static #_UNDO_STACK_CHANGE_EVENT_REDO = 4;
+      static #_UNDO_STACK_CHANGE_EVENT_REMOVE_LAST = 5;
+      static #_UNDO_STACK_CHANGE_EVENT_REMOVE_FIRST = 6;
+
+      #_past = [];
+      #_future = [];
+
+      constructor() {}
+
+      get undoCount() {
+        return this.#_past.length;
+      }
+
+      get redoCount() {
+        return this.#_future.length;
+      }
+
+      get undoAvailable() {
+        return this.#_past.length > 0;
+      }
+
+      get redoAvailable() {
+        return this.#_future.length > 0;
+      }
+
+      onChange(callback) {
+        return sub(UndoStack.#_UNDO_STACK_CHANGE_EVENT_NAME, callback);
+      }
+
+      static #_cleanup(actions) {
+
+        for (let a of actions) {
+          a?.cleanup();
+        }
+      }
+
+      clear() {
+
+        if (this.#_past.length > 0 || this.#_future.length > 0) {
+
+          UndoStack.#_cleanup(this.#_past);
+          UndoStack.#_cleanup(this.#_future);
+          this.#_past.length = 0;
+          this.#_future.length = 0;
+
+          console.log("Undo/redo stacks cleared.");
+          pub(UndoStack.#_UNDO_STACK_CHANGE_EVENT_NAME, UndoStack.#_UNDO_STACK_CHANGE_EVENT_CLEAR);
+        }
+      }
+
+      clearRedo() {
+
+        if (this.#_future.length > 0) {
+
+          UndoStack.#_cleanup(this.#_future);
+          this.#_future.length = 0;
+          console.log("Redo stack cleared.");
+          pub(UndoStack.#_UNDO_STACK_CHANGE_EVENT_NAME, UndoStack.#_UNDO_STACK_CHANGE_EVENT_CLEAR_REDO);
+        }
+      }
+
+      push(doFn, undoFn, ...withArguments) {
+
+        const args = withArguments; // structuredClone(withArguments);
+        const action = {
+          doWithData() {
+            doFn(...args);
+          },
+          undoWithData() {
+            undoFn(...args);
+          },
+          cleanup () {
+            if (doFn.cleanup) doFn.cleanup();
+            if (undoFn.cleanup) undoFn.cleanup();
+          }
+        };
+        action.doWithData();
+
+        if (this.#_past.length === UndoStack.MAX_UNDO) {
+
+          const firstAction = this.#_past.shift();
+
+          if (firstAction) {
+
+            firstAction.cleanup();
+            pub(UndoStack.#_UNDO_STACK_CHANGE_EVENT_NAME, UndoStack.#_UNDO_STACK_CHANGE_EVENT_REMOVE_FIRST);
+          }
+        }
+
+        // Adding a new action wipes the redoable steps
+        this.#_past.push(action);
+        UndoStack.#_cleanup(this.#_future);
+        this.#_future.length = 0;
+
+        pub(UndoStack.#_UNDO_STACK_CHANGE_EVENT_NAME, UndoStack.#_UNDO_STACK_CHANGE_EVENT_PUSH);
+
+        return this.#_past.length - 1;
+      }
+
+      replace(index, doFn, undoFn, ...withArguments) {
+
+        if (index > -1 && index < this.#_past.length) {
+
+          const args = withArguments; // structuredClone(withArguments);
+          const action = {
+            doWithData() {
+              doFn(...args);
+            },
+            undoWithData() {
+              undoFn(...args);
+            },
+            cleanup () {
+              if (doFn.cleanup) doFn.cleanup();
+              if (undoFn.cleanup) undoFn.cleanup();
+            }
+          };
+          let act = this.#_past[index];
+          this.#_past[index] = action;
+          act?.cleanup();
+        }
+      }
+
+      undo() {
+
+        const action = this.#_past.pop();
+
+        if (action) {
+
+          action.undoWithData();
+          this.#_future.unshift(action);
+          pub(UndoStack.#_UNDO_STACK_CHANGE_EVENT_NAME, UndoStack.#_UNDO_STACK_CHANGE_EVENT_UNDO);
+        }
+      }
+
+      removeLast() {
+
+          const action = this.#_past.pop();
+
+          if (action) {
+
+            action.cleanup();
+            pub(UndoStack.#_UNDO_STACK_CHANGE_EVENT_NAME, UndoStack.#_UNDO_STACK_CHANGE_EVENT_REMOVE_LAST);
+          }
+      }
+
+      redo() {
+
+        const action = this.#_future.shift();
+
+        if (action) {
+
+          action.doWithData();
+          this.#_past.push(action);
+          pub(UndoStack.#_UNDO_STACK_CHANGE_EVENT_NAME, UndoStack.#_UNDO_STACK_CHANGE_EVENT_REDO);
+        }
+      }
+    }
+
+    const UNDO_STACK = new UndoStack();
+    UNDO_STACK.onChange(function (event) {
+
+      if (UNDO_STACK.undoAvailable)
+        document.getElementById("btnUndo").removeAttribute("disabled");
+      else
+        document.getElementById("btnUndo").setAttribute("disabled", "");
+
+      if (UNDO_STACK.redoAvailable)
+        document.getElementById("btnRedo").removeAttribute("disabled");
+      else
+        document.getElementById("btnRedo").setAttribute("disabled", "");
+    });
+
+    // LCS - Longest Common Subsequence
+    function getLCS(a, b) {
+
+      if (a === b) return a;
+      if (!a || !b) return "";
+
+      const la = a.length;
+      const lb = b.length;
+      let p = 0;
+
+      while (p < la && p < lb) {
+        if (a[p] !== b[p]) break;
+        ++p;
+      }
+
+      if (p === la) return a;
+      if (p === lb) return b;
+
+      let s = 0;
+
+      while (s < la && s < lb) {
+        if (a[la - s - 1] !== b[lb - s - 1]) break;
+        ++s;
+      }
+
+      if (s === la) return a;
+      if (s === lb) return b;
+
+      if (p > la - s) s = la - p;
+      if (p > lb - s) s = lb - p;
+
+      const a2 = (p === 0 && s === 0) ? a : a.substring(p, la - s);
+      const b2 = (p === 0 && s === 0) ? b : b.substring(p, lb - s);
+      let lcs = "";
+      
+      if (a2 && b2) {
+
+        const dp = Array.from({ length: a2.length + 1 }, () => Array(b2.length + 1).fill(''));
+
+        for (let i = 1; i <= a2.length; i++) {
+          for (let j = 1; j <= b2.length; j++) {
+            if (a2[i - 1] === b2[j - 1]) {
+              dp[i][j] = dp[i - 1][j - 1] + a2[i - 1];
+            } else {
+              dp[i][j] = dp[i - 1][j].length > dp[i][j - 1].length ? dp[i - 1][j] : dp[i][j - 1];
+            }
+          }
+        }
+
+        lcs = dp[a2.length][b2.length];
+      }
+      const prefix = (p === 0) ? "" : a.substring(0, p);
+      const suffix = (s === 0) ? "" : a.substring(la - s);
+
+      return prefix + lcs + suffix;
+    }
+
+    // Text transformation - get the minimum operations (deletions and insertions)
+    // to transform the source text into the target text
+
+    class TextOperationType {
+      static #_DELETE = 0;
+      static #_INSERT = 1;
+
+      static get DELETE() { return this.#_DELETE; }
+      static get INSERT() { return this.#_INSERT; }
+
+      static invert(op) { return ((op + 1) & 1); };
+    }
+
+    function getTextTransformationSteps(source, target) {
+
+      if (source === target) return [];
+
+      if (!source) return [{ type: TextOperationType.INSERT, text: target, index: 0 }];
+
+      if (!target) return [{ type: TextOperationType.DELETE, text: source, index: 0 }];
+
+      const lcs = getLCS(source, target);
+      const operations = [];
+      let i = 0, k = 0;
+      let current = source;
+
+      while (k < lcs.length) {
+
+        let del = "";
+        let start = i;
+
+        while (current[i] !== lcs[k]) {
+          del += current[i++];
+        }
+
+        if (del) {
+
+          operations.push({ type: TextOperationType.DELETE, text: del, index: start });
+          current = current.slice(0, start) + current.slice(start + del.length);
+          i -= del.length;
+        }
+        i++; k++;
+      }
+
+      if (i < current.length) {
+
+        operations.push({ type: TextOperationType.DELETE, text: current.slice(i), index: i });
+        current = current.slice(0, i);
+      }
+      i = 0;
+      k = 0;
+
+      while (k < lcs.length) {
+
+        let ins = "";
+        let start = i;
+
+        while (target[i] !== lcs[k]) {
+          ins += target[i++];
+        }
+
+        if (ins) {
+
+          operations.push({ type: TextOperationType.INSERT, text: ins, index: start });
+          current = current.slice(0, start) + ins + current.slice(start);
+        }
+
+        i++; k++;
+      }
+
+      if (i < target.length) {
+
+        operations.push({ type: TextOperationType.INSERT, text: target.slice(i), index: current.length });
+        current = current + target.slice(i);
+      }
+
+      return operations;
+    }
+
+    function applyTextTransformationSteps(text, steps, reversed = false) {
+
+      function applyTextTransformationStep(text, step, inverted) {
+
+        let op = inverted ? TextOperationType.invert(step.type) : step.type;
+
+        switch (op) {
+          case TextOperationType.DELETE:
+            text = text.slice(0, step.index) + text.slice(step.index + step.text.length);
+            break;
+
+          case TextOperationType.INSERT:
+            text = text.slice(0, step.index) + step.text + text.slice(step.index);
+            break;
+
+          default:
+            break;
+        }
+
+        return text;
+      }
+
+      if (reversed) steps = steps?.toReversed();
+
+      steps?.forEach((step) => text = applyTextTransformationStep(text, step, reversed));
+
+      return text;
+    }
+
     // Media Recording
 
     class MediaRecordingStatus {
@@ -1504,6 +2222,106 @@
       }
     }; // END OF Media Recording
 
+    const editor = document.getElementById("editor");
+    const filename = document.getElementById("filename");
+
+    // Helper: Places the caret at a given node and offset.
+    function setCaret(node, pos) {
+
+      const selection = window.getSelection();
+      const range = document.createRange();
+      range.setStart(node, pos);
+      range.collapse(true);
+      selection.removeAllRanges();
+      selection.addRange(range);
+
+      return range;
+    }
+
+    // Helper: Places the caret after a given node.
+    function setCaretAfter(node) {
+
+      const selection = window.getSelection();
+      const range = document.createRange();
+      range.setStartAfter(node);
+      range.collapse(true);
+      selection.removeAllRanges();
+      selection.addRange(range);
+
+      return range;
+    }
+
+    function setCaretAtEnd(node) {
+
+      const ldc = getLastDeepestChild(node.classList?.contains("code-block") ? node.querySelector("code"): node);
+      const range = document.createRange();
+
+      if (ldc.nodeName === "BR") range.setStartBefore(ldc);
+      else range.setStartAfter(ldc);
+
+      range.collapse(true);
+
+      const selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
+
+      return range;
+    }
+
+    function editorInsertBefore(childNode, siblingNodeId) {
+
+      if (childNode && !editor.contains(childNode)) {
+
+        const siblingNode = siblingNodeId ? document.getElementById(siblingNodeId) : null;
+
+        if (!siblingNode || editor.contains(siblingNode)) {
+
+          editor.insertBefore(childNode, siblingNode);
+
+          if (childNode.classList?.contains("text-block") ||
+              childNode.classList?.contains("code-block")) {
+            if (childNode.classList?.contains("text-block")) setCaret(childNode, 0);
+            else setCaret(childNode.querySelector("code"), 0);
+          }
+        }
+      }
+    }
+
+    function editorRemoveChild(childNode, siblingNodeId) {
+
+      if (childNode && editor.contains(childNode)) {
+
+        if (childNode.classList?.contains("text-block") ||
+            childNode.classList?.contains("code-block")) {
+
+          let p = childNode.previousElementSibling;
+
+          while (p &&
+                 !p.classList?.contains("text-block") &&
+                 !p.classList?.contains("code-block")) {
+            p = p.previousElementSibling;
+          }
+          editor.removeChild(childNode);
+
+          if (p) {
+            if (p.classList?.contains("text-block")) setCaret(p, 0);
+            else setCaret(p.querySelector("code"), 0);
+          }
+          else {
+            editor.focus();
+          }
+        } else {
+
+          editor.removeChild(childNode);
+          editor.focus();
+        }
+      }
+    }
+
+    editor.UNDO_STACK = UNDO_STACK;
+
+    const STYLE_TAGS = ["span", "strong", "em", "u", "s", "a"];
+
     const STYLES = [
       { tagName: "span", style: { "color": "var(--note-text-color-1)" }, attributes: null },
       { tagName: "span", style: { "color": "var(--note-text-color-2)" }, attributes: null },
@@ -1573,25 +2391,40 @@
       for(let link of links) STYLES.push({tagName: "a", style: null, attributes: { "href": link }});
     }
 
+    // Helper: generates a unique id
     function generateUId() {
+
       function s4() {
         return Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
       }
+
       return s4() + s4() + s4() + s4() +
              s4() + s4() + s4() + s4();
     }
 
+    // Blocks page interaction
+    function blockPageInteraction() {
+
+      const divNode = document.createElement("div");
+      divNode.setAttribute("id", `blockingPage${generateUId()}`);
+      document.body.appendChild(divNode);
+
+      return function() {
+        divNode.remove();
+      }
+    }
+
     function setEditMode(editMode) {
-      let editor = document.getElementById("editor");
-      let toolbar = document.getElementById("toolbar");
-      let filename = document.getElementById("filename");
+
+      const toolbar = document.getElementById("toolbar");
 
       if (editMode) {
+
         editor.contentEditable = "true";
         filename.contentEditable = "plaintext-only";
         toolbar.style.display = "flex";
-      }
-      else {
+      } else {
+
         editor.contentEditable = "false";
         filename.contentEditable = "false";
         toolbar.style.display = "none";
@@ -1768,7 +2601,7 @@
         }
       }
 
-      return getTopLevelNodeOf(range?.startContainer, document.getElementById("editor"));
+      return getTopLevelNodeOf(range?.startContainer, editor);
     }
 
     function createRemover(callback = null) {
@@ -1781,7 +2614,7 @@
           callback();
         }, false);
       } else {
-        divNode.setAttribute("onclick", "event.target?.parentNode?.parentNode?.removeChild(event.target?.parentNode)");
+        divNode.setAttribute("onclick", "handleXRemoveEvent(event)");
       }
       divNode.setAttribute("class", "x-remover non-selectable");
       divNode.setAttribute("contenteditable", "false");
@@ -1803,8 +2636,9 @@
       if (file) {
 
         let reader = new FileReader();
-        const nextSibling = getTopLevelNodeOfCurrentPosition(lastValidSelectionRange)?.nextSibling;
+        const nextSibling = getTopLevelNodeOfCurrentPosition(lastValidSelectionRange)?.nextElementSibling;
         reader.onload = function (e) {
+
           const divNode = document.createElement("div");
           const img = document.createElement("img");
           img.src = e.target.result;
@@ -1813,7 +2647,7 @@
           divNode.setAttribute("id", `img${generateUId()}`);
           divNode.setAttribute("class", "embedded-local-image");
           divNode.setAttribute("contenteditable", "false");
-          editor.insertBefore(divNode, nextSibling);
+          UNDO_STACK.push(editorInsertBefore, editorRemoveChild, divNode, nextSibling?.id);
         };
         reader.readAsDataURL(file);
       }
@@ -1823,7 +2657,8 @@
 
       const url = (await showPrompt("Image URL"))?.trim();
       if (!url) return;
-      const nextSibling = getTopLevelNodeOfCurrentPosition()?.nextSibling;
+
+      const nextSibling = getTopLevelNodeOfCurrentPosition()?.nextElementSibling;
       const divNode = document.createElement("div");
       const img = document.createElement("img");
       img.src = `${url}`;
@@ -1832,7 +2667,7 @@
       divNode.setAttribute("id", `img${generateUId()}`);
       divNode.setAttribute("class", "image-link");
       divNode.setAttribute("contenteditable", "false");
-      editor.insertBefore(divNode, nextSibling);
+      UNDO_STACK.push(editorInsertBefore, editorRemoveChild, divNode, nextSibling?.id);
     }
 
     function insertAudio(event) {
@@ -1842,8 +2677,9 @@
       if (file) {
 
         let reader = new FileReader();
-        const nextSibling = getTopLevelNodeOfCurrentPosition(lastValidSelectionRange)?.nextSibling;
+        const nextSibling = getTopLevelNodeOfCurrentPosition(lastValidSelectionRange)?.nextElementSibling;
         reader.onload = function (e) {
+
           const divNode = document.createElement("div");
           const audio = document.createElement("audio");
           audio.src = e.target.result;
@@ -1853,7 +2689,7 @@
           divNode.setAttribute("id", `audio${generateUId()}`);
           divNode.setAttribute("class", "embedded-local-audio");
           divNode.setAttribute("contenteditable", "false");
-          editor.insertBefore(divNode, nextSibling);
+          UNDO_STACK.push(editorInsertBefore, editorRemoveChild, divNode, nextSibling?.id);
         };
         reader.readAsDataURL(file);
       }
@@ -1863,7 +2699,8 @@
 
       const url = (await showPrompt("Audio URL"))?.trim();
       if (!url) return;
-      const nextSibling = getTopLevelNodeOfCurrentPosition()?.nextSibling;
+
+      const nextSibling = getTopLevelNodeOfCurrentPosition()?.nextElementSibling;
       const divNode = document.createElement("div");
       const audio = document.createElement("audio");
       audio.src = `${url}`;
@@ -1873,14 +2710,15 @@
       divNode.setAttribute("id", `audio${generateUId()}`);
       divNode.setAttribute("class", "audio-link");
       divNode.setAttribute("contenteditable", "false");
-      editor.insertBefore(divNode, nextSibling);
+      UNDO_STACK.push(editorInsertBefore, editorRemoveChild, divNode, nextSibling?.id);
     }
 
     async function insertVideoLink() {
 
       const url = (await showPrompt("Video URL"))?.trim();
       if (!url) return;
-      const nextSibling = getTopLevelNodeOfCurrentPosition()?.nextSibling;
+
+      const nextSibling = getTopLevelNodeOfCurrentPosition()?.nextElementSibling;
       const divNode = document.createElement("div");
       const video = document.createElement("video");
       video.src = `${url}`;
@@ -1890,7 +2728,7 @@
       divNode.setAttribute("id", `video${generateUId()}`);
       divNode.setAttribute("class", "video-link");
       divNode.setAttribute("contenteditable", "false");
-      editor.insertBefore(divNode, nextSibling);
+      UNDO_STACK.push(editorInsertBefore, editorRemoveChild, divNode, nextSibling?.id);
     }
 
     const audioRecordingInserter = {
@@ -1916,18 +2754,22 @@
       /** Stores the reference of the setInterval function that controls the timer in audio recording*/
       elapsedTimeTimer: null,
 
+      undoStackIndex: -1,
+
       /** Resets all the audioRecordingInserter's data members*/
       reset: function () {
+
         audioRecordingInserter.strArId = null;
         audioRecordingInserter.audioRecordingNode = null;
         audioRecordingInserter.nextSibling = null;
         audioRecordingInserter.elapsedTimeTag = null;
         audioRecordingInserter.audioRecordStartTime = null;
         audioRecordingInserter.elapsedTimeTimer = null;
+        audioRecordingInserter.undoStackIndex = -1;
       },
 
       /** Tries to start recording and insert the audio recording ui in the page*/
-      insert: function () {
+      insert: function (useSelectionRange) {
 
         if (!audioRecorder.isMediaRecordingSupported()) {
           console.log("Media recording is not supported in this browser.");
@@ -1941,7 +2783,7 @@
         }
         audioRecordingInserter.reset();
 
-        audioRecordingInserter.nextSibling = getTopLevelNodeOfCurrentPosition()?.nextSibling;
+        audioRecordingInserter.nextSibling = getTopLevelNodeOfCurrentPosition(useSelectionRange)?.nextElementSibling;
         audioRecordingInserter.strArId = `ar${generateUId()}`;
         audioRecordingInserter.audioRecordingNode = document.createElement("div");
         audioRecordingInserter.audioRecordingNode.setAttribute("id", audioRecordingInserter.strArId);
@@ -1990,13 +2832,18 @@
         // start recording using the audio recording API
         audioRecorder.start()
           .then(() => { //on success
+
             audioRecordingInserter.audioRecordStartTime = new Date(); // store the recording start time to display the elapsed time according to it
-            editor.insertBefore(audioRecordingInserter.audioRecordingNode, audioRecordingInserter.nextSibling);
+            const audioRecordingNode = audioRecordingInserter.audioRecordingNode;
+            const nextSibling = audioRecordingInserter.nextSibling;
+            audioRecordingInserter.undoStackIndex = UNDO_STACK.push(editorInsertBefore, function (_, _2) {
+              audioRecordingInserter.onClickCancelAudioRecording();
+            }, audioRecordingNode, nextSibling?.id);
             audioRecordingInserter.elapsedTimeTag = document.querySelectorAll(`#${audioRecordingInserter.strArId} .elapsed-time`)[0];
             const stopRecordingButton = document.querySelectorAll(`#${audioRecordingInserter.strArId} .stop-recording-button`)[0];
             const cancelRecordingButton = document.querySelectorAll(`#${audioRecordingInserter.strArId} .cancel-recording-button`)[0];
             stopRecordingButton.onclick = audioRecordingInserter.stopAudioRecording;
-            cancelRecordingButton.onclick = audioRecordingInserter.cancelAudioRecording;
+            cancelRecordingButton.onclick = audioRecordingInserter.onClickCancelAudioRecording;
             audioRecordingInserter.handleElapsedRecordingTime();
           })
           .catch(error => { // on error
@@ -2073,8 +2920,19 @@
         audioRecorder.cancel();
         audioRecordingInserter.handleRecordingEnd();
 
-        if (editor.contains(audioRecordingInserter.audioRecordingNode)) editor.removeChild(audioRecordingInserter.audioRecordingNode);
+        const audioRecordingNode = audioRecordingInserter.audioRecordingNode;
+        const nextSibling = audioRecordingInserter.nextSibling;
+        audioRecordingNode.innerHTML = '<div class="recording-cancelled-container" contenteditable="false"><span style="margin: 0 10px">Cancelled audio recording</span></div>';
+        audioRecordingNode.appendChild(createRemover());
+        UNDO_STACK.replace(audioRecordingInserter.undoStackIndex, editorInsertBefore, editorRemoveChild, audioRecordingNode, nextSibling?.id);
         audioRecordingInserter.reset(); // audioRecordingInserter's job is finished here
+      },
+
+      onClickCancelAudioRecording: function () {
+
+        if (confirm("Do you want to cancel audio recording? The cancellation cannot be undone.")) {
+          audioRecordingInserter.cancelAudioRecording();
+        }
       },
 
       /** Shows the audio play interface for playing the recorded audio using the audio element in the HTML document
@@ -2088,8 +2946,13 @@
         // once content has been read
         reader.onload = (e) => {
 
-          audioRecordingInserter.audioRecordingNode.innerHTML = `<audio controls src="${e.target.result}"></audio>`;
-          audioRecordingInserter.audioRecordingNode.appendChild(createRemover());
+          const audioRecordingNode = audioRecordingInserter.audioRecordingNode;
+          const nextSibling = audioRecordingInserter.nextSibling;
+          audioRecordingNode.innerHTML = `<audio controls src="${e.target.result}"></audio>`;
+          audioRecordingNode.appendChild(createRemover());
+
+          UNDO_STACK.replace(audioRecordingInserter.undoStackIndex, editorInsertBefore, editorRemoveChild, audioRecordingNode, nextSibling?.id);
+
           document.querySelectorAll(`#${audioRecordingInserter.strArId} audio`)[0].load();
           audioRecordingInserter.reset(); // audioRecordingInserter's job is finished here
         };
@@ -2252,7 +3115,29 @@
     };
 
     function insertAudioRecording() {
-      audioRecordingInserter.insert();
+      audioRecordingInserter.insert(lastValidSelectionRange);
+    }
+
+    function setMathExpression(nodeId, expression) {
+
+      const node = document.getElementById(nodeId);
+      const mathNode = node?.querySelector("math");
+
+      if (mathNode) {
+
+        node.setAttribute("data-math", expression);
+        mathup(expression, { bare: true }).updateDOM(mathNode);
+      }
+    }
+
+    function doMathExpression(nodeId, _, newExpression) {
+
+      setMathExpression(nodeId, newExpression);
+    }
+
+    function undoMathExpression(nodeId, oldExpression, _) {
+
+      setMathExpression(nodeId, oldExpression);
     }
 
     function onMathClick(e) {
@@ -2263,26 +3148,24 @@
         node = node.parentNode;
       }
 
-      if (!node) return false;
+      if (!node?.id) return false;
 
-      const expression = prompt("Introduce math expression (see https://mathup.xyz):", node.getAttribute("data-math"));
+      const currentExpression = node.getAttribute("data-math");
+      const newExpression = prompt("Introduce math expression (see https://mathup.xyz):", currentExpression)?.trim();
 
-      if (!expression) return false;
+      if (!newExpression || currentExpression === newExpression) return false;
 
-      node.setAttribute("data-math", expression);
-      const mathNode = node.querySelector("math");
-
-      if (mathNode) mathup(expression, { bare: true }).updateDOM(mathNode);
+      UNDO_STACK.push(doMathExpression, undoMathExpression, node.id, currentExpression, newExpression);
 
       return true;
     }
 
     function insertMath() {
 
-      const expression = prompt("Introduce math expression (see https://mathup.xyz):");
+      const expression = prompt("Introduce math expression (see https://mathup.xyz):")?.trim();
       if (!expression) return;
 
-      const nextSibling = getTopLevelNodeOfCurrentPosition()?.nextSibling;
+      const nextSibling = getTopLevelNodeOfCurrentPosition()?.nextElementSibling;
       const divNode = document.createElement("div");
 
       const mathNode = mathup(expression, { bare: false, display: "inline" }).toDOM();
@@ -2294,7 +3177,7 @@
       divNode.setAttribute("class", "embedded-math");
       divNode.setAttribute("contenteditable", "false");
       divNode.setAttribute("data-math", expression);
-      editor.insertBefore(divNode, nextSibling);
+      UNDO_STACK.push(editorInsertBefore, editorRemoveChild, divNode, nextSibling?.id);
     }
 
     function loadAllReferencedDocuments() {
@@ -2317,7 +3200,7 @@
       if (file) {
 
         let reader = new FileReader();
-        const nextSibling = getTopLevelNodeOfCurrentPosition(lastValidSelectionRange)?.nextSibling;
+        const nextSibling = getTopLevelNodeOfCurrentPosition(lastValidSelectionRange)?.nextElementSibling;
         reader.onload = async function (e) {
           loadEpub(e.target?.result, nextSibling);
         }
@@ -2337,18 +3220,34 @@
         divNode.setAttribute("class", "embedded-local-epub epub-loading");
         divNode.setAttribute("contenteditable", "false");
         divNode.setAttribute("data-epub", epubData);
-        if (!element) editor.insertBefore(divNode, nextSibling);
+        const destroyBook = () => {
+          if (!editor.contains(divNode) && book) {
+            book.destroy();
+            book = null;
+            console.log("Epub book destroyed.");
+          }
+        }
+        const removeEpubNode = (childNode, nextSiblingId) => { editorRemoveChild(childNode, nextSiblingId); };
+        removeEpubNode.cleanup = destroyBook;
+        if (!element) UNDO_STACK.push(editorInsertBefore, removeEpubNode, divNode, nextSibling?.id);
 
         setTimeout(async () => {
+
+          const unblockPageInteraction = blockPageInteraction();
 
           try {
             //book = ePub(epubData, { openAs: "base64" }); // BUG: not working
             book = ePub(await (await window.fetch(epubData)).blob());
           } catch (error) { // we allow ePub loading only if epub library is available and the data could be loaded
+
             console.log(error);
+            unblockPageInteraction();
+
+            if (!element) UNDO_STACK.removeLast();
             if (editor.contains(divNode)) editor.removeChild(divNode);
             return;
           }
+          unblockPageInteraction();
           const strTocId = `toc${epubId}`;
 
           const navButtons = document.createElement("div");
@@ -2385,9 +3284,11 @@
           const readonly = divNode.getAttribute("data-readonly") ?? false;
 
           if (!readonly) {
+
             divNode.appendChild(createRemover(function () {
-              book.destroy();
-              if (editor.contains(divNode)) editor.removeChild(divNode);
+
+              editor.UNDO_STACK.push(removeEpubNode, editorInsertBefore,
+                                     divNode, nextSibling?.id);
             }));
           }
           const rendition = book.renderTo(strEpubId, { flow: "scrolled",
@@ -2422,7 +3323,7 @@
           book.loaded.navigation.then(function (toc) {
 
             divNode.classList.remove("epub-loading");
-            const docfrag = document.createDocumentFragment();
+            const docFrag = document.createDocumentFragment();
 
             toc.forEach(function (chapter) {
 
@@ -2430,9 +3331,9 @@
               option.textContent = chapter.label;
               option.setAttribute("ref", chapter.href);
 
-              docfrag.appendChild(option);
+              docFrag.appendChild(option);
             });
-            selectToc.appendChild(docfrag);
+            selectToc.appendChild(docFrag);
             selectToc.onchange = function () {
 
               const index = selectToc.selectedIndex,
@@ -2495,7 +3396,7 @@
       if (file) {
 
         let reader = new FileReader();
-        const nextSibling = getTopLevelNodeOfCurrentPosition(lastValidSelectionRange)?.nextSibling;
+        const nextSibling = getTopLevelNodeOfCurrentPosition(lastValidSelectionRange)?.nextElementSibling;
         reader.onload = async function (e) {
           await loadPdf(e.target?.result, nextSibling);
         }
@@ -2518,7 +3419,7 @@
         divNode.setAttribute("contenteditable", "false");
         //divNode.setAttribute("data-pdf", pdfData);
 
-        if (!element) editor.insertBefore(divNode, nextSibling);
+        if (!element) UNDO_STACK.push(editorInsertBefore, editorRemoveChild, divNode, nextSibling?.id);
 
         const pdfContainer = PDFObject.embed(pdfData, divNode, {
           height: "800px",
@@ -2541,13 +3442,13 @@
 
       const url = (await showPrompt("PDF URL"))?.trim();
       if (!url) return;
-      const nextSibling = getTopLevelNodeOfCurrentPosition()?.nextSibling;
+      const nextSibling = getTopLevelNodeOfCurrentPosition()?.nextElementSibling;
       const divNode = document.createElement("div");
       divNode.setAttribute("id", `pdf${generateUId()}`);
       divNode.setAttribute("class", "pdf-link pdf-loading");
       divNode.setAttribute("contenteditable", "false");
 
-      editor.insertBefore(divNode, nextSibling);
+      UNDO_STACK.push(editorInsertBefore, editorRemoveChild, divNode, nextSibling?.id);
 
       const pdfContainer = PDFObject.embed(url, divNode, {
         height: "800px",
@@ -2642,14 +3543,14 @@
       }
       tbody = "<tbody>" + tbody + "\n</tbody>";
 
-      const nextSibling = getTopLevelNodeOfCurrentPosition()?.nextSibling;
+      const nextSibling = getTopLevelNodeOfCurrentPosition()?.nextElementSibling;
       const divNode = document.createElement("div");
       divNode.setAttribute("id", `table${generateUId()}`);
       divNode.setAttribute("class", "embedded-table");
       divNode.setAttribute("contenteditable", "false");
       divNode.innerHTML = ['<table contenteditable="false">', thead, tbody, "</table>"].join("\n");
 
-      editor.insertBefore(divNode, nextSibling);
+      UNDO_STACK.push(editorInsertBefore, editorRemoveChild, divNode, nextSibling?.id);
       divNode.appendChild(createRemover());
     }
 
@@ -2660,13 +3561,13 @@
       p.setAttribute("id", `text${generateUId()}`);
       p.setAttribute("class", "text-block");
       p.appendChild(document.createElement("br"));
-      editor.insertBefore(p, topNode?.nextSibling);
+      UNDO_STACK.push(editorInsertBefore, editorRemoveChild, p, topNode?.nextElementSibling?.id);
       setCaret(p, 0);
     }
 
     function insertCode() {
 
-      const nextSibling = getTopLevelNodeOfCurrentPosition()?.nextSibling;
+      const nextSibling = getTopLevelNodeOfCurrentPosition()?.nextElementSibling;
       const divNode = document.createElement("div");
       const pre = document.createElement("pre");
       const code = document.createElement("code");
@@ -2677,7 +3578,7 @@
       divNode.setAttribute("id", `code${generateUId()}`);
       divNode.setAttribute("class", "code-block");
       divNode.setAttribute("contenteditable", "true");
-      editor.insertBefore(divNode, nextSibling);
+      UNDO_STACK.push(editorInsertBefore, editorRemoveChild, divNode, nextSibling?.id);
       setCaret(code, 0);
     }
 
@@ -2685,7 +3586,7 @@
 
       const iframeHtml = (await showPrompt("Embedded Page (iframe or URL)"))?.trim();
       if (!iframeHtml) return;
-      const nextSibling = getTopLevelNodeOfCurrentPosition()?.nextSibling;
+      const nextSibling = getTopLevelNodeOfCurrentPosition()?.nextElementSibling;
       const divNode = document.createElement("div");
 
       if (iframeHtml.length < "<IFRAME".length || !iframeHtml.toUpperCase().startsWith("<IFRAME")) {
@@ -2696,7 +3597,7 @@
       divNode.setAttribute("id", `embed${generateUId()}`);
       divNode.setAttribute("class", "embedded-content");
       divNode.setAttribute("contenteditable", "false");
-      editor.insertBefore(divNode, nextSibling);
+      UNDO_STACK.push(editorInsertBefore, editorRemoveChild, divNode, nextSibling?.id);
       divNode.appendChild(createRemover());
     }
 
@@ -2721,59 +3622,72 @@
 
       if (!selection.rangeCount) return;
       const range = selection.getRangeAt(0);
-      const editor = document.getElementById("editor");
-      const nodes = [];
+      const nodeIds = [];
       const ALIGNABLE_NODE_CLASSES = ["text-block", "embedded-table", "embedded-content", "embedded-math", "embedded-local-image", "image-link"];
 
-      if (range) {
+      function getNodeAlignmentClasses(node) {
 
-        if (range.commonAncestorContainer.nodeType === Node.TEXT_NODE) {
+        const alignmentClasses = [];
 
-          const node = getTopLevelNodeOf(range.startContainer, editor);
-
-          if (node?.classList && [...node.classList].some(c => ALIGNABLE_NODE_CLASSES.indexOf(c) > -1))
-            nodes.push(node);
-        } else {
-
-          let nodeStart = getTopLevelNodeOf(range.startContainer, editor);
-          let nodeEnd = getTopLevelNodeOf(range.endContainer, editor);
-
-          while (nodeStart) {
-
-            if (nodeStart.classList && [...nodeStart.classList].some(c => ALIGNABLE_NODE_CLASSES.indexOf(c) > -1))
-              nodes.push(nodeStart);
-            
-            if (nodeStart === nodeEnd) {
-
-              nodeEnd = null;
-              break;
-            }
-
-            nodeStart = nodeStart.nextElementSibling;
+        for (let alignmentClass of ALIGN_CLASSES_FLAT) {
+          if (node.classList?.contains(alignmentClass)) {
+            alignmentClasses.push(alignmentClass);
           }
+        }
 
-          while (nodeEnd) {
+        return alignmentClasses;
+      }
 
-            if (nodeEnd.classList && [...nodeEnd.classList].some(c => ALIGNABLE_NODE_CLASSES.indexOf(c) > -1))
-              nodes.push(nodeEnd);
-            
-            if (nodeStart === nodeEnd) break;
+      function applyNodeAlignmentClasses(node, alignClasses) {
 
-            nodeEnd = nodeEnd.previousElementSibling;
-          }
+        node.classList?.remove(...ALIGN_CLASSES_FLAT);
+
+        for (let alignmentClass of alignClasses) {
+          if (node.classList) node.classList.add(alignmentClass);
+          else node.setAttribute("class", alignmentClass);
         }
       }
 
-      nodes.forEach((node) => {
+      function applyAlignment(node, alignmentClass) {
 
-        if (node.classList?.contains("text-block")) {
+        node.classList?.remove(...ALIGN_CLASSES_FLAT);
 
-          node.classList?.remove(...ALIGN_CLASSES_FLAT);
-          const alignmentClass = ALIGN_CLASSES[alignType][0];
+        if (node.classList) node.classList.add(alignmentClass);
+        else node.setAttribute("class", alignmentClass);
+      }
 
-          if (node.classList) node.classList.add(alignmentClass);
-          else node.setAttribute("class", alignmentClass);
-        } else if (node.classList?.contains("embedded-table")) {
+      function getNodesAlignments(nodeIds) {
+
+        nodeIds.forEach((nd) => {
+
+          const node = document.getElementById(nd.id);
+
+          if (!node) return;
+
+          if (node.classList?.contains("text-block")) {
+            nd.alignments = getNodeAlignmentClasses(node);
+          } else if (node.classList?.contains("embedded-table")) {
+
+            nd.alignments = new Map();
+
+            for (let columnIndex of nd.idx) {
+
+              const alignments = [];
+
+              node.querySelectorAll(`tr th:nth-child(${columnIndex}), tr td:nth-child(${columnIndex})`)?.forEach((el) => {
+                alignments.push(getNodeAlignmentClasses(el));
+              });
+              nd.alignments.set(columnIndex, alignments);
+            }
+          } else if (node.firstElementChild) {
+            nd.alignments = getNodeAlignmentClasses(node);
+          }
+        });
+      }
+
+      function getSelectedTableColumnIndices(node, range) {
+
+        if (node.classList?.contains("embedded-table")) {
 
           const columnIdxSet = new Set();
           const alignmentClass = ALIGN_CLASSES[alignType][0];
@@ -2792,25 +3706,104 @@
             }
           });
 
-          for (let columnIndex of columnIdxSet) {
-
-            node?.querySelectorAll(`tr th:nth-child(${columnIndex}), tr td:nth-child(${columnIndex})`)?.forEach((el) => {
-
-              el.classList?.remove(...ALIGN_CLASSES_FLAT);
-
-              if (el.classList) el.classList.add(alignmentClass);
-              else el.setAttribute("class", alignmentClass);
-            });
-          }
-        } else if (node.firstElementChild) {
-
-          node.classList?.remove(...ALIGN_CLASSES_FLAT);
-          const alignmentClass = ALIGN_CLASSES[alignType][1];
-
-          if (node.classList) node.classList.add(alignmentClass);
-          else node.setAttribute("class", alignmentClass);
+          return [...columnIdxSet];
         }
-      });
+
+        return [];
+      }
+
+      function alignNodes(nodeIds, alignType) {
+
+        nodeIds.forEach((nd) => {
+
+          const node = document.getElementById(nd.id);
+
+          if (!node) return;
+
+          if (node.classList?.contains("text-block")) {
+            applyAlignment(node, ALIGN_CLASSES[alignType][0]);
+          } else if (node.classList?.contains("embedded-table")) {
+
+            for (let columnIndex of nd.idx) {
+
+              node.querySelectorAll(`tr th:nth-child(${columnIndex}), tr td:nth-child(${columnIndex})`)?.forEach((el) => {
+                applyAlignment(el, ALIGN_CLASSES[alignType][0]);
+              });
+            }
+          } else if (node.firstElementChild) {
+            applyAlignment(node, ALIGN_CLASSES[alignType][1]);
+          }
+        });
+      }
+
+      function undoAlignNodes(nodeIds, _) {
+
+        nodeIds.forEach((nd) => {
+
+          const node = document.getElementById(nd.id);
+
+          if (!node) return;
+
+          if (node.classList?.contains("text-block")) {
+            applyNodeAlignmentClasses(node, nd.alignments);
+          } else if (node.classList?.contains("embedded-table")) {
+
+            for (let columnIndex of nd.idx) {
+
+              const alignments = nd.alignments.get(columnIndex);
+              let i = 0;
+
+              node.querySelectorAll(`tr th:nth-child(${columnIndex}), tr td:nth-child(${columnIndex})`)?.forEach((el) => {
+                applyNodeAlignmentClasses(el, alignments[i++]);
+              });
+            }
+          } else if (node.firstElementChild) {
+            applyNodeAlignmentClasses(node, nd.alignments);
+          }
+        });
+      }
+
+      if (range) {
+
+        if (range.commonAncestorContainer.nodeType === Node.TEXT_NODE) {
+
+          const node = getTopLevelNodeOf(range.startContainer, editor);
+
+          if (node?.classList && [...node.classList].some(c => ALIGNABLE_NODE_CLASSES.indexOf(c) > -1))
+            nodeIds.push({id: node.id, idx: getSelectedTableColumnIndices(node, range)});
+        } else {
+
+          let nodeStart = getTopLevelNodeOf(range.startContainer, editor);
+          let nodeEnd = getTopLevelNodeOf(range.endContainer, editor);
+
+          while (nodeStart) {
+
+            if (nodeStart.classList && [...nodeStart.classList].some(c => ALIGNABLE_NODE_CLASSES.indexOf(c) > -1))
+              nodeIds.push({id: nodeStart.id, idx: getSelectedTableColumnIndices(nodeStart, range)});
+            
+            if (nodeStart === nodeEnd) {
+
+              nodeEnd = null;
+              break;
+            }
+
+            nodeStart = nodeStart.nextElementSibling;
+          }
+
+          while (nodeEnd) {
+
+            if (nodeEnd.classList && [...nodeEnd.classList].some(c => ALIGNABLE_NODE_CLASSES.indexOf(c) > -1))
+              nodeIds.push({id: nodeEnd.id, idx: getSelectedTableColumnIndices(nodeEnd, range)});
+            
+            if (nodeStart === nodeEnd) break;
+
+            nodeEnd = nodeEnd.previousElementSibling;
+          }
+        }
+        getNodesAlignments(nodeIds);
+
+        if (nodeIds.length > 0) UNDO_STACK.push(alignNodes, undoAlignNodes, nodeIds, alignType);
+      }
     }
 
     // Toggles dropdown visibility
@@ -2822,7 +3815,7 @@
         dropdown.classList.remove("show");
       } else {
         // Close any open dropdowns first
-        document.querySelectorAll(".dropdown-content, .text-dropdown-content").forEach(el => el.classList.remove("show"));
+        document.querySelectorAll(".dropdown-content, .text-dropdown-content, .page-dropdown").forEach(el => el.classList.remove("show"));
         dropdown.classList.add("show");
       }
     }
@@ -2837,17 +3830,11 @@
       if (!e.target.closest(".text-dropdown")) {
         document.querySelectorAll(".text-dropdown-content").forEach(el => el.classList.remove("show"));
       }
-    });
 
-    // Helper: Places the caret at a given element and offset.
-    function setCaret(el, pos) {
-      const selection = window.getSelection();
-      const range = document.createRange();
-      range.setStart(el, pos);
-      range.collapse(true);
-      selection.removeAllRanges();
-      selection.addRange(range);
-    }
+      if (!e.target.closest(".page-dropdown-toolbar-item") && !e.target.closest(".page-dropdown-header")) {
+        document.querySelectorAll(".page-dropdown").forEach(el => el.classList.remove("show"));
+      }
+    });
 
     class BitArray {
 
@@ -2990,6 +3977,92 @@
       return "";
     }
 
+    // For each node in the node tree returns the start and end positions in the text of the root node (specified as the argument)
+    function getNodePositions(node) {
+
+      const positions = new Map();
+      let text = getNodeText(node);
+      positions.set(node, {
+        start: 0,
+        end: text.length
+      });
+      const elements = [];
+      node = node.hasChildNodes ? node.firstChild : null;
+
+      while (node) {
+
+        if (node.nodeType === Node.ELEMENT_NODE && node.hasChildNodes) {
+          elements.push(...node.childNodes);
+        }
+
+        if (node.nodeType === Node.ELEMENT_NODE ||
+            node.nodeType === Node.TEXT_NODE) {
+
+          let prevSibling = node.previousSibling;
+
+          while (prevSibling && !positions.has(prevSibling))
+            prevSibling = prevSibling.previousSibling;
+
+          text = getNodeText(node);
+          const start = prevSibling ? positions.get(prevSibling).end : positions.get(node.parentNode).start;
+          const end = start + text.length;
+
+          positions.set(node, {
+            start: start,
+            end: end
+          });
+
+          while (node.nextSibling &&
+                 node.nextSibling.nodeType !== Node.TEXT_NODE &&
+                 node.nextSibling.nodeType !== Node.ELEMENT_NODE)
+            node = node.nextSibling;
+        }
+        node = node.nextSibling ?? (elements.length > 0 ? elements.shift() : null);
+      }
+
+      return positions;
+    }
+
+    // Creates HTML text elements and BR elements from the specified text
+    function createHtmlElementsFromText(text, start, end, callback) {
+
+      const elements = text.split("\n");
+
+      for (let i = 0; i < elements.length; i++) {
+        elements[i] = document.createTextNode(elements[i]);
+      }
+
+      for (let i = elements.length - 1; i > 0; i--) {
+        elements.splice(i, 0, document.createElement("br"));
+      }
+
+      if (start > -1 || end > -1) {
+
+        let length = 0;
+        let startNode = null, endNode = null, offsetStart = 0, offsetEnd = 0;
+
+        for (let i = 0; i < elements.length; i++) {
+
+          const currElementLength = ((elements[i].nodeName === "BR") ? 1 : elements[i].textContent.length);
+
+          if (length <= start && start < length + currElementLength) {
+            startNode = elements[i];
+            offsetStart = start - length;
+          }
+
+          if (length < end && end <= length + currElementLength) {
+            endNode = elements[i];
+            offsetEnd = end - length;
+          }
+
+          length += currElementLength;
+        }
+        callback(startNode, endNode, offsetStart, offsetEnd);
+      }
+      
+      return elements;
+    }
+
     // The core function that does the styling
     // using binary indexed trees
     function wrapRangeText(range, styleIndex) {
@@ -3027,52 +4100,6 @@
         return false;
       }
 
-      // For each node in the node tree returns the start and end positions in the text of the root node (specified as the argument)
-      function getNodePositions(node) {
-
-        const positions = new Map();
-        let text = getNodeText(node);
-        positions.set(node, {
-          start: 0,
-          end: text.length
-        });
-        const elements = [];
-        node = node.hasChildNodes ? node.firstChild : null;
-
-        while (node) {
-
-          if (node.nodeType === Node.ELEMENT_NODE) {
-            elements.push(...node.childNodes);
-          }
-
-          if (node.nodeType === Node.ELEMENT_NODE ||
-              node.nodeType === Node.TEXT_NODE) {
-
-            let prevSibling = node.previousSibling;
-
-            while (prevSibling && !positions.has(prevSibling))
-              prevSibling = prevSibling.previousSibling;
-
-            text = getNodeText(node);
-            const start = prevSibling ? positions.get(prevSibling).end : positions.get(node.parentNode).start;
-            const end = start + text.length;
-
-            positions.set(node, {
-              start: start,
-              end: end
-            });
-
-            while (node.nextSibling &&
-                   node.nextSibling.nodeType !== Node.TEXT_NODE &&
-                   node.nextSibling.nodeType !== Node.ELEMENT_NODE)
-              node = node.nextSibling;
-          }
-          node = node.nextSibling ?? (elements.length > 0 ? elements.shift() : null);
-        }
-
-        return positions;
-      }
-
       // For each character in the root node text (having maxTextLength) gets the styles applied to it as a bit pattern
       // (the binary indexed tree implementation)
       function getStyledPositions(positions, styles, maxTextLength) {
@@ -3108,9 +4135,9 @@
         return styledPositions;
       }
 
-      // determines which type of nodes are stylable (H1-H6, P, SMALL, or any direct child of TH or TD)
+      // determines which type of nodes are stylable (P or any direct child of TH or TD)
       function isSelectableNodeForStyling(node) {
-        return node && (node.nodeName.match(/^H[1-6]$|^P$|^SMALL$/) || ["TH", "TD"].includes(node.parentNode?.nodeName));
+        return node && (node.nodeName === "P" || isTableCell(node.parentNode));
       }
 
       // Gets the list of text positions of all the nodes within the root container and within the specified range
@@ -3187,46 +4214,6 @@
         return selPositions;
       }
 
-      // Creates HTML text elements and BR elements from the specified text
-      function createHtmlElementsFromText(text, start, end, callback) {
-
-        const elements = text.split("\n");
-
-        for (let i = 0; i < elements.length; i++) {
-          elements[i] = document.createTextNode(elements[i]);
-        }
-
-        for (let i = elements.length - 1; i > 0; i--) {
-          elements.splice(i, 0, document.createElement("br"));
-        }
-
-        if (start > -1 || end > -1) {
-
-          let length = 0;
-          let startNode = null, endNode = null, offsetStart = 0, offsetEnd = 0;
-
-          for (let i = 0; i < elements.length; i++) {
-
-            const currElementLength = ((elements[i].nodeName === "BR") ? 1 : elements[i].textContent.length);
-
-            if (length <= start && start < length + currElementLength) {
-              startNode = elements[i];
-              offsetStart = start - length;
-            }
-
-            if (length < end && end <= length + currElementLength) {
-              endNode = elements[i];
-              offsetEnd = end - length;
-            }
-
-            length += currElementLength;
-          }
-          callback(startNode, endNode, offsetStart, offsetEnd);
-        }
-        
-        return elements;
-      }
-
       // Applies CSS style to the element
       function applyCss(element, style) {
 
@@ -3238,7 +4225,7 @@
       // Creates the HTML node with the specified text and styles, having the specified parent
       function createHtmlNode(parentNode, text, styleBitPattern, start, end) {
 
-        text = text.replace(/\t/, "&nbsp;"); // "&emsp;" "&ensp;"
+        text = text.replace(/[\t ]/g, "\u00A0"); // "&emsp;" "&ensp;"
         let nodeStart = null, nodeEnd = null, startOffset = 0, endOffset = 0;
 
         function callback(startNode, endNode, offsetStart, offsetEnd) {
@@ -3353,11 +4340,11 @@
 
       // finds the current root container to work on
       let rootNode = range.commonAncestorContainer;
-      let rootContainer = document.getElementById("editor");
+      let rootContainer = editor;
 
       while (rootNode && rootNode !== rootContainer) {
 
-        if (["TH", "TD"].includes(rootNode.nodeName)) {
+        if (isTableCell(rootNode)) {
           rootContainer = rootNode.parentNode;
           break;
         }
@@ -3372,76 +4359,109 @@
       styleBitPattern.set(styleIndex); // the bit pattern of the style we want to apply over the selected text
 
       // for each root container's direct selected child we get the current styling (getStyledPositions)
-      for (const p of selPositions) {
+      for (let p of selPositions) {
 
         const styled = getStyledPositions(p.positions, STYLES, p.positions.get(p.node).end);
+        delete p.positions; // reclaiming some memory by discarding the positions array property
 
         for (let i = p.start; i < p.end; ++i) { // we compare with the current style pattern, if all the selected text contains the style completely it means we want to remove the styling
           if (styled[i].bitAnd(styleBitPattern).isZero) removeStyle = false; // if there area characters that don't have the style then we must apply the new style
         }                                                                    // otherwise we remove the style on all the characters in the range
         styledPositions.push(styled);
       }
-      const rangeNodes = [];
 
-      if (removeStyle) { // if we want to remove the styling
+      function cloneStyledPositions(styledPositions) {
 
-        styleBitPattern.invertAssign(); // we invert the current style bit pattern
+        const clonedStyledPositions = new Array(styledPositions.length);
 
-        for (let i = 0; i < selPositions.length; ++i) { // for each root container's direct selected child text
+        for (let i = 0; i < styledPositions.length; i++) {
 
-          const styled = styledPositions[i];
+          clonedStyledPositions[i] = new Array(styledPositions[i].length);
 
-          for (let j = selPositions[i].start; j < selPositions[i].end; ++j) {
-            styled[j].bitAndAssign(styleBitPattern);      // we remove the style by applying the inverted bit pattern
-          }                                               // to each of the characters' style pattern in the range
-          const start = (i == 0) ? selPositions[i].start : -1;
-          const end = (i == selPositions.length - 1) ? selPositions[i].end : -1;
-          const [nodeStart, nodeEnd, startOffset, endOffset] = buildHtmlTree(selPositions[i].node, styled, start, end); // we rebuild the HTML tree rooted at node
-          if (nodeStart || nodeEnd) rangeNodes.push([nodeStart, nodeEnd, startOffset, endOffset]);
+          for (let j = 0; j < styledPositions[i].length; j++)
+            clonedStyledPositions[i][j] = styledPositions[i][j].clone();
         }
-      } else {
 
-        let styleGroupClearBitPattern = null; // if the current style is part of a style group, we create a clear styles bit pattern
-                                              // to remove the other styles in the group applied to the selected text
-                                              // (for example the text color styles, we don't want to apply multiple text colors over the same text)
-        for (let styleGroup of STYLE_GROUPS) {
+        return clonedStyledPositions;
+      }
 
-          if (styleIndex >= styleGroup[0] && styleIndex <= styleGroup[1]) {
+      function applyStylePattern(selPositions, styledPositions, styleBitPattern, removeStyle) {
 
-            styleGroupClearBitPattern = new BitArray(STYLES.length);
+        const rangeNodes = [];
+        styledPositions = cloneStyledPositions(styledPositions);
 
-            for (let i = styleGroup[0]; i <= styleGroup[1]; i++) {
-              styleGroupClearBitPattern.set(i);
+        if (removeStyle) { // if we want to remove the styling
+
+          styleBitPattern = styleBitPattern.invert(); // we invert the current style bit pattern
+
+          for (let i = 0; i < selPositions.length; ++i) { // for each root container's direct selected child text
+
+            const styled = styledPositions[i];
+
+            for (let j = selPositions[i].start; j < selPositions[i].end; ++j) {
+              styled[j].bitAndAssign(styleBitPattern);      // we remove the style by applying the inverted bit pattern
+            }                                               // to each of the characters' style pattern in the range
+            const start = (i == 0) ? selPositions[i].start : -1;
+            const end = (i == selPositions.length - 1) ? selPositions[i].end : -1;
+            const [nodeStart, nodeEnd, startOffset, endOffset] = buildHtmlTree(selPositions[i].node, styled, start, end); // we rebuild the HTML tree rooted at node
+            if (nodeStart || nodeEnd) rangeNodes.push([nodeStart, nodeEnd, startOffset, endOffset]);
+          }
+        } else {
+
+          let styleGroupClearBitPattern = null; // if the current style is part of a style group, we create a clear styles bit pattern
+                                                // to remove the other styles in the group applied to the selected text
+                                                // (for example the text color styles, we don't want to apply multiple text colors over the same text)
+          for (let styleGroup of STYLE_GROUPS) {
+
+            if (styleIndex >= styleGroup[0] && styleIndex <= styleGroup[1]) {
+
+              styleGroupClearBitPattern = new BitArray(STYLES.length);
+
+              for (let i = styleGroup[0]; i <= styleGroup[1]; i++) {
+                styleGroupClearBitPattern.set(i);
+              }
+              styleGroupClearBitPattern.invertAssign();  // we invert the bit pattern for all the styles in the group
+              styleGroupClearBitPattern.set(styleIndex); // we let the current style bit pattern on
+              break;
             }
-            styleGroupClearBitPattern.invertAssign();  // we invert the bit pattern for all the styles in the group
-            styleGroupClearBitPattern.set(styleIndex); // we let the current style bit pattern on
-            break;
+          }
+
+          for (let i = 0; i < selPositions.length; ++i) { // for each root container's direct selected child text
+
+            const styled = styledPositions[i];
+
+            for (let j = selPositions[i].start; j < selPositions[i].end; ++j) {
+              if (styleGroupClearBitPattern) styled[j].bitAndAssign(styleGroupClearBitPattern); // we remove other style(s) in the same group with the current style, for each selected character
+              styled[j].bitOrAssign(styleBitPattern);     // we apply the style by applying the style bit pattern
+            }                                             // to each of the characters' style pattern in the range
+            const start = (i == 0) ? selPositions[i].start : -1;
+            const end = (i == selPositions.length - 1) ? selPositions[i].end : -1;
+            const [nodeStart, nodeEnd, startOffset, endOffset] = buildHtmlTree(selPositions[i].node, styled, start, end); // we rebuild the HTML tree rooted at node
+            if (nodeStart || nodeEnd) rangeNodes.push([nodeStart, nodeEnd, startOffset, endOffset]);
           }
         }
+        window.getSelection().removeAllRanges(); // we remove all selection's ranges after HTML tree rebuild
 
-        for (let i = 0; i < selPositions.length; ++i) { // for each root container's direct selected child text
+        if (rangeNodes.length) {
 
-          const styled = styledPositions[i];
-
-          for (let j = selPositions[i].start; j < selPositions[i].end; ++j) {
-            if (styleGroupClearBitPattern) styled[j].bitAndAssign(styleGroupClearBitPattern); // we remove other style(s) in the same group with the current style, for each selected character
-            styled[j].bitOrAssign(styleBitPattern);     // we apply the style by applying the style bit pattern
-          }                                             // to each of the characters' style pattern in the range
-          const start = (i == 0) ? selPositions[i].start : -1;
-          const end = (i == selPositions.length - 1) ? selPositions[i].end : -1;
-          const [nodeStart, nodeEnd, startOffset, endOffset] = buildHtmlTree(selPositions[i].node, styled, start, end); // we rebuild the HTML tree rooted at node
-          if (nodeStart || nodeEnd) rangeNodes.push([nodeStart, nodeEnd, startOffset, endOffset]);
+          const range = document.createRange();
+          range.setStart(rangeNodes[0][0], rangeNodes[0][2]);
+          const i = (rangeNodes.length > 1) ? 1 : 0;
+          range.setEnd(rangeNodes[i][1], rangeNodes[i][3]);
+          window.getSelection().addRange(range);
         }
       }
-      window.getSelection().removeAllRanges(); // we remove all selection's ranges after HTML tree rebuild
 
-      if (rangeNodes.length) {
+      function doApply(selPositions, styledPositions, styleBitPattern, removeStyle) {
+        applyStylePattern(selPositions, styledPositions, styleBitPattern, removeStyle);
+      }
 
-        const range = document.createRange();
-        range.setStart(rangeNodes[0][0], rangeNodes[0][2]);
-        const i = (rangeNodes.length > 1) ? 1 : 0;
-        range.setEnd(rangeNodes[i][1], rangeNodes[i][3]);
-        window.getSelection().addRange(range);
+      function undoApply(selPositions, styledPositions, styleBitPattern, removeStyle) {
+        applyStylePattern(selPositions, styledPositions, styleBitPattern, !removeStyle);
+      }
+
+      if (selPositions.length > 0) {
+        UNDO_STACK.push(doApply, undoApply, selPositions, styledPositions, styleBitPattern, removeStyle);
       }
     }
 
@@ -3452,7 +4472,6 @@
 
       if (!selection.rangeCount || selection.isCollapsed) return;
       const range = selection.getRangeAt(0);
-      const editor = document.getElementById("editor");
 
       if (!editor.contains(range.commonAncestorContainer)) return;
       updateLinkStyles(editor);
@@ -3466,7 +4485,6 @@
 
       if (!selection.rangeCount || selection.isCollapsed) return;
       const range = selection.getRangeAt(0);
-      const editor = document.getElementById("editor");
 
       if (!editor.contains(range.commonAncestorContainer)) return;
       updateLinkStyles(editor);
@@ -3480,7 +4498,6 @@
 
       if (!selection.rangeCount || selection.isCollapsed) return;
       const range = selection.getRangeAt(0);
-      const editor = document.getElementById("editor");
 
       if (!editor.contains(range.commonAncestorContainer)) return;
       const url = (await showPrompt("URL"))?.trim();
@@ -3505,11 +4522,11 @@
       wrapRangeText(range, linkStyleIndex);
     }
 
-    // Called by the text size dropdown.
-    function applyFontSize(size) {
+    // Called by the text scale dropdown.
+    function applyFontScale(scale) {
 
-      if (!size) return;
-      applyStyle(STYLE_FONT_BASE_INDEX + size);
+      if (!scale) return;
+      applyStyle(STYLE_FONT_BASE_INDEX + scale);
     }
 
     // Called when a text color swatch is clicked.
@@ -3526,25 +4543,85 @@
       applyStyle(STYLE_HIGHLIGHT_COLOR_BASE_INDEX + color);
     }
 
-    // Converts the currently selected text blocks (direct children of #editor) to the chosen tag.
-    function changeBlock(tagName) {
+    // Changes the nodes specified by their ids into the specified text level.
+    // Used by the undo stack.
+    function changeTextLevels(nodeIds, nodeTextLevelClasses, textLevelClass) {
+
+      for (let i = 0; i < nodeIds.length; ++i) {
+
+        const nodeId = nodeIds[i];
+        const node = document.getElementById(nodeId);
+
+        if (node) {
+
+          const nodeTextLevelClass = nodeTextLevelClasses[i];
+
+          if (node.classList?.contains(nodeTextLevelClass)) node.classList.remove(nodeTextLevelClass);
+
+          if (textLevelClass !== "medium-text") {
+            node.classList?.add(textLevelClass);
+          }
+        }
+      }
+    }
+
+    // Changes the nodes specified by their ids back into the specified text levels.
+    // Used by the undo stack.
+    function undoChangeTextLevels(nodeIds, nodeTextLevelClasses, textLevelClass) {
+
+      for (let i = 0; i < nodeIds.length; ++i) {
+
+        const nodeId = nodeIds[i];
+        const node = document.getElementById(nodeId);
+
+        if (node) {
+
+          if (node.classList?.contains(textLevelClass)) node.classList.remove(textLevelClass);
+
+          const nodeTextLevelClass = nodeTextLevelClasses[i];
+
+          if (nodeTextLevelClass !== "medium-text") {
+            node.classList?.add(nodeTextLevelClass);
+          }
+        }
+      }
+    }
+
+    const TEXT_LEVEL_CLASSES = ["xlarge-text", "large-text", "medium-text", "small-text"];
+
+    // Converts the currently selected text blocks (direct children of #editor) to the chosen text level.
+    function changeBlock(textLevelClass) {
 
       const selection = window.getSelection();
 
       if (!selection.rangeCount) return;
       const range = selection.getRangeAt(0);
-      const editor = document.getElementById("editor");
-      const nodes = [];
+      const nodeIds = [];
+
+      function isSelectableNode(node) {
+
+        const textLevelClasses = ["xlarge-text", "large-text", "small-text"];
+        return node?.classList?.contains("text-block") &&
+              (textLevelClass === "medium-text" ? [...node.classList].some(c => textLevelClasses.indexOf(c) > -1) :
+                                                  !node.classList.contains(textLevelClass));
+      }
+
+      function getCurrentTextLevel(node) {
+
+        for (let textLevelClass of TEXT_LEVEL_CLASSES) {
+          if (node.classList.contains(textLevelClass)) return textLevelClass;
+        }
+
+        return "medium-text";
+      }
 
       if (range) {
-
-        const tag = tagName.toUpperCase();
 
         if (range.commonAncestorContainer.nodeType === Node.TEXT_NODE) {
 
           const node = getTopLevelNodeOf(range.startContainer, editor);
 
-          if (node?.nodeName !== tag && node?.classList?.contains("text-block")) nodes.push(node);
+          if (isSelectableNode(node)) nodeIds.push(node.id);
         } else {
 
           let nodeStart = getTopLevelNodeOf(range.startContainer, editor);
@@ -3552,9 +4629,8 @@
 
           while (nodeStart) {
 
-            if (nodeStart.nodeName !== tag &&
-                nodeStart.classList?.contains("text-block"))
-              nodes.push(nodeStart);
+            if (isSelectableNode(nodeStart))
+              nodeIds.push(nodeStart.id);
             
             if (nodeStart === nodeEnd) {
 
@@ -3567,39 +4643,30 @@
 
           while (nodeEnd) {
 
-            if (nodeEnd.nodeName !== tag &&
-                nodeEnd.classList?.contains("text-block"))
-              nodes.push(nodeEnd);
+            if (isSelectableNode(nodeEnd))
+              nodeIds.push(nodeEnd.id);
             
             if (nodeStart === nodeEnd) break;
 
             nodeEnd = nodeEnd.previousElementSibling;
           }
         }
+        const startContainer = range.startContainer;
+        const endContainer = range.endContainer;
+        const startContainerId = startContainer.id;
+        const endContainerId = endContainer.id;
+        const startOffset = range.startOffset;
+        const endOffset = range.endOffset;
+        const nodeTextLevelClasses = nodeIds.map((nodeId) => getCurrentTextLevel(document.getElementById(nodeId))) ?? [];
+
+        if (nodeIds.length > 0) UNDO_STACK.push(changeTextLevels, undoChangeTextLevels, nodeIds, nodeTextLevelClasses, textLevelClass);
+
+        range.setStart(startContainerId ? document.getElementById(startContainerId) : startContainer, startOffset);
+        range.setEnd(endContainerId ? document.getElementById(endContainerId) : endContainer, endOffset);
+
+        selection.removeAllRanges();
+        selection.addRange(range);
       }
-      let startContainer = range.startContainer;
-      let endContainer = range.endContainer;
-      const startOffset = range.startOffset;
-      const endOffset = range.endOffset;
-
-      nodes.forEach((node) => {
-
-        const newBlock = document.createElement(tagName);
-        newBlock.id = node.id;
-        newBlock.setAttribute("class", node.getAttribute("class"));
-
-        if (node === range.startContainer) startContainer = newBlock;
-        if (node === range.endContainer) endContainer = newBlock;
-
-        editor.insertBefore(newBlock, node);
-        newBlock.append(...node.childNodes);
-        node.remove();
-      });
-      range.setStart(startContainer, startOffset);
-      range.setEnd(endContainer, endOffset);
-
-      selection.removeAllRanges();
-      selection.addRange(range);
     }
 
     // Helper: Gets the last deepest child of the specified node
@@ -3622,11 +4689,191 @@
       return node;
     }
 
+    // Helper: Gets the specified node index in the parent's child nodes list
+    function getChildNodeIndex(node) {
+
+      if (!node) return -1;
+
+      let index = 0;
+
+      while (node.previousSibling) {
+
+        ++index;
+        node = node.previousSibling;
+      }
+
+      return index;
+    }
+
+    // Helper: Gets the specified element index in the parent's same type elements list
+    function getSameTypeElementIndex(element) {
+
+      if (!element) return -1;
+
+      let index = 0;
+      let elType = element.nodeName;
+
+      while (element.previousElementSibling) {
+
+        if (element.previousElementSibling.nodeName === elType) ++index;
+        element = element.previousElementSibling;
+      }
+
+      return index;
+    }
+
+    function getNodeLimitOffset(node, offset, positions) {
+
+      if (node.nodeType === Node.TEXT_NODE) {
+        return (positions.has(node) ? positions.get(node).start : 0) + offset;
+      } else if (node.nodeType === Node.ELEMENT_NODE) {
+
+        let child = node.firstChild;
+        let i = 0;
+        let pos = (positions.has(node) ? positions.get(node).start : 0);
+
+        while (child && i < offset) {
+
+          if (positions.has(child)) pos = positions.get(child).end;
+
+          child = child.nextSibling;
+          ++i;
+        }
+
+        return pos;
+      }
+
+      return 0;
+    }
+
+    // Helper: Gets the range's absolute limits within the node's text
+    function getRangeLimits(node, range) {
+
+      const positions = getNodePositions(node);
+      const start = getNodeLimitOffset(range.startContainer, range.startOffset, positions);
+      const end = getNodeLimitOffset(range.endContainer, range.endOffset, positions);
+
+      return {
+        start: start,
+        end: end
+      };
+    }
+
+    function setRange(node, rangeLimits) {
+
+      if (node.classList?.contains("code-block")) node = node.querySelector("code");
+
+      const positions = getNodePositions(node);
+      let startContainer = null;
+      let startOffset = -1;
+      let endContainer = null;
+      let endOffset = -1;
+
+      const nodes = [{node: node, visit: 0}];
+
+      while (nodes.length > 0) {
+
+        const nodeInfo = nodes.pop();
+
+        if (nodeInfo.visit < 1 && nodeInfo.node.hasChildNodes) {
+
+          nodeInfo.visit++;
+          nodes.push(nodeInfo);
+          nodes.push(...[...nodeInfo.node.childNodes].map((node) => { return { node: node, visit: 0 }; }));
+        } else {
+
+          if (positions.has(nodeInfo.node)) {
+  
+            const pos = positions.get(nodeInfo.node);
+
+            if ((nodeInfo.node.nodeType === Node.TEXT_NODE && getNodeText(nodeInfo.node)) || nodeInfo.node.nodeName === "BR") {
+            
+              if (pos.start === rangeLimits.start ||
+                  (pos.start < rangeLimits.start &&
+                  rangeLimits.start < pos.end)) {
+
+                if (nodeInfo.node.nodeName === "BR") {
+
+                  startContainer = nodeInfo.node.parentNode;
+                  startOffset = getChildNodeIndex(nodeInfo.node);
+                } else {
+
+                  startContainer = nodeInfo.node;
+                  startOffset = rangeLimits.start - pos.start;
+                }
+              }
+
+              if ((pos.start === rangeLimits.end &&
+                  rangeLimits.start === rangeLimits.end) ||
+                  (pos.start < rangeLimits.end &&
+                  rangeLimits.end <= pos.end)) {
+
+                if (nodeInfo.node.nodeName === "BR") {
+
+                  endContainer = nodeInfo.node.parentNode;
+                  endOffset = getChildNodeIndex(nodeInfo.node) + (pos.start === rangeLimits.end ? 0 : 1);
+                } else {
+
+                  endContainer = nodeInfo.node;
+                  endOffset = rangeLimits.end - pos.start;
+                }
+              }
+            }
+          }
+        }
+      }
+
+      if (startContainer || endContainer) {
+
+        const range = document.createRange();
+        if (startContainer) range.setStart(startContainer, startOffset);
+        if (endContainer) range.setEnd(endContainer, endOffset);
+        if (!startContainer) range.setStart(endContainer, endOffset);
+        if (!endContainer) range.setEnd(startContainer, startOffset);
+        window.getSelection().removeAllRanges();
+        window.getSelection().addRange(range);
+
+        return range;
+      }
+
+      return null;
+    }
+
+    function doSplitBlock(newBlock, blockId, textTransformationSteps, _) {
+
+      const block = document.getElementById(blockId);
+
+      if (!block) return;
+
+      const afterBlockContents = applyTextTransformationSteps(block.innerHTML, textTransformationSteps);
+
+      if (block.innerHTML !== afterBlockContents) {
+        block.innerHTML = afterBlockContents;
+      }
+
+      editorInsertBefore(newBlock, block.nextElementSibling?.id);
+    }
+
+    function undoSplitBlock(newBlock, blockId, textTransformationSteps, savedRangeLimits) {
+
+      const block = document.getElementById(blockId);
+
+      if (!block) return;
+
+      editorRemoveChild(newBlock, null);
+
+      const savedBlockContents = applyTextTransformationSteps(block.innerHTML, textTransformationSteps, true);
+
+      if (block.innerHTML !== savedBlockContents) {
+        block.innerHTML = savedBlockContents;
+      }
+      setRange(block, savedRangeLimits);
+    }
+
     // Splits the current block at the caret.
     function splitBlock(range) {
 
-      if (!range) return;
-      const editor = document.getElementById("editor");
+      if (!range || !window.getSelection().isCollapsed) return;
       let block = range.startContainer;
 
       while (block && block.parentNode !== editor) {
@@ -3639,10 +4886,12 @@
         p.setAttribute("id", `text${generateUId()}`);
         p.setAttribute("class", "text-block");
         p.innerHTML = "<br/>";
-        editor.appendChild(p);
-        setCaret(p, 0);
+        UNDO_STACK.push(editorInsertBefore, editorRemoveChild, p, null);
         return;
       }
+      const savedBlockContents = block.innerHTML;
+      const savedRangeLimits = getRangeLimits(block, range);
+
       const isTextBlock = block.classList?.contains("text-block");
       const newBlock = document.createElement(isTextBlock ? block.nodeName.toLowerCase() : "p");
       newBlock.setAttribute("id", `text${generateUId()}`);
@@ -3672,12 +4921,6 @@
           }
         }
       }
-
-      if (block.nextSibling) {
-        editor.insertBefore(newBlock, block.nextSibling);
-      } else {
-        editor.appendChild(newBlock);
-      }
       const ldc = getLastDeepestChild(block);
 
       if (ldc.nodeName !== "BR" || ldc !== startContainer) {
@@ -3691,14 +4934,16 @@
           block.appendChild(document.createElement("br"));
         }
       }
+      const afterBlockContents = block.innerHTML;
 
-      setCaret(newBlock, 0); // move the caret into the new block
+      if (savedBlockContents !== block.innerHTML) block.innerHTML = savedBlockContents;
+
+      UNDO_STACK.push(doSplitBlock, undoSplitBlock, newBlock, block.id, getTextTransformationSteps(savedBlockContents, afterBlockContents), savedRangeLimits);
     }
 
     // Normalizes stray text nodes and nested blocks.
     function normalizeEditor() {
 
-      const editor = document.getElementById("editor");
       Array.from(editor.childNodes).forEach(node => {
 
         if (node.nodeType === Node.TEXT_NODE && node.textContent.trim()) {
@@ -3732,9 +4977,7 @@
     // Normalize stray text nodes and nested blocks.
     function cleanEditor() {
 
-      const editor = document.getElementById("editor");
-
-      if (editor.firstChild && ["H1", "H2", "H3", "H4", "H5", "H6", "P", "SMALL"].includes(editor.firstChild.nodeName)) {
+      if (editor.firstChild && editor.firstChild.nodeName === "P") {
         return;
       }
       const htmlText = editor.innerHTML.trim();
@@ -3746,43 +4989,48 @@
 
     function updateTitle() {
 
-      let filename = document.getElementById("filename");
-
       if (filename.innerHTML === "<br>" || filename.innerHTML === "<br/>") {
         filename.innerHTML = "";
       }
+
       document.title = filename.innerHTML.trim() || "Nash Note";
     }
 
-    function handleEnterKey(range, parentNodeNames) {
+    function handleEnterKey(range, validParentNodeCallback) {
 
       let block = range?.startContainer;
 
       while (block && block !== editor) {
 
-        if (block.nodeType === Node.ELEMENT_NODE && parentNodeNames.includes(block.nodeName)) {
+        if (block.nodeType === Node.ELEMENT_NODE && validParentNodeCallback(block)) {
+
+          const savedContents = block.innerHTML;
+          const savedRangeLimits = getRangeLimits(block, range);
+          let newRange = null;
 
           const textNode = range.startContainer;
+          const parentNode = textNode.parentNode;
 
           if (textNode.nodeName === "BR") {
 
             const brNode = document.createElement("br");
-            textNode.parentNode.insertBefore(brNode, textNode.nextSibling);
-            setCaret(brNode, 0);
-          } else if (parentNodeNames.includes(textNode.nodeName) || textNode.nodeType === Node.ELEMENT_NODE) {
+            parentNode.insertBefore(brNode, textNode.nextSibling);
+            newRange = setCaretAfter(brNode);
+          } else if (validParentNodeCallback(textNode) || textNode.nodeType === Node.ELEMENT_NODE) {
+
+            const brNode = document.createElement("br");
 
             if (textNode.childNodes.length > range.startOffset) {
-              textNode.insertBefore(document.createElement("br"), textNode.childNodes[range.startOffset]);
+              textNode.insertBefore(brNode, textNode.childNodes[range.startOffset]);
             } else {
-              textNode.appendChild(document.createElement("br"));
+              textNode.appendChild(brNode);
             }
-            setCaret(textNode, range.startOffset + 1);
+            newRange = setCaretAfter(brNode);
           } else if (textNode.nodeType === Node.TEXT_NODE) {
 
             const text1 = textNode.textContent.substring(0, range.startOffset);
             const text2 = textNode.textContent.substring(range.startOffset);
             const newTextNode = text2?.length ? document.createTextNode(text2) : null;
-            const parentNode = textNode.parentNode;
             const nextSibling = textNode.nextSibling;
             const brNode = document.createElement("br");
             parentNode.insertBefore(brNode, nextSibling);
@@ -3799,37 +5047,77 @@
             if (newTextNode) {
 
               parentNode.insertBefore(newTextNode, nextSibling);
-              setCaret(newTextNode, 0);
+              newRange = setCaret(newTextNode, 0);
             } else if (text1?.length) {
 
               if (!nextSibling) {
 
-                if (parentNodeNames.includes(parentNode.nodeName)) {
+                if (validParentNodeCallback(parentNode)) {
 
                   const brNode2 = document.createElement("br");
                   parentNode.insertBefore(brNode2, nextSibling);
-                  setCaret(parentNode, [...parentNode.childNodes].indexOf(brNode2));
+                  newRange = setCaretAfter(brNode2);
                 } else {
                   let p = parentNode;
                   while (p && !p.nextSibling) p = p.parentNode;
-                  if (p?.nextSibling) setCaret(p.nextSibling, 0);
+                  if (p?.nextSibling) newRange = setCaret(p.nextSibling, 0);
                 }
               } else {
-                setCaret(parentNode, [...parentNode.childNodes].indexOf(nextSibling));
+                newRange = setCaret(parentNode, getChildNodeIndex(nextSibling));
               }
             } else {
 
               const brNode2 = document.createElement("br");
               parentNode.insertBefore(brNode2, nextSibling);
-              setCaret(brNode2, 0);
+              newRange = setCaretAfter(brNode2);
             }
           }
+
+          if (!newRange && window.getSelection().rangeCount) {
+            newRange = window.getSelection().getRangeAt(0);
+          }
+          const afterContents = block.innerHTML;
+          const afterRangeLimits = newRange ? getRangeLimits(block, newRange) : savedRangeLimits;
+          
+          if (savedContents !== block.innerHTML) block.innerHTML = savedContents;
+
+          if (savedContents !== afterContents) UNDO_STACK.push(doChangeText, undoChangeText, block, getTextTransformationSteps(savedContents, afterContents), savedRangeLimits, afterRangeLimits);
+
           return true;
         }
         block = block.parentNode;
       }
 
       return false;
+    }
+
+    function removeTextBlock(node, _, previousSiblingId) {
+
+      const selection = window.getSelection(); // remove all selections
+      selection.removeAllRanges();
+      node.remove();
+      const sibling = previousSiblingId ? document.getElementById(previousSiblingId) : null;
+
+      if (sibling) {
+
+        let lastChild = null; // get the last deepest child of the text or code block
+
+        if (sibling.classList?.contains("code-block")) {
+          lastChild = getLastDeepestChild(sibling.querySelector("code"));
+        } else {
+          lastChild = getLastDeepestChild(sibling);
+        }
+
+        if (lastChild) setCaret(lastChild, lastChild.textContent?.length ?? 0); // and set the caret at the end of it
+      } else {
+        editor.focus();
+      }
+    }
+
+    function cancelEvent(e) {
+
+      e.stopImmediatePropagation();
+      e.preventDefault();
     }
 
     function handleBackspaceInEmptyTextContent(topNode, e) {
@@ -3841,8 +5129,7 @@
 
       if (shouldHandle) { // if the node is empty
 
-        e.stopImmediatePropagation();  // cancel the event
-        e.preventDefault();
+        cancelEvent(e);  // cancel the event
         let sibling = topNode.previousElementSibling; // find a previous text or code sibling node to move the focus to (the cursor caret)
 
         while (sibling &&
@@ -3852,20 +5139,7 @@
         }
 
         if (sibling) {   // if a sibling was found
-
-          const selection = window.getSelection(); // remove all selections
-          selection.removeAllRanges();
-          topNode.replaceChildren();
-          topNode.remove();
-          let lastChild = null; // get the last deepest child of the text or code block
-
-          if (sibling.classList?.contains("code-block")) {
-            lastChild = getLastDeepestChild(sibling.querySelector("code"));
-          } else {
-            lastChild = getLastDeepestChild(sibling);
-          }
-
-          if (lastChild) setCaret(lastChild, lastChild.textContent?.length ?? 0); // and set the caret at the end of it
+          UNDO_STACK.push(removeTextBlock, editorInsertBefore, topNode, topNode.nextElementSibling?.id, sibling.id);
         }
 
         return true; // node with empty text was handled
@@ -3874,7 +5148,738 @@
       return false;
     }
 
-    function keydownHandler(e) {
+    function removeLastBr(node) {
+
+      let lastChild = node.lastChild;
+
+      while (lastChild) { // search for a last BR child, if any
+
+        while (lastChild &&
+               (lastChild.nodeType !== Node.ELEMENT_NODE || !lastChild.lastChild) && // skip last empty text or element nodes
+               !getNodeText(lastChild).length) {
+          lastChild = lastChild.previousSibling;
+        }
+
+        if (lastChild &&
+            lastChild.nodeName !== "BR" && // if last child found is not BR and has a last child subnode (and also non-empty text contents)
+            lastChild.lastChild) {
+          lastChild = lastChild.lastChild; // then search for a last BR subchild in this last child subnode
+        } else {
+          break;
+        }
+      }
+
+      if (lastChild?.nodeName === "BR") lastChild.remove();
+    }
+
+    function joinAdjacentTextBlocks(textBlockNode, _, _2, textBlockPreviousNodeId) {
+
+      const previousElementSibling = textBlockPreviousNodeId ? document.getElementById(textBlockPreviousNodeId) : null;
+
+      if (!previousElementSibling) return;
+
+      const innerHtml = textBlockNode.innerHTML;
+      removeLastBr(previousElementSibling);
+      const focusChild = textBlockNode.firstChild;
+      previousElementSibling.append(...textBlockNode.childNodes);
+      textBlockNode.remove();
+      textBlockNode.innerHTML = innerHtml;
+      
+      if (focusChild) setCaret(focusChild, 0);
+    }
+
+    function undoJoinAdjacentTextBlocks(textBlockNode, nextSiblingId, textBlockPreviousSavedContents, textBlockPreviousNodeId) {
+
+      const previousElementSibling = textBlockPreviousNodeId ? document.getElementById(textBlockPreviousNodeId) : null;
+
+      if (!previousElementSibling) return;
+
+      previousElementSibling.innerHTML = textBlockPreviousSavedContents;
+      editorInsertBefore(textBlockNode, nextSiblingId);
+    }
+
+    function isCaretAtStart(node, range) {
+
+      if (range.startContainer === range.endContainer &&
+          range.startOffset === range.endOffset) {
+
+        if (range.startOffset === 0) {
+          return true;
+        } else if (range.startContainer === node) {
+
+          const childNodes = [...node.childNodes];
+
+          for (let i = 0; i < range.startOffset && i < childNodes.length; i++) {
+
+            if (childNodes[i].nodeType !== Node.TEXT_NODE || childNodes[i].textContent.length > 0) {
+              return false;
+            }
+          }
+
+          return true;
+        }
+      }
+
+      return false;
+    }
+
+    function isCaretAtEnd(node, range) {
+
+      if (range.startContainer === range.endContainer &&
+          range.startOffset === range.endOffset) {
+
+        if (range.endContainer === node) {
+
+          const childNodes = [...node.childNodes];
+
+          if (childNodes.length > 0 && range.endOffset > -1) {
+
+            let brCount = 0;
+
+            for (let i = range.endOffset; i < childNodes.length; i++) {
+
+              const child = childNodes[i];
+
+              if (child.nodeName === "BR") {
+
+                ++brCount;
+
+                if (brCount > 1) return false;
+              } else if (getNodeText(child).length > 0) {
+                return false;
+              }
+            }
+          }
+        } else {
+
+          if (range.endContainer.nodeType === Node.TEXT_NODE) {
+
+            const textLength = getNodeText(range.endContainer).length;
+
+            if (textLength > 0 && range.endOffset < textLength) {
+              return false;
+            }
+          }
+          let p = range.endContainer;
+
+          while (p !== node) {
+
+            let brCount = (p.nodeName === "BR") ? 1 : 0;
+
+            while (p.nextSibling) {
+
+              if (p.nextSibling.nodeName === "BR") {
+
+                ++brCount;
+
+                if (brCount > 1) return false;
+              } else if (getNodeText(p.nextSibling).length > 0) {
+                return false;
+              }
+              p = p.nextSibling;
+            }
+            p = p.parentNode;
+          }
+        }
+      } else {
+        return false;
+      }
+
+      return true;
+    }
+
+    function isTableCell(node) {
+      return node && (node.nodeName === "TH" || node.nodeName === "TD");
+    }
+
+    // Determines if the node is a node that contains text that can be edited
+    function isEditableTextNode(node) {
+      return node && (node.classList?.contains("text-block") || node.classList?.contains("code-block") || isTableCell(node));
+    }
+
+    function isTableNode(node) {
+      return node && node.classList?.contains("embedded-table");
+    }
+
+    function getTableCell(node) {
+
+      while (node) {
+
+        if (isTableCell(node)) return node;
+        if (node.parentNode === editor) return null;
+        node = node.parentNode;
+      }
+
+      return null;
+    }
+
+    // Gets the list of all nodes and text positions of the start and end nodes within the root container and within the specified range
+    function getSelectionNodesAndPositions(rootContainer, range) {
+
+      const selPositions = [];
+
+      if (range) {
+
+        if (range.commonAncestorContainer.nodeType === Node.TEXT_NODE) {
+
+          const node = getTopLevelNodeOf(range.startContainer, rootContainer);
+
+          if (node) {
+
+            const positions = getNodePositions(node);
+            const start = positions.get(range.startContainer).start + range.startOffset;
+            const end = start + range.endOffset - range.startOffset;
+            selPositions.push({ node: node, start: start, end: end, positions: positions });
+          }
+        } else {
+
+          let nodeStart = getTopLevelNodeOf(range.startContainer, rootContainer);
+          let nodeEnd = getTopLevelNodeOf(range.endContainer, rootContainer);
+
+          if (nodeStart && nodeEnd) {
+
+            if (nodeStart === nodeEnd) {
+
+              if (isEditableTextNode(nodeStart)) {
+
+                const positions = getNodePositions(nodeStart);
+                const start = positions.get(range.startContainer).start + range.startOffset;
+                const end = positions.get(range.endContainer).start + range.endOffset;
+                selPositions.push({ node: nodeStart, start: start, end: end, positions: positions });
+              } else {
+                selPositions.push({ node: nodeStart });
+              }
+            } else {
+
+              if (isEditableTextNode(nodeStart)) {
+
+                const positions = getNodePositions(nodeStart);
+                const start = positions.get(range.startContainer).start + range.startOffset;
+                const end = positions.get(nodeStart).end;
+                selPositions.push({ node: nodeStart, start: start, end: end, positions: positions });
+              } else {
+                selPositions.push({ node: nodeStart });
+              }
+
+              let node = nodeStart.nextElementSibling;
+
+              while (node && node !== nodeEnd) {
+
+                if (node.parentNode === rootContainer) {
+
+                  if (isEditableTextNode(node)) {
+
+                    const positions = getNodePositions(node);
+                    const start = positions.get(node).start;
+                    const end = positions.get(node).end;
+                    selPositions.push({ node: node, start: start, end: end, positions: positions });
+                  } else {
+                    selPositions.push({ node: node });
+                  }
+                }
+                node = node.nextElementSibling;
+              }
+
+              if (isEditableTextNode(nodeEnd)) {
+
+                const positions = getNodePositions(nodeEnd);
+                const start = positions.get(nodeEnd).start;
+                const end = positions.get(range.endContainer).start + range.endOffset;
+                selPositions.push({ node: nodeEnd, start: start, end: end, positions: positions });
+              } else {
+                selPositions.push({ node: nodeEnd });
+              }
+            }
+          }
+        }
+      }
+
+      return selPositions;
+    }
+
+    function makeNodeId(node) {
+
+      if (isTableCell(node)) {
+
+        if (node.cellId) return node.cellId;
+
+        let child = node;
+        let tr = null;
+
+        while (child && !isTableNode(child.parentNode)) {
+
+          child = child.parentNode;
+
+          if (child.nodeName === "TR") tr = child;
+        }
+
+        if (child?.parentNode) {
+
+          const table = child.parentNode;
+          const tid = table.id;
+          const trIdx = tr ? (getSameTypeElementIndex(tr) + 1) : null;
+
+          if (trIdx) {
+
+            const cellIdx = getSameTypeElementIndex(node) + 1;
+            node.cellId = `#${tid} tr:nth-of-type(${trIdx}) ${node.nodeName.toLowerCase()}:nth-of-type(${cellIdx})`;
+
+            return node.cellId;
+          }
+        }
+
+        return null;
+      }
+
+      return node?.id;
+    }
+
+    function getNodeFromId(nodeId) {
+
+      return nodeId ? (nodeId.includes(" ") ? document.querySelector(nodeId) : document.getElementById(nodeId)) : null;
+    }
+
+    function replaceSelectedContent(firstNodeId, removeNodes, nextElementSiblingId, textTransformationSteps, newTextBlock, _2, newRangeLimits) {
+
+      for (let node of removeNodes) {
+        editorRemoveChild(node);
+      }
+      const firstNode = getNodeFromId(firstNodeId);
+
+      if (firstNode) {
+
+        const afterContents = applyTextTransformationSteps(firstNode.innerHTML, textTransformationSteps);
+
+        if (firstNode.innerHTML !== afterContents) firstNode.innerHTML = afterContents;
+        setRange(firstNode, newRangeLimits);
+      }
+
+      if (newTextBlock) {
+
+        editorInsertBefore(newTextBlock, nextElementSiblingId);
+        setRange(newTextBlock, newRangeLimits);
+      }
+    }
+
+    function undoReplaceSelectedContent(firstNodeId, removeNodes, nextElementSiblingId, textTransformationSteps, newTextBlock, oldRangeLimits, _2) {
+
+      if (newTextBlock) {
+        editorRemoveChild(newTextBlock);
+      }
+      const firstNode = getNodeFromId(firstNodeId);
+
+      if (firstNode) {
+
+        const savedContents = applyTextTransformationSteps(firstNode.innerHTML, textTransformationSteps, true);
+
+        if (firstNode.innerHTML !== savedContents) firstNode.innerHTML = savedContents;
+      }
+      let nextSiblingId = nextElementSiblingId;
+
+      for (let i = removeNodes.length - 1; i > -1; i--) {
+
+        editorInsertBefore(removeNodes[i], nextSiblingId);
+        nextSiblingId = removeNodes[i].id;
+      }
+
+      // set the selection range
+
+      let startContainer = null;
+      let startOffset = 0;
+      let endOffset = 0;
+
+      if (isEditableTextNode(firstNode)) {
+
+        startContainer = firstNode.classList?.contains("code-block") ? firstNode.querySelector("code") : firstNode;
+        const range = setRange(startContainer, { start: oldRangeLimits.start, end: (removeNodes.length > 0 ? oldRangeLimits.start : oldRangeLimits.end) });
+
+        if (range) {
+
+          startContainer = range.startContainer;
+          startOffset = range.startOffset;
+          endOffset = range.endOffset;
+        }
+      } else {
+
+        startContainer = firstNode.parentNode;
+        startOffset = getChildNodeIndex(firstNode);
+      }
+      let endContainer = startContainer;
+
+      if (removeNodes.length > 0) {
+
+        const lastNode = removeNodes[removeNodes.length - 1];
+
+        if (lastNode && lastNode !== firstNode) {
+
+          if (isEditableTextNode(lastNode)) {
+
+            endContainer = lastNode.classList?.contains("code-block") ? lastNode.querySelector("code") : lastNode;
+            const range = setRange(endContainer, { start: oldRangeLimits.end, end: oldRangeLimits.end });
+
+            if (range) {
+              endContainer = range.endContainer;
+              endOffset = range.endOffset;
+            }
+          } else if (lastNode) {
+
+            endContainer = lastNode.parentNode;
+            endOffset = getChildNodeIndex(lastNode) + 1;
+          }
+        }
+      }
+
+      if (startContainer && endContainer) {
+
+        const range = document.createRange();
+        range.setStart(startContainer, startOffset);
+        range.setEnd(endContainer, endOffset);
+        window.getSelection().removeAllRanges();
+        window.getSelection().addRange(range);
+      }
+    }
+
+    function htmlTextToChildNodesArray(text) {
+
+      const template = document.createElement("template");
+      template.innerHTML = text.trim();
+      return [...template.content.childNodes].filter((node) => node.nodeName !== "META");
+    }
+
+    function htmlTextToPlainText(html) {
+
+      const divNode = document.createElement("div");
+      divNode.innerHTML = html;
+
+      return getNodeText(divNode);
+    }
+
+    function normalizeStyledText(node) {
+
+      const inners = new Set();
+      const rootNode = (node?.parentNode === editor) ? node: getTopLevelNodeOf(node, editor);
+      let replacementNode = node;
+
+      while (true) {
+
+        rootNode?.querySelectorAll('span[style~="color:" i] span[style~="color:" i]')?.forEach((nested) => {
+
+          if (nested.style.color) {
+            inners.add(nested);
+          }
+        });
+
+        rootNode?.querySelectorAll('span[style~="background-color:" i] span[style~="background-color:" i]')?.forEach((nested) => {
+
+          if (nested.style.backgroundColor) {
+            inners.add(nested);
+          }
+        });
+
+        rootNode?.querySelectorAll('span[style~="font-size:" i] span[style~="font-size:" i]')?.forEach((nested) => {
+
+          if (nested.style.fontSize) {
+            inners.add(nested);
+          }
+        });
+
+        rootNode?.querySelectorAll("strong strong, em em, u u, s s")?.forEach((nested) => {
+          inners.add(nested);
+        });
+
+        if (inners.size > 0) {
+
+          for (let nested of inners) {
+
+            if (nested.childNodes?.length) {
+
+              if (nested === replacementNode) replacementNode = nested.childNodes[nested.childNodes.length - 1];
+              nested.replaceWith(...nested.childNodes);
+            } else {
+
+              if (nested === replacementNode) {
+              
+                replacementNode = nested.nextSibling;
+
+                if (!replacementNode) {
+
+                  let p = nested.parentNode;
+
+                  if (p && p !== editor) {
+
+                    while (p && p.parentNode !== editor && !replacementNode) {
+
+                      replacementNode = p.nextSibling;
+                      p = p.parentNode;
+                    }
+                  }
+
+                  if (!replacementNode) replacementNode = rootNode;
+                }
+              }
+              nested.remove();
+            }
+          }
+          inners.clear();
+        } else {
+          break;
+        }
+      }
+
+      return replacementNode;
+    }
+
+    function insertTextInRange(text, range, isHtml = false) {
+
+      let htmlNodes = null;
+
+      if (isHtml) {
+
+        let transformToPlainText = false;
+        let p = range.startContainer;
+
+        while (p && p !== editor) {
+
+          if (p.nodeName === "CODE") { // inserting html in code blocks is not allowed
+            transformToPlainText = true;
+            break;
+          }
+          p = p.parentNode;
+        }
+
+        if (transformToPlainText) {
+
+          text = htmlTextToPlainText(text);
+          isHtml = false;
+        } else {
+
+          htmlNodes = htmlTextToChildNodesArray(text);
+          text = "";
+        }
+      } else {
+        text = text.replace(/[\t ]/g, "\u00A0");
+      }
+
+      function getOffsetAtEnd(node) {
+
+        if (node.nodeType === Node.TEXT_NODE) {
+
+          return getNodeText(node).length;
+        } else if (node.nodeType === Node.ELEMENT_NODE) {
+
+          if (node.nodeName === "BR") return 1;
+
+          return node.childNodes.length;
+        }
+
+        return 0;
+      }
+
+      if (range.startContainer.nodeType === Node.TEXT_NODE) {
+
+        const nodes = htmlNodes ?? createHtmlElementsFromText(text, -1, -1, null);
+        let textContent = range.startContainer.textContent;
+
+        if (nodes.length === 1) {
+
+          if (nodes[0].nodeType === Node.TEXT_NODE) {
+
+            text = getNodeText(nodes[0]);
+            const endRangeOffset = range.startOffset + text.length;
+            textContent = textContent.substring(0, range.startOffset) + text + textContent.substring(range.startOffset);
+            if (textContent !== range.startContainer.textContent) range.startContainer.textContent = textContent;
+
+            return { node: range.startContainer, offset: endRangeOffset };
+          } else if (nodes[0].nodeType === Node.ELEMENT_NODE) {
+
+            const parentNode = range.startContainer.parentNode;
+            const startContent = textContent.substring(0, range.startOffset);
+            const endContent = textContent.substring(range.startOffset);
+            const nextSibling = range.startContainer.nextSibling;
+
+            if (startContent !== range.startContainer.textContent) range.startContainer.textContent = startContent;
+            parentNode.insertBefore(nodes[0], nextSibling);
+
+            if (endContent) {
+              parentNode.insertBefore(document.createTextNode(endContent), nextSibling);
+            }
+
+            if (isHtml) nodes[0] = normalizeStyledText(nodes[0]);
+
+            return { node: nodes[0], offset: getOffsetAtEnd(nodes[0]) };
+          }
+        } else if (nodes.length > 1) {
+
+          const parentNode = range.startContainer.parentNode;
+          const startContent = textContent.substring(0, range.startOffset);
+          const endContent = textContent.substring(range.startOffset);
+          const nextSibling = range.startContainer.nextSibling;
+
+          textContent = startContent;
+          let i = 0;
+
+          while (i < nodes.length && nodes[i].nodeType === Node.TEXT_NODE) {
+
+            textContent += getNodeText(nodes[i]);
+            ++i;
+          }
+
+          for (let j = i; j < nodes.length; ++j) {
+            parentNode.insertBefore(nodes[j], nextSibling);
+          }
+
+          if (i < nodes.length) {
+
+            if (textContent !== range.startContainer.textContent) range.startContainer.textContent = textContent;
+
+            let lastNode = nodes[nodes.length - 1];
+
+            if (lastNode.nodeType === Node.TEXT_NODE) {
+
+              let lastText = getNodeText(lastNode);
+              const offset = lastText.length;
+              lastText += endContent;
+
+              if (lastText !== lastNode.textContent) lastNode.textContent = lastText;
+
+              if (isHtml) normalizeStyledText(parentNode);
+
+              return { node: lastNode, offset: offset };
+            } else if (endContent) {
+
+              parentNode.insertBefore(document.createTextNode(endContent), nextSibling);
+            }
+
+            if (isHtml) lastNode = normalizeStyledText(lastNode);
+
+            return { node: lastNode, offset: getOffsetAtEnd(lastNode) };
+          } else {
+
+            const offset = textContent.length;
+            textContent += endContent;
+
+            if (textContent !== range.startContainer.textContent) range.startContainer.textContent = textContent;
+
+            return { node: range.startContainer, offset: offset };
+          }
+        }
+      } else if (range.startContainer.nodeType === Node.ELEMENT_NODE) {
+
+        const nodes = htmlNodes ?? createHtmlElementsFromText(text, -1, -1, null);
+
+        if (nodes.length > 0) {
+
+          nodes.reverse();
+          nodes.forEach((node) => range.insertNode(node));
+          let lastNode = nodes[0];
+
+          if (isHtml) lastNode = normalizeStyledText(lastNode);
+
+          return { node: lastNode, offset: getOffsetAtEnd(lastNode) };
+        }
+      }
+
+      return null;
+    }
+
+    function doChangeText(node, textTransformationSteps, _, afterRangeLimits) {
+
+      if (node) {
+
+        const afterContents = applyTextTransformationSteps(node.innerHTML, textTransformationSteps);
+
+        if (node.innerHTML !== afterContents) node.innerHTML = afterContents;
+        setRange(node, afterRangeLimits);
+      }
+    }
+
+    function undoChangeText(node, textTransformationSteps, savedRangeLimits, _,) {
+
+      if (node) {
+
+        const savedContents = applyTextTransformationSteps(node.innerHTML, textTransformationSteps, true);
+
+        if (node.innerHTML !== savedContents) node.innerHTML = savedContents;
+        setRange(node, savedRangeLimits);
+      }
+    }
+
+    function sanitizeEditableTextNode(node) {
+
+      const contentNode = node.classList?.contains("code-block") ? node.querySelector("code") : node;
+
+      if (getNodeText(contentNode)) {
+
+        const emptyChildren = [];
+        let child = contentNode.firstChild;
+
+        while (child) {
+
+          if (!getNodeText(child)) emptyChildren.push(child);
+          child = child.nextSibling;
+        }
+        emptyChildren.forEach((node) => node.remove());
+      } else {
+        contentNode.innerHTML = "<br/>";
+      }
+    }
+
+    function handleTextInsertion(text, range, topNode, isHtml = false) {
+
+      if (isTableNode(topNode)) {
+
+        topNode = getTableCell(range.startContainer);
+        if (!topNode) return;
+      }
+      const savedContents = topNode.innerHTML;
+      const savedRangeLimits = getRangeLimits(topNode, range);
+      const insertion = insertTextInRange(text, range, isHtml);
+
+      if (insertion) {
+
+        range.setStart(insertion.node, insertion.offset);
+        range.setEnd(insertion.node, insertion.offset);
+        window.getSelection().collapseToEnd();
+      } else {
+        return;
+      }
+      sanitizeEditableTextNode(topNode);
+      const afterContents = topNode.innerHTML;
+      const afterRangeLimits = getRangeLimits(topNode, range);
+
+      if (savedContents !== topNode.innerHTML) topNode.innerHTML = savedContents;
+
+      if (savedContents !== afterContents) UNDO_STACK.push(doChangeText, undoChangeText, topNode, getTextTransformationSteps(savedContents, afterContents), savedRangeLimits, afterRangeLimits);
+    }
+
+    function handleTextDeletion(range, topNode, usingBackspace) {
+
+      if (isTableNode(topNode)) {
+
+        topNode = getTableCell(range.startContainer);
+        if (!topNode) return;
+      }
+      const savedContents = topNode.innerHTML;
+      const savedRangeLimits = getRangeLimits(topNode, range);
+      const delRangeLimits = { start: savedRangeLimits.start + (usingBackspace ?  - 1 : 0), end: savedRangeLimits.end + (usingBackspace ? 0 : 1) };
+      const delRange = setRange(topNode, delRangeLimits);
+
+      if (delRange) {
+
+        delRange.deleteContents();
+        window.getSelection().collapseToStart();
+
+        sanitizeEditableTextNode(topNode);
+        const afterContents = topNode.innerHTML;
+        const afterRangeLimits = getRangeLimits(topNode, delRange);
+
+        if (savedContents !== topNode.innerHTML) topNode.innerHTML = savedContents;
+
+        if (savedContents !== afterContents) UNDO_STACK.push(doChangeText, undoChangeText, topNode, getTextTransformationSteps(savedContents, afterContents), savedRangeLimits, afterRangeLimits);
+      }
+    }
+
+    function handleMultiSelection(text, isHtml = false) {
 
       let range = null;
       const selection = window.getSelection();
@@ -3882,7 +5887,279 @@
       if (selection.rangeCount) {
         range = selection.getRangeAt(0);
       }
-      let block = range?.startContainer;
+
+      if (range && !selection.isCollapsed) {
+
+        // finds the current root container to work on
+        let rootNode = range.commonAncestorContainer;
+        let rootContainer = editor;
+
+        while (rootNode && rootNode !== rootContainer) {
+
+          if (isTableCell(rootNode)) {
+            rootContainer = rootNode.parentNode;
+            break;
+          }
+          rootNode = rootNode.parentNode;
+        }
+        // gets all the selected nodes within the root container as a list of start and end positions within each root container's direct child text
+        const selections = getSelectionNodesAndPositions(rootContainer, range);
+
+        if (selections.length) {
+
+          let removeNodes = [];
+          let savedContents = null;
+          let firstNodeId = null;
+          let lastContent = null;
+          let newCaretPosition = selections[0].start;
+          const oldRangeLimits = { start: selections[0].start, end: selections[selections.length - 1].end };
+          const firstNode = selections[0].node;
+
+
+          if (selections.length === 1) {
+
+            if (isEditableTextNode(firstNode)) {
+
+              savedContents = firstNode.innerHTML;
+              firstNodeId = makeNodeId(firstNode);
+              selection.deleteFromDocument();
+
+              if (text) {
+
+                const insertion = insertTextInRange(text, range, isHtml);
+
+                if (insertion) {
+
+                  range.setStart(insertion.node, insertion.offset);
+                  range.setEnd(insertion.node, insertion.offset);
+                } else {
+                  return true;
+                }
+              }
+              selection.collapseToEnd();
+              sanitizeEditableTextNode(firstNode);
+              const afterRangeLimits = getRangeLimits(firstNode, range);
+              newCaretPosition = afterRangeLimits.end;
+            } else if (editor.firstChild !== firstNode) {
+              removeNodes = [firstNode];
+            }
+          } else {
+
+            removeNodes = selections.map((e) => e.node);
+
+            const lastNode = selections[selections.length - 1].node;
+
+            if (isEditableTextNode(lastNode)) {
+
+              const extractRange = range.cloneRange();
+              extractRange.setStart(range.endContainer, range.endOffset);
+              extractRange.setEndAfter(lastNode.lastChild || lastNode);
+              lastContent = extractRange.cloneContents();
+
+              if (lastNode.classList?.contains("code-block")) {
+
+                const childNodes = lastContent.querySelector("code").childNodes;
+
+                if (childNodes?.length) {
+
+                  lastContent = document.createDocumentFragment();
+                  childNodes.forEach((childNode) => lastContent.appendChild(childNode));
+                } else {
+                  lastContent = null;
+                }
+              }
+            }
+
+            if (isEditableTextNode(firstNode)) {
+
+              savedContents = firstNode.innerHTML;
+              firstNodeId = makeNodeId(firstNode);
+              const insertionNode = firstNode.classList?.contains("code-block") ? firstNode.querySelector("code"): firstNode;
+
+              range.setEndAfter(insertionNode.lastChild || insertionNode);
+              range.deleteContents();
+
+              if (text) {
+
+                const insertion = insertTextInRange(text, range, isHtml);
+
+                if (insertion) {
+
+                  range.setStart(insertion.node, insertion.offset);
+                  range.setEnd(insertion.node, insertion.offset);
+                } else {
+                  return true;
+                }
+              }
+              selection.collapseToEnd();
+              sanitizeEditableTextNode(firstNode);
+              const afterRangeLimits = getRangeLimits(firstNode, range);
+              newCaretPosition = afterRangeLimits.end;
+
+              if (lastContent) {
+
+                insertionNode.append(lastContent);
+                sanitizeEditableTextNode(firstNode);
+              }
+
+              removeNodes.shift();
+            } else if (editor.firstChild === firstNode) {
+              removeNodes.shift();
+            }
+          }
+
+          if (!firstNodeId) sanitizeEditableTextNode(firstNode);
+          const afterContents = firstNodeId ? firstNode.innerHTML : null;
+          const newTextBlock = firstNodeId ? null : document.createElement("p");
+
+          if (newTextBlock) {
+
+            newTextBlock.setAttribute("id", `text${generateUId()}`);
+            newTextBlock.setAttribute("class", "text-block");
+            newTextBlock.append(...(isHtml ? htmlTextToChildNodesArray(text) : createHtmlElementsFromText(text, -1, -1, null)));
+            const txt = getNodeText(newTextBlock);
+            newCaretPosition = txt.length;
+            if (lastContent) newTextBlock.append(lastContent);
+
+            if (!getNodeText(newTextBlock)) newTextBlock.appendChild(document.createElement("br"));
+          }
+          const newRangeLimits = { start: newCaretPosition, end: newCaretPosition };
+
+          if (savedContents !== afterContents || newTextBlock)
+
+            if (!newTextBlock) firstNode.innerHTML = savedContents;
+            UNDO_STACK.push(replaceSelectedContent, undoReplaceSelectedContent, firstNodeId, removeNodes,
+                            selections[selections.length - 1].node.nextElementSibling?.id,
+                            newTextBlock ? [] : getTextTransformationSteps(savedContents, afterContents), newTextBlock, oldRangeLimits, newRangeLimits);
+        }
+
+        return true;
+      }
+
+      return false;
+    }
+
+    function isCopyCutOrPasteEvent(e) {
+
+      const KEY = e.key.toUpperCase();
+      return KEY === "COPY" || KEY === "CUT" || KEY === "PASTE" || ((KEY === "C" || KEY === "X" || KEY === "V") && (e.ctrlKey || e.metaKey));
+    }
+
+    function isUndoEvent(e) {
+
+      const KEY = e.key.toUpperCase();
+
+      if (KEY === "UNDO") {
+        return true;
+      }
+
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && KEY === "Z") {
+        return true;
+      }
+
+      return false;
+    }
+
+    function isRedoEvent(e) {
+
+      const KEY = e.key.toUpperCase();
+
+      if (KEY === "REDO") {
+        return true;
+      }
+
+      if (e.ctrlKey && KEY === "Y") {
+        return true;
+      }
+
+      if (e.shiftKey && e.metaKey && KEY === "Z") {
+        return true;
+      }
+
+      return false;
+    }
+
+    function isDelEvent(e) {
+      return (e.key === "Delete" || e.key === "Del" || (e.key.toUpperCase() === "D" && e.ctrlKey));
+    }
+
+    function isBackspaceEvent(e) {
+      return e.key === "Backspace";
+    }
+
+    const KEY2EMPTY_STR = ["UNIDENTIFIED", "ALT", "ALTGRAPH", "CAPSLOCK", "CONTROL", "FN", "FNLOCK", "HYPER", "META", "OS", "NUMLOCK", "SCROLLLOCK",
+                           "SHIFT", "SUPER", "SYMBOL", "SYMBOLLOCK", "TAB", "ARROWDOWN", "ARROWLEFT", "ARROWRIGHT", "ARROWUP", "DOWN", "LEFT", "RIGHT", "UP",
+                           "END", "HOME", "PAGEDOWN", "PAGEUP", "BACKSPACE", "CLEAR", "COPY", "CRSEL", "CUT", "DEL", "DELETE", "ERASEEOF", "EXSEL", "INSERT",
+                           "PASTE", "REDO", "UNDO", "ACCEPT", "AGAIN", "ATTN", "CANCEL", "CONTEXTMENU", "APPS", "ESCAPE", "ESC", "EXECUTE", "FIND", "FINISH",
+                           "HELP", "PAUSE", "PLAY", "PROPS", "SELECT", "ZOOMIN", "ZOOMOUT", "BRIGHTNESSDOWN", "BRIGHTNESSUP", "EJECT", "LOGOFF", "POWER",
+                           "POWEROFF", "PRINTSCREEN", "HIBERNATE", "STANDBY", "WAKEUP", "ALLCANDIDATES", "ALPHANUMERIC", "CODEINPUT", "COMPOSE", "CONVERT",
+                           "DEAD", "FINALMODE", "GROUPFIRST", "GROUPLAST", "GROUPNEXT", "GROUPPREVIOUS", "MODECHANGE", "NEXTCANDIDATE", "NONCONVERT",
+                           "PREVIOUSCANDIDATE", "PROCESS", "SINGLECANDIDATE", "HANGULMODE", "HANJAMODE", "JUNJAMODE", "EISU", "HANKAKU", "HIRAGANA",
+                           "HIRAGANAKATAKANA", "KANAMODE", "KANJIMODE", "KATAKANA", "ROMAJI", "ZENKAKU", "ZENKAKUHANKAKU", "F1", "F2", "F3", "F4", "F5", "F6",
+                           "F7", "F8", "F9", "F10", "F11", "F12", "F13", "F14", "F15", "F16", "F17", "F18", "F19", "F20", "SOFT1", "SOFT2", "SOFT3", "SOFT4",
+                           "APPSWITCH", "CALL", "CAMERA", "CAMERAFOCUS", "ENDCALL", "GOBACK", "GOHOME", "MOZHOMESCREEN", "HEADSETHOOK", "LASTNUMBERREDIAL",
+                           "NOTIFICATION", "MANNERMODE", "VOICEDIAL", "CHANNELDOWN", "CHANNELUP", "MEDIAFASTFORWARD", "MEDIAPAUSE", "MEDIAPLAY", "MEDIAPLAYPAUSE",
+                           "MEDIARECORD", "MEDIAREWIND", "MEDIASTOP", "MEDIATRACKNEXT", "MEDIATRACKPREVIOUS", "AUDIOBALANCELEFT", "AUDIOBALANCERIGHT",
+                           "AUDIOBASSDOWN", "AUDIOBASSBOOSTDOWN", "AUDIOBASSBOOSTTOGGLE", "AUDIOBASSBOOSTUP", "AUDIOBASSUP", "AUDIOFADERFRONT", "AUDIOFADERREAR",
+                           "AUDIOSURROUNDMODENEXT", "AUDIOTREBLEDOWN", "AUDIOTREBLEUP", "AUDIOVOLUMEDOWN", "AUDIOVOLUMEMUTE", "AUDIOVOLUMEUP", "MICROPHONETOGGLE",
+                           "MICROPHONEVOLUMEDOWN", "MICROPHONEVOLUMEMUTE", "MICROPHONEVOLUMEUP", "CLOSE", "NEW", "OPEN", "PRINT", "SAVE", "SPELLCHECK", "MAILFORWARD",
+                           "MAILREPLY", "MAILSEND", "BROWSERBACK", "BROWSERFAVORITES", "BROWSERFORWARD", "BROWSERHOME", "BROWSERREFRESH", "BROWSERSEARCH", "BROWSERSTOP",
+                           "KEY11", "KEY12"];
+
+    function key2Str(e) {
+
+      const KEY = e.key.toUpperCase();
+      return KEY2EMPTY_STR.includes(KEY) ?
+             "" : (KEY === "ENTER" ?
+                  "\n" : ((KEY === "SPACEBAR" || KEY === " ") ?
+                          " " : ((e.ctrlKey || e.metaKey) ? "" : e.key)));
+    }
+
+    function keydownHandler(e) {
+
+      if (isUndoEvent(e)) {
+
+        UNDO_STACK.undo();
+        cancelEvent(e);
+        return;
+      }
+
+      if (isRedoEvent(e)) {
+
+        UNDO_STACK.redo();
+        cancelEvent(e);
+        return;
+      }
+
+      if (isCopyCutOrPasteEvent(e)) {
+        return;
+      }
+      const keyText = key2Str(e);
+      const isDeleteKey = isDelEvent(e);
+      const isBackspaceKey = isBackspaceEvent(e);
+
+      if (!keyText && !isDeleteKey && !isBackspaceKey) {
+        return;
+      }
+      let range = null;
+      const selection = window.getSelection();
+
+      if (selection.rangeCount) {
+        range = selection.getRangeAt(0);
+      }
+
+      if (!range) {
+
+        cancelEvent(e);
+        return;
+      }
+
+      if (handleMultiSelection(keyText)) {
+
+        cancelEvent(e);
+        return;
+      }
+      let block = range.startContainer;
 
       if (block) {
 
@@ -3902,205 +6179,381 @@
 
         if (block.parentNode &&
             [...block.parentNode.classList].some(c => BLOCKED_NODE_CLASSES.indexOf(c) > -1)) {
-            e.stopImmediatePropagation();
-            e.preventDefault();
+            cancelEvent(e);
             return;
         }
-        let p = block;
-        let shouldNormalizeEditor = true;
+      } else {
 
-        while (p && p.id !== "editor") {
+        cancelEvent(e);
+        return;
+      }
 
-          if (p.classList?.contains("text-block") ||
-              p.classList?.contains("code-block") ||
-              p.classList?.contains("embedded-table")) {
-            shouldNormalizeEditor = false;
-            break;
-          }
-          p = p.parentNode;
-        }
+      if (e.key === "Enter" && e.shiftKey) {
 
-        if (shouldNormalizeEditor) {
+        if (handleEnterKey(range, (parentNode) => parentNode.classList?.contains("text-block"))) {
 
-          // don't block some control keys (like Left, Right, Up and Down); block the rest
-          const keyCode = e.keyCode || e.which;
-
-          if (keyCode < 33 || keyCode > 44) {
-
-            e.stopImmediatePropagation();
-            e.preventDefault();
-            return;
-          }
+          cancelEvent(e);
+          return;
         }
       }
 
       if (e.key === "Enter" && !e.shiftKey) {
 
-        if (block && handleEnterKey(range, ["CODE", "TD", "TH"])) {
+        if (handleEnterKey(range, (parentNode) => ["CODE", "TD", "TH"].includes(parentNode.nodeName))) {
 
-          e.stopImmediatePropagation();
-          e.preventDefault();
+          cancelEvent(e);
           return;
         }
         e.preventDefault();
         splitBlock(range);
         return;
       }
-      let handleBackspace = false;
-      let topNode = null;
+      let topNode = getTopLevelNodeOfCurrentPosition(range);
 
-      if (e.key === "Backspace") {
+      if (!topNode) {
 
-        if (range.startContainer === range.endContainer &&
-            range.startOffset === range.endOffset) {
+        cancelEvent(e);
+        return;
+      }
+      let handleDeleteAtBoundaries = false;
 
-          if (range.startOffset === 0) {
-            handleBackspace = true;
-          } else {
-            topNode = getTopLevelNodeOfCurrentPosition();
+      if (isDeleteKey && isCaretAtEnd(topNode, range)) {
 
-            if (topNode) {
+        const nextSibling = topNode.nextElementSibling;
 
-              if (block === topNode) {
+        if (nextSibling) {
 
-                const childNodes = [...topNode.childNodes];
-                handleBackspace = true;
+          const topNodeIsText = topNode.classList?.contains("text-block");
+          const topNodeIsCode = !topNodeIsText && topNode.classList?.contains("code-block");
 
-                for (let i = 0; i < range.startOffset && i < childNodes.length; i++) {
+          if (topNodeIsText || topNodeIsCode) {
 
-                  if (childNodes[i].nodeType !== Node.TEXT_NODE || childNodes[i].textContent.length) {
-                    handleBackspace = false;
-                    break;
-                  } 
-                }
+            const nextSiblingIsText = nextSibling.classList?.contains("text-block");
+            const nextSiblingIsCode = !nextSiblingIsText && nextSibling.classList?.contains("code-block");
+
+            if (nextSiblingIsText || nextSiblingIsCode) {
+
+              handleDeleteAtBoundaries = topNodeIsText && nextSiblingIsText;
+
+              if (!handleDeleteAtBoundaries) {
+
+                const nextText = getNodeText(nextSibling);
+                handleDeleteAtBoundaries = nextText === "\n" || nextText.length === 0;
               }
+
+              if (handleDeleteAtBoundaries) {
+
+                topNode = nextSibling;
+                range = setCaret(nextSiblingIsCode ? nextSibling.querySelector("code") : nextSibling, 0);
+                block = range.startContainer;
+              } else {
+
+                cancelEvent(e);
+                return;
+              }
+            } else {
+
+              cancelEvent(e);
+              return;
             }
           }
         }
+      } else {
+        handleDeleteAtBoundaries = (isBackspaceKey && isCaretAtStart(topNode, range));
       }
 
-      if (handleBackspace) {
+      if (handleDeleteAtBoundaries) {
 
-        topNode = topNode || getTopLevelNodeOfCurrentPosition();
+        // blocks moving of the current line in the code block into the previous sibling p node
+        if (topNode.classList?.contains("code-block") && !(block?.previousSibling)) {
 
-        if (topNode) {
+          if (handleBackspaceInEmptyTextContent(topNode, e)) return;
 
-          // blocks moving of the current line in the code block into the previous sibling p node
-          if (topNode.classList?.contains("code-block") && !(block?.previousSibling)) {
+          cancelEvent(e);
+          return;
+        }
 
-            if (handleBackspaceInEmptyTextContent(topNode, e)) return;
+        if (topNode.classList?.contains("text-block")) {
 
-            e.stopImmediatePropagation();
-            e.preventDefault();
+          if (handleBackspaceInEmptyTextContent(topNode, e)) return;
+
+          const previousElementSibling = topNode.previousElementSibling;
+
+          if (topNode === block &&
+              (!previousElementSibling ||
+              !previousElementSibling.classList?.contains("text-block"))) {
+
+            cancelEvent(e);
             return;
           }
 
-          if (topNode.classList?.contains("text-block")) {
+          while (block !== topNode) {
 
-            if (handleBackspaceInEmptyTextContent(topNode, e)) return;
+            while (block.previousSibling) {
 
-            const previousElementSibling = topNode.previousElementSibling;
+              block = block.previousSibling;
 
-            if (topNode === block &&
-                (!previousElementSibling ||
-                !previousElementSibling.classList?.contains("text-block"))) {
+              if (block.nodeName === "BR") {
+                return;
+              }
 
-              e.stopImmediatePropagation();
-              e.preventDefault();
-              return;
-            }
-            let focusChild = (block === topNode ? block.firstChild : block);
+              if (block.nodeType === Node.TEXT_NODE) {
 
-            while (block !== topNode) {
-
-              while (block.previousSibling) {
-  
-                block = block.previousSibling;
-
-                if (block.nodeName === "BR") {
+                if (getNodeText(block).length) {
                   return;
                 }
+              } else if (block.nodeType === Node.ELEMENT_NODE) {
 
-                if (block.nodeType === Node.TEXT_NODE) {
-
-                  if (getNodeText(block).length) {
-                    return;
-                  }
-                } else if (block.nodeType === Node.ELEMENT_NODE) {
-
-                  if (getNodeText(block).length || block.querySelector("br")) {
-                    return;
-                  }
+                if (getNodeText(block).length || block.querySelector("br")) {
+                  return;
                 }
               }
-
-              block = block.parentNode;
             }
 
-            if (!previousElementSibling ||
-                !previousElementSibling.classList?.contains("text-block")) {
-
-              e.stopImmediatePropagation();
-              e.preventDefault();
-              return;
-            }
-
-            // combining current text block with the previous text block
-            let lastChild = previousElementSibling.lastChild;
-
-            while (lastChild) {
-
-              while (lastChild &&
-                     (lastChild.nodeType !== Node.ELEMENT_NODE || !lastChild.lastChild) &&
-                     !getNodeText(lastChild).length) {
-                lastChild = lastChild.previousSibling;
-              }
-
-              if (lastChild &&
-                  lastChild.nodeName !== "BR" &&
-                  lastChild.lastChild) {
-                lastChild = lastChild.lastChild;
-              } else {
-                break;
-              }
-            }
-            lastChild = lastChild || previousElementSibling;
-
-            if (lastChild === previousElementSibling) {
-              previousElementSibling.replaceChildren();
-            } else if (lastChild.nodeName === "BR") {
-
-              if (lastChild.hasChildNodes) lastChild.replaceChildren();
-              lastChild.remove();
-            }
-            previousElementSibling.append(...topNode.childNodes);
-            topNode.replaceChildren();
-            topNode.remove();
-
-            if (focusChild) {
-              setCaret(focusChild, 0);
-            } else {
-              selection.removeAllRanges();
-              editor?.focus();
-            }
-            e.stopImmediatePropagation();
-            e.preventDefault();
+            block = block.parentNode;
           }
+
+          if (!previousElementSibling ||
+              !previousElementSibling.classList?.contains("text-block")) {
+
+            cancelEvent(e);
+            return;
+          }
+
+          // combining current text block with the previous text block
+          UNDO_STACK.push(joinAdjacentTextBlocks, undoJoinAdjacentTextBlocks, topNode, topNode.nextElementSibling?.id, previousElementSibling.innerHTML, previousElementSibling.id);
+
+          cancelEvent(e);
+          return;
         }
       }
 
-      if ((e.ctrlKey || e.metaKey) && (e.key === "z" || e.key === "y")) {
-        e.preventDefault();
+      if (isDeleteKey) {
+
+        handleTextDeletion(range, topNode, false);
+        cancelEvent(e);
+        return;
+      } else if (isBackspaceKey) {
+
+        handleTextDeletion(range, topNode, true);
+        cancelEvent(e);
+        return;
+      } else if (keyText) {
+
+        handleTextInsertion(keyText, range, topNode);
+        cancelEvent(e);
+        return;
       }
     }
 
+    function getStyledContent(selectedFragment) {
+
+      const docFrag = document.createDocumentFragment();
+      const childNodes = [...selectedFragment.childNodes];
+
+      for (let child of childNodes) {
+
+        if (child.nodeName === "BR") {
+          docFrag.append(child);
+        } else if (child.nodeType === Node.TEXT_NODE) {
+
+          if (child.textContent) {
+
+            if (child.textContent === "\n") {
+              docFrag.append(document.createElement("br"));
+            } else {
+              docFrag.append(child);
+            }
+          }
+        } else if (isEditableTextNode(child)) {
+
+          const ch = (child.classList?.contains("code-block") ? child.querySelector("code") : child).childNodes;
+          docFrag.append(...ch);
+        } else {
+          return null;
+        }
+      }
+
+      return docFrag.querySelector(STYLE_TAGS.join(", ")) ? docFrag : null; // return only contents that have style nodes
+    }
+
+    function getSingleNodeStyledContent(range) {
+
+      let node = range.commonAncestorContainer;
+      let retNode = null;
+      let leafNode = null;
+
+      function cloneNode(node, range) {
+
+        const clonedNode = node.nodeType === Node.TEXT_NODE ? document.createTextNode(node.textContent.substring(range.startOffset, range.endOffset)) : document.createElement(node.nodeName.toLowerCase());
+
+        if (node.nodeType === Node.ELEMENT_NODE) {
+
+          // Copy attributes
+          for (let attr of node.attributes) {
+            clonedNode.setAttribute(attr.name, attr.value);
+          }
+
+          // Copy inline styles
+          if (node.style?.cssText) clonedNode.style.cssText = node.style.cssText;
+
+          // Copy classes
+          if (node.className) clonedNode.className = node.className;
+        }
+
+        return clonedNode;
+      }
+
+      while (node && node !== editor) {
+
+        if (node.nodeName === "CODE") return null; // code contents is considered unstyled
+
+        if (isEditableTextNode(node)) { // all editable text nodes, except code blocks
+
+          const docFrag = document.createDocumentFragment();
+          retNode = retNode || docFrag;
+          leafNode = leafNode || retNode;
+
+          if (leafNode.nodeType !== Node.TEXT_NODE) {
+
+            const extractRange = range.cloneRange();
+            const contents = extractRange.cloneContents();
+            leafNode.append(...contents.childNodes);
+          }
+
+          if (retNode !== docFrag) docFrag.append(retNode);
+
+          return docFrag.querySelector(STYLE_TAGS.join(", ")) ? docFrag : null; // return only contents that have style nodes
+        } else if (!node.id && node.parentNode && node.parentNode !== editor && node.parentNode.nodeName !== "CODE") {
+
+          const clonedNode = cloneNode(node, range);
+
+          if (retNode) clonedNode.append(retNode);
+
+          retNode = clonedNode;
+          leafNode = leafNode || retNode;
+        }
+        node = node.parentNode;
+      }
+
+      return null;
+    }
+
+    function fragmentToInnerHtml(fragment) { // destroys the fragment
+
+      if (!(fragment instanceof DocumentFragment)) {
+        throw new TypeError("Expected a DocumentFragment.");
+      }
+
+      const container = document.createElement("div");
+      container.appendChild(fragment);
+
+      return container.innerHTML;
+    }
+
+    function handleCutCopy(e, cut) {
+
+      let range = null;
+      const selection = window.getSelection();
+
+      if (selection.rangeCount) {
+        range = selection.getRangeAt(0);
+      }
+
+      if (!range?.startContainer || !range.endContainer ||
+          range.startContainer === editor || range.endContainer === editor ||
+          selection.isCollapsed) {
+
+        cancelEvent(e);
+        return;
+      }
+      let styledContentFrag = getSingleNodeStyledContent(range);
+
+      if (!styledContentFrag) {
+
+        const extractRange = range.cloneRange();
+        const contents = extractRange.cloneContents();
+        styledContentFrag = getStyledContent(contents);
+      }
+
+      if (styledContentFrag) {
+
+        const html = fragmentToInnerHtml(styledContentFrag);
+        (e.clipboardData || window.clipboardData)?.setData("text/html", html);
+      } else {
+        (e.clipboardData || window.clipboardData)?.setData("text/plain", selection.toString());
+      }
+      if (cut) handleMultiSelection("");
+      e.preventDefault();
+    }
+
+    function handleCut(e) {
+      handleCutCopy(e, true);
+    }
+
+    function handleCopy(e) {
+      handleCutCopy(e, false);
+    }
+
+    function handlePaste(e) {
+
+      let range = null;
+      const selection = window.getSelection();
+
+      if (selection.rangeCount) {
+        range = selection.getRangeAt(0);
+      }
+
+      if (!range?.startContainer || !range.endContainer ||
+          range.startContainer === editor || range.endContainer === editor) {
+
+        cancelEvent(e);
+        return;
+      }
+      const cbData = e.clipboardData || window.clipboardData;
+
+      if (!cbData) return;
+
+      if (selection.isCollapsed) {
+
+        const topNode = getTopLevelNodeOfCurrentPosition(range);
+
+        if (isEditableTextNode(topNode) || isTableNode(topNode)) {
+
+          const pasteText = cbData.getData("text") || cbData.getData("text/plain");
+
+          if (pasteText) {
+            handleTextInsertion(pasteText, range, topNode);
+          } else {
+
+            const pasteHtml = cbData.getData("html") || cbData.getData("text/html");
+            if (pasteHtml) handleTextInsertion(pasteHtml, range, topNode, true);
+          }
+        }
+      } else {
+
+        const pasteText = cbData.getData("text") || cbData.getData("text/plain");
+
+        if (pasteText) {
+          handleMultiSelection(pasteText);
+        } else {
+
+          const pasteHtml = cbData.getData("html") || cbData.getData("text/html");
+          if (pasteHtml) handleMultiSelection(pasteHtml, true);
+        }
+      }
+      cancelEvent(e);
+    }
+
     function clickHandler(e) {
+
       const target = e.target.closest("a");
       if (!target || !document.getElementById("editorContainer").contains(target)) return;
 
       e.preventDefault();
 
       const userConfirmed = confirm(`"${target.href}" open this url?`);
+
       if (userConfirmed) {
         window.open(target.href, "_blank");
       }
@@ -4108,18 +6561,26 @@
 
     function unloadHandler(e) {
 
-      if (document.getElementById("editor").contentEditable !== "true") {
+      if (editor.contentEditable !== "true") {
         return;
       }
       e.preventDefault()
       e.returnValue = "";
     }
 
+    function closeAllPageDropdownSections() {
+
+      document.querySelectorAll(".page-dropdown-content").forEach((item) => {
+
+        item.style.maxHeight = null;
+        item.classList?.remove("open");
+      });
+    }
+
     let lastValidSelectionRange = null;
 
     document.onselectionchange = () => {
 
-      const editor = document.getElementById("editor");
       const selection = document.getSelection();
 
       if (selection?.rangeCount) {
@@ -4139,21 +6600,91 @@
 
         document.getElementById("btnLinkText").removeAttribute("disabled");
         document.getElementById("btnLinkText").setAttribute("title", "Make text link");
+
+        document.getElementById("btnB").removeAttribute("disabled");
+        document.getElementById("btnB").setAttribute("title", "Bold text");
+
+        document.getElementById("btnI").removeAttribute("disabled");
+        document.getElementById("btnI").setAttribute("title", "Italic text");
+
+        document.getElementById("btnU").removeAttribute("disabled");
+        document.getElementById("btnU").setAttribute("title", "Underline text");
+
+        document.getElementById("btnStrikethrough").removeAttribute("disabled");
+        document.getElementById("btnStrikethrough").setAttribute("title", "Strikethrough text");
+
+        document.getElementById("btnTextColorMenu").removeAttribute("disabled");
+        document.getElementById("btnTextColorMenu").setAttribute("title", "Colorize text");
+
+        document.getElementById("btnTextHighlightMenu").removeAttribute("disabled");
+        document.getElementById("btnTextHighlightMenu").setAttribute("title", "Highlight text");
+
+        document.getElementById("btnFontScaleMenu").removeAttribute("disabled");
+        document.getElementById("btnFontScaleMenu").setAttribute("title", "Change text scale");
+
+        // mobile ui items
+
+        document.getElementById("mbtnLinkText").removeAttribute("disabled");
+        document.getElementById("mbtnLinkText").setAttribute("title", "Make text link");
+
+        document.getElementById("mbtnTextColorMenu").removeAttribute("disabled");
+        document.getElementById("mbtnTextColorMenu").setAttribute("title", "Colorize text");
+
+        document.getElementById("mbtnTextHighlightMenu").removeAttribute("disabled");
+        document.getElementById("mbtnTextHighlightMenu").setAttribute("title", "Highlight text");
+
+        document.getElementById("mbtnFontScaleMenu").removeAttribute("disabled");
+        document.getElementById("mbtnFontScaleMenu").setAttribute("title", "Change text scale");
       } else {
 
         document.getElementById("btnLinkText").setAttribute("disabled", " ");
         document.getElementById("btnLinkText").setAttribute("title", "Select a text to make link");
+
+        document.getElementById("btnB").setAttribute("disabled", " ");
+        document.getElementById("btnB").setAttribute("title", "Select a text to make bold");
+
+        document.getElementById("btnI").setAttribute("disabled", " ");
+        document.getElementById("btnI").setAttribute("title", "Select a text to make italic");
+
+        document.getElementById("btnU").setAttribute("disabled", " ");
+        document.getElementById("btnU").setAttribute("title", "Select a text to underline");
+
+        document.getElementById("btnStrikethrough").setAttribute("disabled", " ");
+        document.getElementById("btnStrikethrough").setAttribute("title", "Select a text to strikethrough");
+
+        document.getElementById("btnTextColorMenu").setAttribute("disabled", " ");
+        document.getElementById("btnTextColorMenu").setAttribute("title", "Select a text to colorize");
+
+        document.getElementById("btnTextHighlightMenu").setAttribute("disabled", " ");
+        document.getElementById("btnTextHighlightMenu").setAttribute("title", "Select a text to highlight");
+
+        document.getElementById("btnFontScaleMenu").setAttribute("disabled", " ");
+        document.getElementById("btnFontScaleMenu").setAttribute("title", "Select a text to change scale");
+
+        // mobile ui items
+
+        document.getElementById("mbtnLinkText").setAttribute("disabled", " ");
+        document.getElementById("mbtnLinkText").setAttribute("title", "Select a text to make link");
+
+        document.getElementById("mbtnTextColorMenu").setAttribute("disabled", " ");
+        document.getElementById("mbtnTextColorMenu").setAttribute("title", "Select a text to colorize");
+
+        document.getElementById("mbtnTextHighlightMenu").setAttribute("disabled", " ");
+        document.getElementById("mbtnTextHighlightMenu").setAttribute("title", "Select a text to highlight");
+
+        document.getElementById("mbtnFontScaleMenu").setAttribute("disabled", " ");
+        document.getElementById("mbtnFontScaleMenu").setAttribute("title", "Select a text to change scale");
       }
     };
-
-    let editor = document.getElementById("editor");
-    let filename = document.getElementById("filename");
 
     editor.addEventListener("keydown", keydownHandler);
     editor.addEventListener("click", clickHandler);
     editor.addEventListener("blur", normalizeEditor);
     editor.addEventListener("input", cleanEditor);
     editor.addEventListener("focus", cleanEditor);
+    editor.addEventListener("cut", handleCut);
+    editor.addEventListener("copy", handleCopy);
+    editor.addEventListener("paste", handlePaste);
 
     filename.addEventListener("input", updateTitle);
 
@@ -4171,10 +6702,27 @@
 
     document.querySelectorAll(".embedded-math math").forEach(mathNode => mathNode.addEventListener("click", onMathClick));
 
-    document.getElementById("btnH1").addEventListener("click", (e) => changeBlock("h1"));
-    document.getElementById("btnH2").addEventListener("click", (e) => changeBlock("h2"));
-    document.getElementById("btnM").addEventListener("click", (e) => changeBlock("p"));
-    document.getElementById("btnS").addEventListener("click", (e) => changeBlock("small"));
+    document.getElementById("btnH1").addEventListener("click", (e) => changeBlock("xlarge-text"));
+    document.getElementById("btnH2").addEventListener("click", (e) => changeBlock("large-text"));
+    document.getElementById("btnM").addEventListener("click", (e) => changeBlock("medium-text"));
+    document.getElementById("btnS").addEventListener("click", (e) => changeBlock("small-text"));
+
+    document.getElementById("mbtnH1").addEventListener("click", (e) => {
+      toggleDropdown("styleDropdown");
+      changeBlock("xlarge-text");
+    });
+    document.getElementById("mbtnH2").addEventListener("click", (e) => {
+      toggleDropdown("styleDropdown");
+      changeBlock("large-text");
+    });
+    document.getElementById("mbtnM").addEventListener("click", (e) => {
+      toggleDropdown("styleDropdown");
+      changeBlock("medium-text");
+    });
+    document.getElementById("mbtnS").addEventListener("click", (e) => {
+      toggleDropdown("styleDropdown");
+      changeBlock("small-text");
+    });
 
     document.getElementById("btnB").addEventListener("click", (e) => applyFormat(STYLE_STRONG_INDEX));
     document.getElementById("btnI").addEventListener("click", (e) => applyFormat(STYLE_EM_INDEX));
@@ -4188,6 +6736,10 @@
         applyTextColor(i);
         toggleDropdown("textColorDropdown");
       });
+      document.getElementById(`mbtnTextColor${i}`).addEventListener("click", (e) => {
+        applyTextColor(i);
+        toggleDropdown("styleDropdown");
+      });
     }
 
     document.getElementById("btnTextHighlightMenu").addEventListener("click", (e) => toggleDropdown("highlightDropdown"));
@@ -4197,14 +6749,22 @@
         applyHighlightColor(i);
         toggleDropdown("highlightDropdown");
       });
+      document.getElementById(`mbtnTextHighlight${i}`).addEventListener("click", (e) => {
+        applyHighlightColor(i);
+        toggleDropdown("styleDropdown");
+      });
     }
 
-    document.getElementById("btnFontSizeMenu").addEventListener("click", (e) => toggleDropdown("fontSizeDropdown"));
+    document.getElementById("btnFontScaleMenu").addEventListener("click", (e) => toggleDropdown("fontScaleDropdown"));
 
     for (let i = 1; i < FONT_SIZES_N + 1; ++i) {
-      document.getElementById(`btnFontSize${i}`).addEventListener("click", (e) => {
-        applyFontSize(i);
-        toggleDropdown("fontSizeDropdown");
+      document.getElementById(`btnFontScale${i}`).addEventListener("click", (e) => {
+        applyFontScale(i);
+        toggleDropdown("fontScaleDropdown");
+      });
+      document.getElementById(`mbtnFontScale${i}`).addEventListener("click", (e) => {
+        applyFontScale(i);
+        toggleDropdown("styleDropdown");
       });
     }
 
@@ -4223,6 +6783,23 @@
     });
     document.getElementById("btnJustifyTextAlign").addEventListener("click", (e) => {
       toggleDropdown("alignDropdown");
+      doAlign(AlignType.JUSTIFY);
+    });
+
+    document.getElementById("mbtnLeftTextAlign").addEventListener("click", (e) => {
+      toggleDropdown("styleDropdown");
+      doAlign(AlignType.LEFT);
+    });
+    document.getElementById("mbtnCenterTextAlign").addEventListener("click", (e) => {
+      toggleDropdown("styleDropdown");
+      doAlign(AlignType.CENTER);
+    });
+    document.getElementById("mbtnRightTextAlign").addEventListener("click", (e) => {
+      toggleDropdown("styleDropdown");
+      doAlign(AlignType.RIGHT);
+    });
+    document.getElementById("mbtnJustifyTextAlign").addEventListener("click", (e) => {
+      toggleDropdown("styleDropdown");
       doAlign(AlignType.JUSTIFY);
     });
 
@@ -4251,6 +6828,27 @@
       insertPdfLink();
     });
 
+    document.getElementById("mbtnLinkText").addEventListener("click", (e) => {
+      toggleDropdown("insertDropdown");
+      applyURL();
+    });
+    document.getElementById("mbtnLinkImage").addEventListener("click", (e) => {
+      toggleDropdown("insertDropdown");
+      insertImageLink();
+    });
+    document.getElementById("mbtnLinkAudio").addEventListener("click", (e) => {
+      toggleDropdown("insertDropdown");
+      insertAudioLink();
+    });
+    document.getElementById("mbtnLinkVideo").addEventListener("click", (e) => {
+      toggleDropdown("insertDropdown");
+      insertVideoLink();
+    });
+    document.getElementById("mbtnLinkPdf").addEventListener("click", (e) => {
+      toggleDropdown("insertDropdown");
+      insertPdfLink();
+    });
+
     document.getElementById("btnEmbed").addEventListener("click", (e) => toggleDropdown("embedDropdown"));
     document.getElementById("btnEmbedWeb").addEventListener("click", (e) => {
       toggleDropdown("embedDropdown");
@@ -4273,9 +6871,34 @@
       insertEpub(e);
     });
 
+    document.getElementById("mbtnEmbedWeb").addEventListener("click", (e) => {
+      toggleDropdown("insertDropdown");
+      insertEmbeddedContent();
+    });
+    document.getElementById("mimageUpload").addEventListener("change", (e) => {
+      toggleDropdown("insertDropdown");
+      insertImage(e);
+    });
+    document.getElementById("maudioUpload").addEventListener("change", (e) => {
+      toggleDropdown("insertDropdown");
+      insertAudio(event);
+    });
+    document.getElementById("mpdfUpload").addEventListener("change", (e) => {
+      toggleDropdown("insertDropdown");
+      insertPdf(e);
+    });
+    document.getElementById("mepubUpload").addEventListener("change", (e) => {
+      toggleDropdown("insertDropdown");
+      insertEpub(e);
+    });
+
     document.getElementById("btnRecordAudio").addEventListener("click", (e) => insertAudioRecording());
 
     document.getElementById("btnEmbedMath").addEventListener("click", (e) => insertMath());
+    document.getElementById("mbtnEmbedMath").addEventListener("click", (e) => {
+      toggleDropdown("insertDropdown");
+      insertMath();
+    });
 
     document.getElementById("btnTable").addEventListener("click", (e) => toggleDropdown("tableDropdown"));
     document.getElementById("btnSimpleTable").addEventListener("click", (e) => {
@@ -4287,7 +6910,21 @@
       insertTable(true);
     });
 
+    document.getElementById("mbtnSimpleTable").addEventListener("click", (e) => {
+      toggleDropdown("insertDropdown");
+      insertTable(false);
+    });
+    document.getElementById("mbtnHeadlessTable").addEventListener("click", (e) => {
+      toggleDropdown("insertDropdown");
+      insertTable(true);
+    });
+
+    document.getElementById("btnUndo").addEventListener("click", (e) => UNDO_STACK.undo());
+    document.getElementById("btnRedo").addEventListener("click", (e) => UNDO_STACK.redo());
+
     document.getElementById("btnSaveMenu").addEventListener("click", (e) => toggleDropdown("saveDropdown"));
+    document.getElementById("mbtnSaveMenu").addEventListener("click", (e) => toggleDropdown("msaveDropdown"));
+
     document.getElementById("btnSave").addEventListener("click", (e) => {
       toggleDropdown("saveDropdown");
       exportToFile(SaveType.DOWNLOAD, true);
@@ -4313,7 +6950,154 @@
       exportToFile(SaveType.SHARE, false);
     });
 
+    document.getElementById("mbtnSave").addEventListener("click", (e) => {
+      toggleDropdown("msaveDropdown");
+      exportToFile(SaveType.DOWNLOAD, true);
+    });
+    document.getElementById("mbtnSaveTo").addEventListener("click", async (e) => {
+      toggleDropdown("msaveDropdown");
+      exportToFile(SaveType.FILE, true);
+    });
+    document.getElementById("mbtnShare").addEventListener("click", (e) => {
+      toggleDropdown("msaveDropdown");
+      exportToFile(SaveType.SHARE, true);
+    });
+    document.getElementById("mbtnSaveReadOnly").addEventListener("click", (e) => {
+      toggleDropdown("msaveDropdown");
+      exportToFile(SaveType.DOWNLOAD, false);
+    });
+    document.getElementById("mbtnSaveToReadOnly").addEventListener("click", async (e) => {
+      toggleDropdown("msaveDropdown");
+      exportToFile(SaveType.FILE, false);
+    });
+    document.getElementById("mbtnShareReadOnly").addEventListener("click", (e) => {
+      toggleDropdown("msaveDropdown");
+      exportToFile(SaveType.SHARE, false);
+    });
+
+    document.getElementById("mbtnStyle").addEventListener("click", (e) => {
+
+      closeAllPageDropdownSections();
+      toggleDropdown("styleDropdown");
+    });
+    document.getElementById("mbtnInsert").addEventListener("click", (e) => {
+
+      closeAllPageDropdownSections();
+      toggleDropdown("insertDropdown");
+    });
+
+    document.getElementById("mbtnCancelStyle").addEventListener("click", (e) => toggleDropdown("styleDropdown"));
+    document.getElementById("mbtnCancelInsert").addEventListener("click", (e) => toggleDropdown("insertDropdown"));
+    document.getElementById("mbtnCancelSave").addEventListener("click", (e) => toggleDropdown("msaveDropdown"));
+
+    document.querySelectorAll(".page-dropdown-header").forEach(header => {
+
+      header.addEventListener("click", () => {
+
+        const content = header.nextElementSibling;
+
+        // Close others if you want only one open at a time
+        document.querySelectorAll(".page-dropdown-content").forEach(item => {
+
+          if (item !== content) {
+
+            item.style.maxHeight = null;
+            item.classList?.remove("open");
+          }
+        });
+
+        // Toggle current
+        if (content.style.maxHeight) {
+
+          content.style.maxHeight = null;
+          content.classList?.remove("open");
+        } else {
+
+          content.style.maxHeight = content.scrollHeight + "px";
+          content.classList?.add("open");
+        }
+      });
+    });
+
     editor.focus();
+  </script>
+
+  <script>
+    const editor = document.getElementById("editor");
+
+    // Helper: Places the caret at a given element and offset.
+    function setCaret(el, pos) {
+
+      const selection = window.getSelection();
+      const range = document.createRange();
+      range.setStart(el, pos);
+      range.collapse(true);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
+
+    function editorInsertBefore(childNode, siblingNodeId) {
+
+      if (childNode && !editor.contains(childNode)) {
+
+        const siblingNode = siblingNodeId ? document.getElementById(siblingNodeId) : null;
+
+        if (!siblingNode || editor.contains(siblingNode)) {
+
+          editor.insertBefore(childNode, siblingNode);
+
+          if (childNode.classList?.contains("text-block") ||
+              childNode.classList?.contains("code-block")) {
+            if (childNode.classList?.contains("text-block")) setCaret(childNode, 0);
+            else setCaret(childNode.querySelector("code"), 0);
+          }
+        }
+      }
+    }
+
+    function editorRemoveChild(childNode, siblingNodeId) {
+
+      if (childNode && editor.contains(childNode)) {
+
+        if (childNode.classList?.contains("text-block") ||
+            childNode.classList?.contains("code-block")) {
+
+          let p = childNode.previousElementSibling;
+
+          while (p &&
+                 !p.classList?.contains("text-block") &&
+                 !p.classList?.contains("code-block")) {
+            p = p.previousElementSibling;
+          }
+          editor.removeChild(childNode);
+
+          if (p) {
+            if (p.classList?.contains("text-block")) setCaret(p, 0);
+            else setCaret(p.querySelector("code"), 0);
+          }
+          else {
+            editor.focus();
+          }
+        } else {
+
+          editor.removeChild(childNode);
+          editor.focus();
+        }
+      }
+    }
+
+    function handleXRemoveEvent(event) {
+
+      const parentNode = event.target?.parentNode?.parentNode;
+
+      if (parentNode === editor) {
+
+        const childNode = event.target?.parentNode;
+        const childSibling = childNode?.nextElementSibling;
+        editor.UNDO_STACK.push(editorRemoveChild, editorInsertBefore,
+                               childNode, childSibling?.id);
+      }
+    }
   </script>
 
 </body>
