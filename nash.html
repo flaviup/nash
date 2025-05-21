@@ -5554,6 +5554,81 @@
       return getNodeText(divNode);
     }
 
+    function normalizeStyledText(node) {
+
+      const inners = new Set();
+      const rootNode = (node?.parentNode === editor) ? node: getTopLevelNodeOf(node, editor);
+      let replacementNode = node;
+
+      while (true) {
+
+        rootNode?.querySelectorAll('span[style~="color:" i] span[style~="color:" i]')?.forEach((nested) => {
+
+          if (nested.style.color) {
+            inners.add(nested);
+          }
+        });
+
+        rootNode?.querySelectorAll('span[style~="background-color:" i] span[style~="background-color:" i]')?.forEach((nested) => {
+
+          if (nested.style.backgroundColor) {
+            inners.add(nested);
+          }
+        });
+
+        rootNode?.querySelectorAll('span[style~="font-size:" i] span[style~="font-size:" i]')?.forEach((nested) => {
+
+          if (nested.style.fontSize) {
+            inners.add(nested);
+          }
+        });
+
+        rootNode?.querySelectorAll("strong strong, em em, u u, s s")?.forEach((nested) => {
+          inners.add(nested);
+        });
+
+        if (inners.size > 0) {
+
+          for (let nested of inners) {
+
+            if (nested.childNodes?.length) {
+
+              if (nested === replacementNode) replacementNode = nested.childNodes[nested.childNodes.length - 1];
+              nested.replaceWith(...nested.childNodes);
+            } else {
+
+              if (nested === replacementNode) {
+              
+                replacementNode = nested.nextSibling;
+
+                if (!replacementNode) {
+
+                  let p = nested.parentNode;
+
+                  if (p && p !== editor) {
+
+                    while (p && p.parentNode !== editor && !replacementNode) {
+
+                      replacementNode = p.nextSibling;
+                      p = p.parentNode;
+                    }
+                  }
+
+                  if (!replacementNode) replacementNode = rootNode;
+                }
+              }
+              nested.remove();
+            }
+          }
+          inners.clear();
+        } else {
+          break;
+        }
+      }
+
+      return replacementNode;
+    }
+
     function insertTextInRange(text, range, isHtml = false) {
 
       let htmlNodes = null;
@@ -5629,6 +5704,8 @@
               parentNode.insertBefore(document.createTextNode(endContent), nextSibling);
             }
 
+            if (isHtml) nodes[0] = normalizeStyledText(nodes[0]);
+
             return { node: nodes[0], offset: getOffsetAtEnd(nodes[0]) };
           }
         } else if (nodes.length > 1) {
@@ -5655,7 +5732,7 @@
 
             if (textContent !== range.startContainer.textContent) range.startContainer.textContent = textContent;
 
-            const lastNode = nodes[nodes.length - 1];
+            let lastNode = nodes[nodes.length - 1];
 
             if (lastNode.nodeType === Node.TEXT_NODE) {
 
@@ -5665,11 +5742,15 @@
 
               if (lastText !== lastNode.textContent) lastNode.textContent = lastText;
 
+              if (isHtml) normalizeStyledText(parentNode);
+
               return { node: lastNode, offset: offset };
             } else if (endContent) {
 
               parentNode.insertBefore(document.createTextNode(endContent), nextSibling);
             }
+
+            if (isHtml) lastNode = normalizeStyledText(lastNode);
 
             return { node: lastNode, offset: getOffsetAtEnd(lastNode) };
           } else {
@@ -5690,7 +5771,9 @@
 
           nodes.reverse();
           nodes.forEach((node) => range.insertNode(node));
-          const lastNode = nodes[0];
+          let lastNode = nodes[0];
+
+          if (isHtml) lastNode = normalizeStyledText(lastNode);
 
           return { node: lastNode, offset: getOffsetAtEnd(lastNode) };
         }
