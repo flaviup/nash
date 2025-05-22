@@ -941,6 +941,15 @@
     }
 
     @media (max-width: 800px) {
+      body {
+        padding: 10px !important;
+      }
+
+      .editor-container {
+        max-width: 98%;
+        padding: 4px !important;
+      }
+
       .mobile-only {
         display: block !important;
       }
@@ -1170,7 +1179,7 @@
     <div id="footer">
       <small><a href="https://github.com/flaviup">flaviup@github.com</a></small>
       <br/>
-      <small>Nash 1.0.20250521</small>
+      <small>Nash 1.0.20250522</small>
     </div>
 
     <div id="styleDropdown" class="page-dropdown">
@@ -1751,7 +1760,7 @@
 
     class UndoStack {
 
-      static MAX_UNDO = 4_000_000_000;
+      static MAX_UNDO = 10_000;
 
       static #_UNDO_STACK_CHANGE_EVENT_NAME = "UNDO_STACK_CHANGE";
 
