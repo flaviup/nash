@@ -6364,45 +6364,6 @@
       }
     }
 
-    function beforeInputHandler(e) {
-
-      if (e.inputType === "insertLineBreak") { // Shift + Enter
-        handleKey("\n", false, false, true, e);
-      } else if (e.inputType === "insertParagraph") { // Enter
-        handleKey("\n", false, false, false, e);
-      } else if (["deleteContentBackward", "deleteWordBackward", "deleteSoftLineBackward", "deleteHardLineBackward", "deleteEntireSoftLine",
-                  "deleteByDrag", "deleteByCut", "deleteContent"].includes(e.inputType)) { // Backspace
-        handleKey("", false, true, false, e);
-      } else if (["deleteContentForward", "deleteWordForward", "deleteSoftLineForward", "deleteHardLineForward"].includes(e.inputType)) { // Delete
-        handleKey("", true, false, false, e);
-      } else if (e.data && // other non-empty keys
-          ["insertText", "insertCompositionText", "insertReplacementText", "insertFromYank",
-           "insertFromDrop", "insertFromPaste", "insertFromPasteAsQuotation", "insertLink", "insertTranspose"].includes(e.inputType)) {
-
-        let data = e.data;
-
-        if (data.length > 1) {
-
-          const topNode = getTopLevelNodeOfCurrentPosition();
-
-          if (!topNode) {
-
-            cancelEvent(e);
-            return;
-          }
-          const oldData = getNodeText(topNode);
-          const steps = getTextTransformationSteps(oldData, data);
-
-          if (steps.length === 1 && steps[0].type === TextOperationType.INSERT) {
-            data = steps[0].text;
-          } else {
-            return;
-          }
-        }
-        handleKey(data, false, false, false, e);
-      }
-    }
-
     function keydownHandler(e) {
 
       if (isUndoEvent(e)) {
@@ -6769,10 +6730,9 @@
     };
 
     if (isMobileViewport()) {
-      editor.addEventListener("beforeinput", beforeInputHandler);
-    } else {
-      editor.addEventListener("keydown", keydownHandler);
-    }
+      editor.addEventListener("textInput", (e) => console.log(e));
+    } 
+    editor.addEventListener("keydown", keydownHandler);
     editor.addEventListener("click", clickHandler);
     editor.addEventListener("blur", normalizeEditor);
     editor.addEventListener("input", cleanEditor);
