@@ -3039,12 +3039,12 @@
         audioRecordingControlsNode.setAttribute("class", "recording-control-buttons-container non-selectable");
         audioRecordingControlsNode.setAttribute("contenteditable", "false");
         audioRecordingControlsNode.innerHTML = `
-            <button class="cancel-recording-button non-selectable" contenteditable="false" aria-hidden="true">✖</button>
+            <button class="cancel-recording-button non-selectable" contenteditable="false">✖</button>
             <div class="recording-elapsed-time non-selectable" contenteditable="false">
               <b class="red-recording-dot non-selectable" contenteditable="false" aria-hidden="true">🔴</b>
               <p class="elapsed-time non-selectable" style="font-size: 28px;" contenteditable="false">00:00</p>
             </div>
-            <button class="stop-recording-button non-selectable" contenteditable="false" aria-hidden="true">✓</button>`;
+            <button class="stop-recording-button non-selectable" contenteditable="false">✓</button>`;
         audioRecordingInserter.audioRecordingNode.appendChild(audioRecordingControlsNode);
 
         if (audioRecorder.recordingState === MediaRecordingStatus.CLOSED) {
