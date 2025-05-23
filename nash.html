@@ -473,6 +473,10 @@
       left: auto;
     }
 
+    #btnH1 {
+      border-top-left-radius: 12px;
+    }
+
     @media (max-width: 800px) {
       #toolbar {
         overflow: hidden;
@@ -483,10 +487,43 @@
       }
     }
 
+    @media (min-width: 1241px) and (max-width: 1293px) {
+      #btnUndo {
+        border-bottom-left-radius: 12px;
+      }
+    }
+
+    @media (min-width: 1294px) and (max-width: 1299px) {
+      #btnUndo:disabled {
+        border-top-right-radius: 12px;
+      }
+    }
+
+    @media (min-width: 1294px) and (max-width: 1347px) {
+      #btnRedo {
+        border-bottom-left-radius: 12px;
+      }
+    }
+
+    @media (min-width: 1348px) and (max-width: 1351px) {
+      #btnRedo:disabled {
+        border-top-right-radius: 12px;
+      }
+    }
+
     @media (min-width: 1363px) and (max-width: 1416px) {
       #saveDropdown {
         right: auto;
         left: 0;
+      }
+      #btnSaveMenu {
+        border-bottom-left-radius: 12px;
+      }
+    }
+
+    @media (min-width: 1417px) {
+      #btnH1 {
+        border-bottom-left-radius: 12px;
       }
     }
   </style>
