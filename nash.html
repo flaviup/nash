@@ -677,22 +677,6 @@
     .audio-recording {
       margin: 20px 0;
     }
-
-    .recording-cancelled-container {
-      /*targeting Chrome & Safari*/
-      display: -webkit-flex;
-      /*targeting IE10*/
-      display: -ms-flex;
-      display: flex;
-      align-items: start;
-      width: 100%;
-      height: auto;
-      margin: 0;
-      padding: 10px 0px;
-      border-radius: 12px;
-      background-color: var(--audio-recording-controls-bg-color);
-      color: var(--audio-recording-controls-text-color);
-    }
   </style>
   <style class="content-editing-style">
     .x-remover {
@@ -756,6 +740,22 @@
 
     #recordingBar.hidden {
       display: none;
+    }
+
+    .recording-cancelled-container {
+      /*targeting Chrome & Safari*/
+      display: -webkit-flex;
+      /*targeting IE10*/
+      display: -ms-flex;
+      display: flex;
+      align-items: start;
+      width: 100%;
+      height: auto;
+      margin: 0;
+      padding: 10px 0px;
+      border-radius: 12px;
+      background-color: var(--audio-recording-controls-bg-color);
+      color: var(--audio-recording-controls-text-color);
     }
 
     .recording-control-buttons-container {
@@ -2700,9 +2700,19 @@
           });
         }
 
+        // Remove cancelled audio recordings
+        template.content.querySelectorAll(".recording-cancelled-container")?.forEach(el => {
+          if (el.parentNode) el.parentNode.parentNode?.removeChild(el.parentNode);
+        });
+
         // Set elements as read-only
         template.content.querySelectorAll("*[contenteditable]")?.forEach(el => {
           el.setAttribute("contenteditable", "false");
+        });
+
+        // Removed ids
+        [...template.content.getElementById("editor").children].forEach(el => {
+          if (el.hasAttribute("id")) el.removeAttribute("id");
         });
       }
 
