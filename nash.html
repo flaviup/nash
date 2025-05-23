@@ -6378,7 +6378,28 @@
       } else if (e.data && // other non-empty keys
           ["insertText", "insertCompositionText", "insertReplacementText", "insertFromYank",
            "insertFromDrop", "insertFromPaste", "insertFromPasteAsQuotation", "insertLink", "insertTranspose"].includes(e.inputType)) {
-        handleKey(e.data, false, false, false, e);
+
+        let data = e.data;
+
+        if (data.length > 1) {
+
+          const topNode = getTopLevelNodeOfCurrentPosition();
+
+          if (!topNode) {
+
+            cancelEvent(e);
+            return;
+          }
+          const oldData = getNodeText(topNode);
+          const steps = getTextTransformationSteps(oldData, data);
+
+          if (steps.length === 1 && steps[0].type === TextOperationType.INSERT) {
+            data = steps[0].text;
+          } else {
+            return;
+          }
+        }
+        handleKey(data, false, false, false, e);
       }
     }
 
