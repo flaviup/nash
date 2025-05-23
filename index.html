@@ -1178,7 +1178,7 @@
     <div id="footer">
       <small><a href="https://github.com/flaviup">flaviup@github.com</a></small>
       <br/>
-      <small>Nash <div id="version" style="display: inline">1.0.20250522</div></small>
+      <small>Nash <div id="version" style="display: inline">1.0.20250523</div></small>
     </div>
     <div id="styleDropdown" class="page-dropdown">
       <div class="page-dropdown-title">Style</div>
@@ -6156,32 +6156,8 @@
                           " " : ((e.ctrlKey || e.metaKey) ? "" : e.key)));
     }
 
-    function keydownHandler(e) {
+    function handleKey(keyText, isDeleteKey, isBackspaceKey, isShiftKey, e) {
 
-      if (isUndoEvent(e)) {
-
-        UNDO_STACK.undo();
-        cancelEvent(e);
-        return;
-      }
-
-      if (isRedoEvent(e)) {
-
-        UNDO_STACK.redo();
-        cancelEvent(e);
-        return;
-      }
-
-      if (isCopyCutOrPasteEvent(e)) {
-        return;
-      }
-      const keyText = key2Str(e);
-      const isDeleteKey = isDelEvent(e);
-      const isBackspaceKey = isBackspaceEvent(e);
-
-      if (!keyText && !isDeleteKey && !isBackspaceKey) {
-        return;
-      }
       let range = null;
       const selection = window.getSelection();
 
@@ -6229,25 +6205,26 @@
         return;
       }
 
-      if (e.key === "Enter" && e.shiftKey) {
+      if (keyText === "\n") {
 
-        if (handleEnterKey(range, (parentNode) => parentNode.classList?.contains("text-block"))) {
+        if (isShiftKey) {
 
-          cancelEvent(e);
+          if (handleEnterKey(range, (parentNode) => parentNode.classList?.contains("text-block"))) {
+
+            cancelEvent(e);
+            return;
+          }
+        } else {
+
+          if (handleEnterKey(range, (parentNode) => ["CODE", "TD", "TH"].includes(parentNode.nodeName))) {
+
+            cancelEvent(e);
+            return;
+          }
+          e.preventDefault();
+          splitBlock(range);
           return;
         }
-      }
-
-      if (e.key === "Enter" && !e.shiftKey) {
-
-        if (handleEnterKey(range, (parentNode) => ["CODE", "TD", "TH"].includes(parentNode.nodeName))) {
-
-          cancelEvent(e);
-          return;
-        }
-        e.preventDefault();
-        splitBlock(range);
-        return;
       }
       let topNode = getTopLevelNodeOfCurrentPosition(range);
 
@@ -6385,6 +6362,54 @@
         cancelEvent(e);
         return;
       }
+    }
+
+    function beforeInputHandler(e) {
+
+      if (e.inputType === "insertLineBreak") { // Shift + Enter
+        handleKey("\n", false, false, true, e);
+      } else if (e.inputType === "insertParagraph") { // Enter
+        handleKey("\n", false, false, false, e);
+      } else if (["deleteContentBackward", "deleteWordBackward", "deleteSoftLineBackward", "deleteHardLineBackward", "deleteEntireSoftLine",
+                  "deleteByDrag", "deleteByCut", "deleteContent"].includes(e.inputType)) { // Backspace
+        handleKey("", false, true, false, e);
+      } else if (["deleteContentForward", "deleteWordForward", "deleteSoftLineForward", "deleteHardLineForward"].includes(e.inputType)) { // Delete
+        handleKey("", true, false, false, e);
+      } else if (e.data && // other non-empty keys
+          ["insertText", "insertCompositionText", "insertReplacementText", "insertFromYank",
+           "insertFromDrop", "insertFromPaste", "insertFromPasteAsQuotation", "insertLink", "insertTranspose"].includes(e.inputType)) {
+        handleKey(e.data, false, false, false, e);
+      }
+    }
+
+    function keydownHandler(e) {
+
+      if (isUndoEvent(e)) {
+
+        UNDO_STACK.undo();
+        cancelEvent(e);
+        return;
+      }
+
+      if (isRedoEvent(e)) {
+
+        UNDO_STACK.redo();
+        cancelEvent(e);
+        return;
+      }
+
+      if (isCopyCutOrPasteEvent(e)) {
+        return;
+      }
+      const keyText = key2Str(e);
+      const isDeleteKey = isDelEvent(e);
+      const isBackspaceKey = isBackspaceEvent(e);
+
+      if (!keyText && !isDeleteKey && !isBackspaceKey) {
+        return;
+      }
+      const isShiftKey = e.shiftKey;
+      handleKey(keyText, isDeleteKey, isBackspaceKey, isShiftKey, e);
     }
 
     function getStyledContent(selectedFragment) {
@@ -6618,6 +6643,10 @@
       });
     }
 
+    function isMobileViewport() {
+      return window.matchMedia("(max-width: 800px)").matches;
+    }
+
     let lastValidSelectionRange = null;
 
     document.onselectionchange = () => {
@@ -6718,7 +6747,11 @@
       }
     };
 
-    editor.addEventListener("keydown", keydownHandler);
+    if (isMobileViewport()) {
+      editor.addEventListener("beforeinput", beforeInputHandler);
+    } else {
+      editor.addEventListener("keydown", keydownHandler);
+    }
     editor.addEventListener("click", clickHandler);
     editor.addEventListener("blur", normalizeEditor);
     editor.addEventListener("input", cleanEditor);
