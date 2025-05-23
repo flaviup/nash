@@ -6625,10 +6625,6 @@
       });
     }
 
-    function isMobileViewport() {
-      return window.matchMedia("(max-width: 800px)").matches;
-    }
-
     let lastValidSelectionRange = null;
 
     document.onselectionchange = () => {
@@ -6729,9 +6725,6 @@
       }
     };
 
-    if (isMobileViewport()) {
-      editor.addEventListener("textInput", (e) => console.log(e));
-    } 
     editor.addEventListener("keydown", keydownHandler);
     editor.addEventListener("click", clickHandler);
     editor.addEventListener("blur", normalizeEditor);
