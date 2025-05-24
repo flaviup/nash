@@ -1231,7 +1231,7 @@
     </div>
     <div id="editorContainer" class="thin-line">
       <div id="editor" contenteditable="true">
-        <p id="text28096aea6fa9cc5d10934d24509e2c83" class="text-block"><br/></p>
+        <p id="text28096aea6fa9cc5d10934d24509e2c83" class="text-block justify-text"><br/></p>
       </div>
     </div>
     <div id="footer">
@@ -2630,6 +2630,8 @@
 
     editor.UNDO_STACK = UNDO_STACK;
 
+    const DEFAULT_TEXT_ALIGN = "justify-text";
+
     const STYLE_TAGS = ["span", "strong", "em", "u", "s", "a"];
 
     const STYLES = [
@@ -3669,7 +3671,7 @@
       const topNode = getTopLevelNodeOfCurrentPosition();
       const p = document.createElement("p");
       p.setAttribute("id", `text${generateUId()}`);
-      p.setAttribute("class", "text-block");
+      p.setAttribute("class", `text-block ${DEFAULT_TEXT_ALIGN}`);
       p.appendChild(document.createElement("br"));
       UNDO_STACK.push(editorInsertBefore, editorRemoveChild, p, topNode?.nextElementSibling?.id);
       setCaret(p, 0);
@@ -4994,7 +4996,7 @@
 
         const p = document.createElement("p");
         p.setAttribute("id", `text${generateUId()}`);
-        p.setAttribute("class", "text-block");
+        p.setAttribute("class", `text-block ${DEFAULT_TEXT_ALIGN}`);
         p.innerHTML = "<br/>";
         UNDO_STACK.push(editorInsertBefore, editorRemoveChild, p, null);
         return;
@@ -5060,7 +5062,7 @@
 
           const p = document.createElement("p");
           p.setAttribute("id", `text${generateUId()}`);
-          p.setAttribute("class", "text-block");
+          p.setAttribute("class", `text-block ${DEFAULT_TEXT_ALIGN}`);
           p.textContent = node.textContent;
           editor.replaceChild(p, node);
         }
@@ -5093,7 +5095,7 @@
       const htmlText = editor.innerHTML.trim();
 
       if (htmlText === "" || htmlText === "<br>" || htmlText === "<br/>") {
-        editor.innerHTML = `<p class="text-block" id="text${generateUId()}"><br/></p>`;
+        editor.innerHTML = `<p class="text-block ${DEFAULT_TEXT_ALIGN}" id="text${generateUId()}"><br/></p>`;
       }
     }
 
@@ -6125,7 +6127,7 @@
           if (newTextBlock) {
 
             newTextBlock.setAttribute("id", `text${generateUId()}`);
-            newTextBlock.setAttribute("class", "text-block");
+            newTextBlock.setAttribute("class", `text-block ${DEFAULT_TEXT_ALIGN}`);
             newTextBlock.append(...(isHtml ? htmlTextToChildNodesArray(text) : createHtmlElementsFromText(text, -1, -1, null)));
             const txt = getNodeText(newTextBlock);
             newCaretPosition = txt.length;
