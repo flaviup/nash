@@ -2834,7 +2834,11 @@
         return;
       }
 
-      filename = filename.endsWith(".html") ? filename : filename + ".html";
+      if (editMode === false) {
+        filename = (filename.endsWith(".html") ? filename.substring(0, filename.length - ".html".length) : filename) + "_lock.html";
+      } else {
+        filename = filename.endsWith(".html") ? filename : (filename + ".html");
+      }
 
       if (editMode === false) {
         setEditMode(false);
