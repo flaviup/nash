@@ -1007,6 +1007,21 @@
       justify-content: flex-end;
     }
 
+    .justify-align,
+    .justify-align math {
+      /*targeting Chrome & Safari*/
+      display: -webkit-flex;
+      /*targeting IE10*/
+      display: -ms-flex;
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+    }
+
+    .justify-align math {
+      gap: auto;
+    }
+
     .mobile-only {
       display: none;
     }
@@ -3725,7 +3740,7 @@
       static get JUSTIFY() { return this.#_JUSTIFY; }
     }
 
-    const ALIGN_CLASSES = [["left-text", "left-align"], ["center-text", "center-align"], ["right-text", "right-align"], ["justify-text", "left-align"]];
+    const ALIGN_CLASSES = [["left-text", "left-align"], ["center-text", "center-align"], ["right-text", "right-align"], ["justify-text", "justify-align"]];
     const ALIGN_CLASSES_FLAT = ALIGN_CLASSES.flat();
 
     function doAlign(alignType) {
