@@ -542,6 +542,7 @@
     #editor p {
       margin-top: 0.5em;
       margin-bottom: 0.5em;
+      white-space: break-spaces;
       overflow-wrap: break-word;
     }
 
@@ -4333,7 +4334,7 @@
       // Creates the HTML node with the specified text and styles, having the specified parent
       function createHtmlNode(parentNode, text, styleBitPattern, start, end) {
 
-        text = text.replace(/[\t ]/g, "\u00A0"); // "&emsp;" "&ensp;"
+        //text = text.replace(/[\t ]/g, "\u00A0"); // "&emsp;" "&ensp;"
         let nodeStart = null, nodeEnd = null, startOffset = 0, endOffset = 0;
 
         function callback(startNode, endNode, offsetStart, offsetEnd) {
@@ -5764,9 +5765,9 @@
           htmlNodes = htmlTextToChildNodesArray(text);
           text = "";
         }
-      } else {
+      }/* else {
         text = text.replace(/[\t ]/g, "\u00A0");
-      }
+      }*/
 
       function getOffsetAtEnd(node) {
 
