@@ -678,6 +678,7 @@
       border: 1px solid var(--table-border-color);
       margin: 0 0;
       padding: 0 8px;
+      white-space: break-spaces;
       overflow-wrap: break-word;
     }
 
@@ -3635,7 +3636,7 @@
         --rows;
 
         for (let i = 0; i < cols; ++i) {
-          thead += `\n<th scope="col" contenteditable="true">Column&nbsp;${i + 1}</th>`;
+          thead += `\n<th scope="col" contenteditable="true">Column ${i + 1}</th>`;
         }
         thead = "<thead>\n<tr>" + thead + "\n</tr>\n</thead>";
       }
