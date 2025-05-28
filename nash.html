@@ -1266,7 +1266,7 @@
     <div id="footer">
       <small><a href="https://github.com/flaviup">flaviup@github.com</a></small>
       <br/>
-      <small>Nash <div id="version" style="display: inline">1.0.20250524</div></small>
+      <small>Nash <div id="version" style="display: inline">1.0.20250528</div></small>
     </div>
     <div id="styleDropdown" class="page-dropdown">
       <div class="page-dropdown-title">Style</div>
@@ -4307,6 +4307,8 @@
 
             let nodeStart = getTopLevelNodeOf(range.startContainer, rootContainer);
             let nodeEnd = getTopLevelNodeOf(range.endContainer, rootContainer);
+            const nodeStartOriginal = nodeStart;
+            const nodeEndOriginal = nodeEnd;
 
             while (nodeStart &&
                    nodeStart !== nodeEnd &&
@@ -4323,13 +4325,13 @@
               if (nodeStart === nodeEnd) {
 
                 const positions = getNodePositions(nodeStart);
-                const start = positions.get(range.startContainer).start + range.startOffset;
-                const end = positions.get(range.endContainer).start + range.endOffset;
+                const start = (nodeStartOriginal === nodeStart ? positions.get(range.startContainer).start + range.startOffset : positions.get(nodeStart).start);
+                const end = (nodeEndOriginal === nodeEnd ? positions.get(range.endContainer).start + range.endOffset : positions.get(nodeEnd).end);
                 selPositions.push({ node: nodeStart, start: start, end: end, positions: positions });
               } else {
 
                 let positions = getNodePositions(nodeStart);
-                let start = positions.get(range.startContainer).start + range.startOffset;
+                let start = (nodeStartOriginal === nodeStart ? positions.get(range.startContainer).start + range.startOffset : positions.get(nodeStart).start);
                 let end = positions.get(nodeStart).end;
                 selPositions.push({ node: nodeStart, start: start, end: end, positions: positions });
 
@@ -4349,7 +4351,7 @@
 
                 positions = getNodePositions(nodeEnd);
                 start = positions.get(nodeEnd).start;
-                end = positions.get(range.endContainer).start + range.endOffset;
+                end = (nodeEndOriginal === nodeEnd ? positions.get(range.endContainer).start + range.endOffset :  positions.get(nodeEnd).end);
                 selPositions.push({ node: nodeEnd, start: start, end: end, positions: positions });
               }
             }
@@ -4590,9 +4592,9 @@
         if (rangeNodes.length) {
 
           const range = document.createRange();
-          range.setStart(rangeNodes[0][0], rangeNodes[0][2]);
+          range.setStart(rangeNodes[0][0], rangeNodes[0][2].nodeName === "BR" ? 0 : rangeNodes[0][2]);
           const i = (rangeNodes.length > 1) ? 1 : 0;
-          range.setEnd(rangeNodes[i][1], rangeNodes[i][3]);
+          range.setEnd(rangeNodes[i][1], rangeNodes[i][1].nodeName === "BR" ? 0 : rangeNodes[i][3]);
           window.getSelection().addRange(range);
         }
       }
