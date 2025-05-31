@@ -2786,8 +2786,12 @@
         }
 
         // Remove MathML related scripts and styles
+        template.content.querySelectorAll(".math-loading-script")?.forEach(el => {
+          el.parentNode?.removeChild(el);
+        });
+
         if (!template.content.querySelectorAll(".embedded-math")?.length) {
-          template.content.querySelectorAll(".math-loading-script, .math-loading-style")?.forEach(el => {
+          template.content.querySelectorAll(".math-loading-style")?.forEach(el => {
             el.parentNode?.removeChild(el);
           });
         }
