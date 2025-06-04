@@ -173,6 +173,16 @@
       color: var(--note-placeholder-color);
       display: block;
     }
+
+    .note-dates {
+      font-size: 14px;
+      font-weight: normal;
+      margin-bottom: 15px;
+      padding: 0px 15px;
+      outline: none;
+      border: none;
+      background: transparent;
+    }
   </style>
   <style class="content-editing-style">
     .top-container {
@@ -1081,6 +1091,7 @@
 <body>
   <div class="editor-container">
     <div id="filename" contenteditable="plaintext-only" class="file-title"></div>
+    <div id="noteDates" contenteditable="false" class="note-dates"></div>
     <div class="top-container">
       <div id="toolbar" class="no-print">
         <button id="btnH1" class="no-mobile" title="Extra large text">XL</button>
@@ -1266,7 +1277,7 @@
     <div id="footer">
       <small><a href="https://github.com/flaviup">flaviup@github.com</a></small>
       <br/>
-      <small>Nash <div id="version" style="display: inline">1.0.20250531</div></small>
+      <small>Nash <div id="version" style="display: inline">1.0.20250604</div></small>
     </div>
     <div id="styleDropdown" class="page-dropdown">
       <div class="page-dropdown-title">Style</div>
@@ -1735,6 +1746,15 @@
     const loadEpub = window.editor_imodule_obj.loadEpub;
 
     document.getElementById("text28096aea6fa9cc5d10934d24509e2c83")?.setAttribute("id", `text${generateUId()}`);
+
+    const noteDates = document.getElementById("noteDates");
+
+    if (!noteDates.textContent?.length) {
+
+      const now = new Date();
+      noteDates.setAttribute("data-created-time", `${now.toISOString()}`);
+      noteDates.textContent = new Intl.DateTimeFormat(Intl.DateTimeFormat().resolvedOptions().locale).format(now);
+    }
 
     /**
      *  PDFObject v2.3.1
@@ -2862,6 +2882,22 @@
 
       if (editMode === false) {
         setEditMode(false);
+      }
+      const noteDates = document.getElementById("noteDates");
+
+      if (noteDates) {
+
+        const createdTime = Date.parse(noteDates.getAttribute("data-created-time"));
+        const now = new Date();
+        noteDates.setAttribute("data-last-saved-time", `${now.toISOString()}`);
+        const lastSavedTime = new Intl.DateTimeFormat(Intl.DateTimeFormat().resolvedOptions().locale).format(now);
+        const createdDate = new Intl.DateTimeFormat(Intl.DateTimeFormat().resolvedOptions().locale).format(createdTime);
+
+        if (createdDate !== lastSavedTime) {
+          noteDates.textContent = `${createdDate} | ${lastSavedTime} ${now.getHours()}:${now.getMinutes()}:${now.getSeconds()}`;
+        } else {
+          noteDates.textContent = `${createdDate} | ${now.getHours()}:${now.getMinutes()}:${now.getSeconds()}`;
+        }
       }
 
       const content = removeDocumentNodes(document.documentElement.outerHTML, editMode);
