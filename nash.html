@@ -1278,7 +1278,7 @@
     <div id="footer">
       <small><a href="https://github.com/flaviup">flaviup@github.com</a></small>
       <br/>
-      <small>Nash <div id="version" style="display: inline">1.0.20250604</div></small>
+      <small>Nash <div id="version" style="display: inline">1.0.20250605</div></small>
     </div>
     <div id="styleDropdown" class="page-dropdown">
       <div class="page-dropdown-title">Style</div>
@@ -1748,13 +1748,35 @@
 
     document.getElementById("text28096aea6fa9cc5d10934d24509e2c83")?.setAttribute("id", `text${generateUId()}`);
 
+    function setNoteDates(noteDates, createdTime, savedTime) {
+
+      function _0pfx(n) { // prefixing an integer number with 0 up to 2 digits
+        return n.toLocaleString("en-US", { minimumIntegerDigits: 2, useGrouping: false });
+      }
+
+      const savedDate = new Intl.DateTimeFormat(Intl.DateTimeFormat().resolvedOptions().locale).format(savedTime);
+      const createdDate = new Intl.DateTimeFormat(Intl.DateTimeFormat().resolvedOptions().locale).format(createdTime);
+
+      if (createdDate !== savedDate) {
+        noteDates.textContent = `${createdDate} | ${savedDate} ${_0pfx(savedTime.getHours())}:${_0pfx(savedTime.getMinutes())}:${_0pfx(savedTime.getSeconds())}`;
+      } else {
+        noteDates.textContent = `${createdDate} | ${_0pfx(savedTime.getHours())}:${_0pfx(savedTime.getMinutes())}:${_0pfx(savedTime.getSeconds())}`;
+      }
+    }
+
     const noteDates = document.getElementById("noteDates");
 
     if (!noteDates.textContent?.length) {
 
       const now = new Date();
       noteDates.setAttribute("data-created-time", `${now.toISOString()}`);
+      noteDates.setAttribute("data-last-saved-time", `${now.toISOString()}`);
       noteDates.textContent = new Intl.DateTimeFormat(Intl.DateTimeFormat().resolvedOptions().locale).format(now);
+    } else {
+
+      const createdTime = Date.parse(noteDates.getAttribute("data-created-time"));
+      const savedTime = Date.parse(noteDates.getAttribute("data-last-saved-time"));
+      setNoteDates(noteDates, createdTime, savedTime);
     }
 
     /**
@@ -2889,16 +2911,9 @@
       if (noteDates) {
 
         const createdTime = Date.parse(noteDates.getAttribute("data-created-time"));
-        const now = new Date();
-        noteDates.setAttribute("data-last-saved-time", `${now.toISOString()}`);
-        const lastSavedTime = new Intl.DateTimeFormat(Intl.DateTimeFormat().resolvedOptions().locale).format(now);
-        const createdDate = new Intl.DateTimeFormat(Intl.DateTimeFormat().resolvedOptions().locale).format(createdTime);
-
-        if (createdDate !== lastSavedTime) {
-          noteDates.textContent = `${createdDate} | ${lastSavedTime} ${now.getHours()}:${now.getMinutes()}:${now.getSeconds()}`;
-        } else {
-          noteDates.textContent = `${createdDate} | ${now.getHours()}:${now.getMinutes()}:${now.getSeconds()}`;
-        }
+        const savedTime = new Date();
+        noteDates.setAttribute("data-last-saved-time", `${savedTime.toISOString()}`);
+        setNoteDates(noteDates, createdTime, savedTime);
       }
 
       const content = removeDocumentNodes(document.documentElement.outerHTML, editMode);
