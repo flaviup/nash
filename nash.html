@@ -1278,7 +1278,7 @@
     <div id="footer">
       <small><a href="https://github.com/flaviup">flaviup@github.com</a></small>
       <br/>
-      <small>Nash <div id="version" style="display: inline">1.0.20250605</div></small>
+      <small>Nash <div id="version" style="display: inline">1.0.20250619</div></small>
     </div>
     <div id="styleDropdown" class="page-dropdown">
       <div class="page-dropdown-title">Style</div>
@@ -1774,8 +1774,8 @@
       noteDates.textContent = new Intl.DateTimeFormat(Intl.DateTimeFormat().resolvedOptions().locale).format(now);
     } else {
 
-      const createdTime = Date.parse(noteDates.getAttribute("data-created-time"));
-      const savedTime = Date.parse(noteDates.getAttribute("data-last-saved-time"));
+      const createdTime = new Date(Date.parse(noteDates.getAttribute("data-created-time")));
+      const savedTime = new Date(Date.parse(noteDates.getAttribute("data-last-saved-time")));
       setNoteDates(noteDates, createdTime, savedTime);
     }
 
@@ -2910,7 +2910,7 @@
 
       if (noteDates) {
 
-        const createdTime = Date.parse(noteDates.getAttribute("data-created-time"));
+        const createdTime = new Date(Date.parse(noteDates.getAttribute("data-created-time")));
         const savedTime = new Date();
         noteDates.setAttribute("data-last-saved-time", `${savedTime.toISOString()}`);
         setNoteDates(noteDates, createdTime, savedTime);
